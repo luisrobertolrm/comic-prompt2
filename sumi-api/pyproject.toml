@@ -1,0 +1,109 @@
+[project]
+name = "prompt-clinica"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "alembic>=1.18.4",
+    "langchain-core>=1.2.9",
+    "langchain-google-genai>=4.2.0",
+    "langchain[ollama,openai]>=1.2.9",
+    "langgraph>=1.0.8",
+    "langgraph-checkpoint-postgres>=3.0.4",
+    "psycopg>=3.3.2",
+    "psycopg2-binary>=2.9.11",
+    "py-linq>=1.4.0",
+    "pyppeteer>=0.0.25",
+    "rich>=14.3.2",
+    "sqlalchemy>=2.0.46",
+    "pyright>=1.1.390",
+    "ruff>=0.8.4",
+    "fastapi[standard]>=0.135.3",
+    "uvicorn>=0.44.0",
+    "python-dotenv>=1.0.0",
+    "bcrypt>=4.2.0",
+    "PyJWT>=2.10.0",
+    "email-validator>=2.2.0",
+]
+
+[project.urls]
+Homepage = "https://www.otaviomiranda.com.br/"
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+fix = true
+show-fixes = true
+indent-width = 4
+exclude = [".venv"]
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+  "T201",   # Checks for print statements
+  "COM812", # Checks for the absence of trailing commas.
+  "INP001", # Checks for packages that are missing an __init__.py file.
+  "D",      # All pydocstyle (D)
+  "ERA001", # Checks for commented-out Python code.
+  "A004",   # Shadowing Python Builtin
+  "RUF005",
+  "PLR2004",
+  "F821",
+  "F841",
+  "E501"
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["ANN201", "S101"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+
+[tool.ruff.lint.isort]
+known-first-party = ["prompt_clinica"]
+
+[tool.pyright]
+typeCheckingMode = "strict"
+pythonVersion = "3.13"
+include = ["src", "tests", "models"]
+exclude = [
+  "**/venv",
+  "**/.venv",
+  "**/env",
+  "**/.env",
+  "**/node_modules",
+  "**/__pycache__",
+]
+venv = ".venv"
+venvPath = "."
+executionEnvironments = [{ root = ".", extraPaths = ["src", "models"] }]
+reportAny = "error"
+reportImplicitStringConcatenation = "error"
+reportMissingTypeStubs = "warning"
+reportUnknownArgumentType = "error"
+reportUnknownLambdaType = "error"
+reportUnknownMemberType = "error"
+reportUnknownParameterType = "error"
+reportUnknownVariableType = "error"
+reportUnnecessaryTypeIgnoreComment = "warning"
+reportUntypedBaseClass = "error"
+reportUntypedClassDecorator = "error"
+reportUntypedFunctionDecorator = "error"
+
+[tool.pytest.ini_options]
+addopts = "-s --color=yes --tb=short"
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools]
+package-dir = { "" = "src" }

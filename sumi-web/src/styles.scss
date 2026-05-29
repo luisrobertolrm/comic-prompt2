@@ -1,0 +1,63 @@
+/* ── Design tokens ─────────────────────────────────────────────── */
+:root {
+  /* Tipografia */
+  --serif: "Playfair Display", Georgia, serif;
+  --sans:  "Inter", system-ui, sans-serif;
+  --mono:  "JetBrains Mono", "Courier New", monospace;
+
+  /* Cores — tinta */
+  --ink:   #1E1812;
+  --ink-2: #3D3020;
+  --ink-3: #7D6B52;
+  --ink-4: #B8A898;
+
+  /* Cores — papel */
+  --paper:   #FFFAEC;
+  --paper-2: #F5EDD8;
+  --paper-3: #EDE0C8;
+
+  /* Cores — accent (amarelo quente) */
+  --accent:      #F0C060;
+  --accent-soft: #FDF0C8;
+  --accent-ink:  #8B6914;
+
+  /* Cores — estado */
+  --mint:      #7EC8A0;
+  --mint-soft: #DFF4EB;
+  --peach:     #E8896A;
+  --peach-soft:#FBE8DF;
+
+  /* Paletas de personagem */
+  --blush:      #F4D6D7;
+  --blush-soft: #FDF1F1;
+  --lilac:      #C8B4E8;
+  --lilac-soft: #F0EAF9;
+
+  /* Separadores / sombras */
+  --rule:         #D4C4A8;
+  --shadow-1:     2px 2px 0 rgba(30,24,18,.08);
+  --shadow-2:     4px 4px 0 rgba(30,24,18,.12);
+  --shadow-panel: 3px 3px 0 rgba(30,24,18,.10);
+
+  /* Raios */
+  --r-sm: 4px;
+  --r:    8px;
+  --r-lg: 12px;
+}
+
+/* ── Reset mínimo ───────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; }
+
+button { font-family: inherit; }
