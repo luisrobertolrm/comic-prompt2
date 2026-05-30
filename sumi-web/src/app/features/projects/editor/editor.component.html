@@ -1,0 +1,121 @@
+<div class="editor-layout">
+
+  <!-- ── Cabeçalho ── -->
+  <div class="page-head">
+    <div>
+      <p class="eyebrow">EDITOR VISUAL</p>
+      <h1>Componha a página.</h1>
+      <p class="lede">Arraste os balões para reposicionar. Troque o layout. Reordene sem refazer o roteiro.</p>
+    </div>
+    <div class="head-actions">
+      <button class="btn-ghost" (click)="goReview()">← Revisão</button>
+      <button class="btn-primary" (click)="goFinal()">Finalizar →</button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-state">Carregando quadros…</div>
+  }
+
+  @if (!loading()) {
+    <div class="main-grid">
+
+      <!-- ── Stage ── -->
+      <div>
+        <!-- Layout chips -->
+        <div class="layout-bar">
+          <span class="eyebrow" style="margin-right:8px">LAYOUT DA PÁGINA</span>
+          @for (key of layoutKeys; track key) {
+            <button class="chip" [class.chip--active]="layout() === key" (click)="layout.set(key)">
+              {{ layoutLabel(key) }}
+            </button>
+          }
+        </div>
+
+        <!-- Page stage -->
+        <div class="stage" [ngStyle]="stageStyle()">
+          @for (p of visiblePanels; track p.id; let i = $index) {
+            <div class="editor-panel"
+                 [ngStyle]="slotStyle(i)"
+                 [class.editor-panel--selected]="isSelected(p.id)"
+                 (click)="selectedId.set(p.id)">
+
+              <!-- Screentone -->
+              <div class="panel-tone"
+                   [style.background-image]="tonePattern(p.tone)"
+                   [style.background-size]="toneBgSize(p.tone)">
+              </div>
+
+              <!-- Balões arrastáveis -->
+              @for (b of p.bubbles; track $index; let bi = $index) {
+                <div [class]="bubbleClass(b)"
+                     [ngStyle]="bubbleStyle(b)"
+                     style="position:absolute;cursor:grab;user-select:none;max-width:55%"
+                     (mousedown)="startDrag(p.id, bi, $event)">
+                  {{ b.text }}
+                </div>
+              }
+
+              <!-- Meta -->
+              <div class="panel-meta">{{ padNum(p.index_order) }} · {{ p.label }}</div>
+            </div>
+          }
+        </div>
+
+        <p class="stage-hint">
+          Página 1 de {{ visiblePanels.length ? Math.ceil(panels().length / currentLayout.slots.length) : 1 }}
+          · arraste balões diretamente sobre os quadros
+        </p>
+      </div>
+
+      <!-- ── Painel lateral ── -->
+      <div class="side-col">
+
+        <!-- Lista de quadros -->
+        <div class="side-card">
+          <p class="eyebrow" style="margin-bottom:10px">QUADROS NA PÁGINA</p>
+          <div class="panel-list">
+            @for (p of panels(); track p.id; let i = $index) {
+              <button class="panel-list-item" [class.panel-list-item--active]="isSelected(p.id)"
+                      (click)="selectedId.set(p.id)">
+                <span class="panel-num">{{ padNum(i + 1) }}</span>
+                <span class="panel-label-text">{{ p.label }}</span>
+                @if (p.status === 'approved') {
+                  <span class="approved-dot"></span>
+                }
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Quadro selecionado -->
+        @if (selectedPanel) {
+          <div class="side-card">
+            <p class="eyebrow" style="margin-bottom:8px">QUADRO SELECIONADO</p>
+            <p class="sel-caption">{{ selectedPanel.caption }}</p>
+            <div class="chips" style="margin-top:8px">
+              <span class="chip-muted">{{ selectedPanel.framing }}</span>
+              <span class="chip-muted">{{ selectedPanel.aspect }}</span>
+            </div>
+            <div class="sel-footer">
+              <span class="eyebrow">{{ selectedPanel.bubbles.length }} balão(ões)</span>
+              <button class="btn-sm-ghost" (click)="goReview()">✏ Editar quadro</button>
+            </div>
+          </div>
+        }
+
+        <!-- Sentido de leitura -->
+        <div class="side-card">
+          <p class="eyebrow" style="margin-bottom:10px">SENTIDO DE LEITURA</p>
+          <div class="chips">
+            @for (d of readingDirs; track d) {
+              <button class="chip" [class.chip--active]="readingDir() === d" (click)="readingDir.set(d)">{{ d }}</button>
+            }
+          </div>
+        </div>
+
+      </div>
+    </div>
+  }
+
+</div>

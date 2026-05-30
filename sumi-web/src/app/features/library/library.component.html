@@ -1,0 +1,85 @@
+<div class="library-layout">
+
+  <!-- ── Cabeçalho ── -->
+  <div class="page-head">
+    <div>
+      <p class="eyebrow">BIBLIOTECA</p>
+      <h1>Personagens reutilizáveis.</h1>
+      <p class="lede">Cada personagem mantém ficha visual e personalidade. Aparecem em várias HQs sem perder coerência.</p>
+    </div>
+    <button class="btn-accent" (click)="goNewCharacter()">+ Novo personagem</button>
+  </div>
+
+  <!-- ── Filtros ── -->
+  <div class="filter-bar">
+    <div class="search-wrap">
+      <span class="search-icon">⌕</span>
+      <input class="search-input" placeholder="Buscar personagem…"
+             [value]="search()" (input)="setSearch($event)">
+    </div>
+    <div class="chips">
+      @for (r of roleFilters; track r) {
+        <button class="chip" [class.chip--active]="roleFilter() === r" (click)="roleFilter.set(r)">{{ r }}</button>
+      }
+    </div>
+  </div>
+
+  <!-- ── Grid ── -->
+  @if (loading()) {
+    <div class="char-grid">
+      @for (i of [1,2,3,4,5,6]; track i) {
+        <div class="skeleton-card"></div>
+      }
+    </div>
+  }
+
+  @if (!loading() && filteredChars().length === 0) {
+    <div class="empty-state">
+      <p>Nenhum personagem encontrado.</p>
+      <button class="btn-accent" (click)="goNewCharacter()">Criar o primeiro personagem</button>
+    </div>
+  }
+
+  @if (!loading() && filteredChars().length > 0) {
+    <div class="char-grid">
+      @for (c of filteredChars(); track c.id) {
+        <div class="lib-card">
+
+          <!-- Retrato -->
+          <div class="portrait" [style.--accent]="'var(--' + accentOf(c.name) + '-soft)'">
+            <div class="portrait-pattern"></div>
+            <div class="portrait-avatar" [style.background]="'var(--' + accentOf(c.name) + ')'">
+              {{ initial(c.name) }}
+            </div>
+            <span class="portrait-role">{{ c.role.toUpperCase() }}</span>
+          </div>
+
+          <!-- Info -->
+          <div class="card-body">
+            <div class="char-name">{{ c.name }}</div>
+            @if (c.age || c.height) {
+              <div class="char-meta">
+                {{ c.age ? c.age + ' anos' : '' }}{{ c.age && c.height ? ' · ' : '' }}{{ c.height ?? '' }}
+              </div>
+            }
+            @if (c.summary) {
+              <p class="char-summary">{{ c.summary }}</p>
+            }
+            @if (c.traits.length > 0) {
+              <div class="trait-chips">
+                @for (t of c.traits; track t) {
+                  <span class="trait-chip">{{ t }}</span>
+                }
+              </div>
+            }
+            @if (!c.approved) {
+              <div class="draft-tag">RASCUNHO</div>
+            }
+          </div>
+
+        </div>
+      }
+    </div>
+  }
+
+</div>

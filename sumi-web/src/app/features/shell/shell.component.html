@@ -1,0 +1,139 @@
+<div class="app">
+
+  <!-- ══════════════ SIDEBAR ══════════════ -->
+  <aside class="sidebar">
+
+    <!-- Brand -->
+    <div class="brand">
+      <div class="brand-mark">墨</div>
+      <span class="brand-name">Sumi</span>
+    </div>
+
+    <!-- Atalhos -->
+    <div class="nav-section-label">Atalhos</div>
+
+    <button class="nav-item" [class.active]="isActive('home')" (click)="navigateTo('/home')">
+      <span class="glyph">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path [attr.d]="iconPath('home')"></path>
+        </svg>
+      </span>
+      Projetos
+    </button>
+
+    <button class="nav-item" [class.active]="isActive('library')" (click)="navigateTo('/library')">
+      <span class="glyph">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path [attr.d]="iconPath('book')"></path>
+        </svg>
+      </span>
+      Biblioteca
+    </button>
+
+    <!-- Em produção -->
+    @if (inCreation()) {
+      <div class="nav-section-label" style="margin-top:8px">Em produção</div>
+
+      <div class="production-card">
+        <div class="prod-label">HQ ATUAL</div>
+        <div class="prod-title">{{ draft.currentProjectTitle() || 'Novo projeto' }}</div>
+
+        <div class="steps-list">
+          @for (step of steps; track step.id; let i = $index) {
+            <button class="step-item"
+                    [class.step-item--active]="isActive(step.id)"
+                    [class.step-item--done]="isDone(i)"
+                    (click)="navigateToStep(step.id)">
+              <span class="step-num">
+                @if (isDone(i)) { ✓ } @else { {{ i + 1 }} }
+              </span>
+              {{ step.label }}
+            </button>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Footer: usuário -->
+    <div class="sidebar-foot">
+      <button class="user-btn" (click)="togglePopover()">
+        <div class="av">{{ initial() }}</div>
+        <div class="user-info">
+          <div class="user-name">{{ user()?.name ?? 'Usuário' }}</div>
+          <div class="user-sub">{{ user()?.email ?? user()?.plan ?? 'Plano criador' }}</div>
+        </div>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+             style="color:var(--ink-4);flex-shrink:0;transform:rotate(-90deg)">
+          <path d="M15 6l-6 6 6 6"></path>
+        </svg>
+      </button>
+
+      @if (popoverOpen()) {
+        <div class="popover">
+          <div class="popover-head">
+            <div class="popover-name">{{ user()?.name }}</div>
+            <div class="popover-email">{{ user()?.email }}</div>
+            <span class="plan-badge">{{ (user()?.plan ?? 'Plano criador').toUpperCase() }}</span>
+          </div>
+          <button class="menu-item" (click)="closePopover()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path [attr.d]="iconPath('users')"></path></svg>
+            Minha conta
+          </button>
+          <button class="menu-item" (click)="closePopover()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path [attr.d]="iconPath('star')"></path></svg>
+            Assinatura
+          </button>
+          <button class="menu-item menu-item--danger" (click)="logout()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path [attr.d]="iconPath('logout')"></path></svg>
+            Sair
+          </button>
+        </div>
+      }
+    </div>
+
+  </aside>
+
+  <!-- ══════════════ MAIN ══════════════ -->
+  <div class="main">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <nav class="crumb">
+        @for (c of breadcrumbs(); track $index; let i = $index; let last = $last) {
+          @if (i > 0) { <span class="sep">›</span> }
+          @if (c.route && !last) {
+            <a class="crumb-link" [routerLink]="c.route">{{ c.label }}</a>
+          } @else if (last) {
+            <b>{{ c.label }}</b>
+          } @else {
+            <span>{{ c.label }}</span>
+          }
+        }
+      </nav>
+
+      <div class="topbar-grow"></div>
+
+      <div class="topbar-actions">
+        @if (inCreation()) {
+          <span class="draft-saved">rascunho salvo</span>
+        }
+        <button class="icon-btn" title="Buscar">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+            <path [attr.d]="iconPath('search')"></path>
+          </svg>
+        </button>
+        <div class="topbar-divider"></div>
+        <button class="user-pill" (click)="navigateTo('/home')">
+          <span class="pill-name">{{ (user()?.name ?? '').split(' ')[0] }}</span>
+          <span class="pill-avatar">{{ initial() }}</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Conteúdo da página -->
+    <div class="content">
+      <router-outlet />
+    </div>
+
+  </div>
+</div>

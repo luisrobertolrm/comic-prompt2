@@ -143,8 +143,8 @@
             <label class="field-label">Confirmar senha</label>
             <input class="input" type="password" formControlName="confirm"
                    autocomplete="new-password" placeholder="••••••••">
-            @if (confirmError) {
-              <span class="field-error">{{ confirmError }}</span>
+            @if (registerError('confirm') || confirmError) {
+              <span class="field-error">{{ registerError('confirm') || confirmError }}</span>
             }
           </div>
 

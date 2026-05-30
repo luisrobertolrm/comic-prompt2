@@ -22,6 +22,10 @@ class Settings:
     database_url: str = field(default_factory=lambda: _require("DATABASE_URL"))
     google_api_key: str = field(default_factory=lambda: _optional("GOOGLE_API_KEY"))
     openai_api_key: str = field(default_factory=lambda: _optional("OPENAI_API_KEY"))
+    ai_provider: str = field(default_factory=lambda: _optional("AI_PROVIDER", "openai"))
+    ai_text_model: str = field(default_factory=lambda: _optional("AI_TEXT_MODEL", "gpt-4o-mini"))
+    ai_image_model: str = field(default_factory=lambda: _optional("AI_IMAGE_MODEL", "gpt-image-1"))
+    images_dir: str = field(default_factory=lambda: _optional("IMAGES_DIR", "static/images"))
     app_env: str = field(default_factory=lambda: _optional("APP_ENV", "development"))
     app_host: str = field(default_factory=lambda: _optional("APP_HOST", "0.0.0.0"))
     app_port: int = field(

@@ -1,0 +1,281 @@
+<div class="video-layout">
+
+  <!-- ── Cabeçalho ── -->
+  <div class="page-head">
+    <div>
+      <p class="eyebrow">SAÍDA EM VÍDEO — MOTION COMIC</p>
+      <h1>Sua HQ, narrada cena a cena.</h1>
+      <p class="lede">Cada quadro vira uma cena com narração e vozes por personagem. Você decide se os balões aparecem.</p>
+    </div>
+    <div class="head-actions">
+      <button class="btn-ghost" (click)="goFinal()">← Voltar</button>
+      <button class="btn-primary">⬇ Exportar vídeo</button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-state">Carregando quadros…</div>
+  }
+
+  @if (!loading()) {
+    <div class="main-grid">
+
+      <!-- ════════════════ PLAYER (esquerda) ════════════════ -->
+      <div class="player-col">
+
+        <!-- ── VideoStage ── -->
+        <div class="stage">
+          <!-- Grain -->
+          <div class="stage-grain"></div>
+
+          <!-- Painel com transição -->
+          <div class="stage-panel"
+               [style.animation]="stageAnim()"
+               [class.kenburns]="transition() === 'kenburns' && playing()">
+
+            @if (scene()) {
+              <div class="panel-wrap"
+                   [style.aspect-ratio]="scene()!.aspect === '3-4' ? '3/4' : scene()!.aspect === '16-9' ? '16/9' : scene()!.aspect === '1-1' ? '1/1' : '4/3'">
+
+                <!-- Screentone -->
+                <div class="panel-tone"
+                     [style.background-image]="tonePattern(scene()!.tone)"
+                     [style.background-size]="toneBgSize(scene()!.tone)">
+                </div>
+
+                <!-- Imagem gerada por IA -->
+                @if (imageUrl(scene())) {
+                  <img class="panel-img" [src]="imageUrl(scene())" alt="">
+                }
+
+                <!-- Balões (se showBubbles ativo) -->
+                @if (showBubbles()) {
+                  @for (b of scene()!.bubbles; track $index) {
+                    <div [class]="'bubble' + (b.kind === 'thought' ? ' thought' : b.kind === 'shout' ? ' shout' : '')"
+                         [style.left]="b.side === 'left' ? b.x + '%' : 'auto'"
+                         [style.right]="b.side === 'right' ? b.x + '%' : 'auto'"
+                         [style.top]="b.y + '%'">{{ b.text }}</div>
+                  }
+                }
+
+                <!-- Meta tag -->
+                <div class="panel-meta-tag">
+                  PANEL · {{ padNum(scene()!.index_order) }} · {{ scene()!.label }}
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Lower-third caption -->
+          @if (beat() && beat()!.text) {
+            <div class="lower-third">
+              @if (beat()!.speaker !== 'Narrador' && beat()!.speaker !== '—') {
+                <div class="lt-avatar">{{ initial(beat()!.speaker) }}</div>
+              }
+              <div class="lt-body">
+                <div class="lt-speaker">
+                  {{ beat()!.speaker === 'Narrador' ? 'NARRAÇÃO' : beat()!.speaker.toUpperCase() }}
+                  @if (curVoice().voice !== '—') { <span class="lt-voice">· {{ curVoice().voice }}</span> }
+                </div>
+                <div class="lt-text"
+                     [class.lt-text--narration]="beat()!.kind === 'narration'"
+                     [class.lt-text--thought]="beat()!.kind === 'thought'">
+                  {{ beat()!.text }}
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Play overlay (quando pausado) -->
+          @if (!playing()) {
+            <div class="play-overlay" (click)="togglePlay()">
+              <div class="play-btn">▶</div>
+            </div>
+          }
+        </div>
+
+        <!-- ── NarrationBar ── -->
+        <div class="narration-bar">
+          <div class="wave-bars">
+            @for (i of [0,1,2,3,4,5,6,7]; track i) {
+              <span class="wave-bar"
+                    [class.wave-bar--active]="playing() && beat()?.text && !curVoice().muted"
+                    [style.animation-delay]="(i * 0.08) + 's'">
+              </span>
+            }
+          </div>
+          <div class="narration-label">
+            @if (curVoice().muted) {
+              <span class="muted">{{ beat()?.speaker }} está mudo nesta prévia</span>
+            } @else if (playing() && beat()?.text) {
+              <span><strong>{{ beat()!.speaker }}</strong> falando — <span class="muted">{{ curVoice().voice }}</span></span>
+            } @else {
+              <span class="muted">Pressione play para ouvir a narração simulada</span>
+            }
+          </div>
+        </div>
+
+        <!-- ── Transport ── -->
+        <div class="transport">
+          <button class="icon-btn" (click)="jumpScene(-1)" title="Cena anterior">⏮</button>
+          <button class="play-circle" (click)="togglePlay()">{{ playing() ? '⏸' : '▶' }}</button>
+          <button class="icon-btn" (click)="jumpScene(1)" title="Próxima cena">⏭</button>
+
+          <span class="time-label">{{ fmt(t()) }}</span>
+
+          <div class="seek-bar" (click)="onSeek($event)">
+            <div class="seek-fill" [style.width]="pct() + '%'"></div>
+            <div class="seek-thumb" [style.left]="'calc(' + pct() + '% - 7px)'"></div>
+          </div>
+
+          <span class="time-label">{{ fmt(bd().total) }}</span>
+
+          <select class="speed-select" [value]="speed()" (change)="setSpeed($event)">
+            @for (s of speeds; track s) {
+              <option [value]="s">{{ s }}×</option>
+            }
+          </select>
+        </div>
+
+        <!-- ── SceneTimeline ── -->
+        <div class="timeline">
+          <p class="eyebrow" style="margin-bottom:10px">LINHA DO TEMPO · {{ panels().length }} CENAS</p>
+          <div class="filmstrip">
+            @for (p of panels(); track p.id; let si = $index) {
+              <button class="film-cell" [class.film-cell--active]="si === sceneIdx()"
+                      (click)="jumpToScene(si)">
+                <div class="film-thumb">
+                  <div class="film-tone"
+                       [style.background-image]="tonePattern(p.tone)"
+                       [style.background-size]="toneBgSize(p.tone)">
+                  </div>
+                  @if (imageUrl(p)) {
+                    <img class="film-img" [src]="imageUrl(p)" alt="">
+                  } @else if (p.character_name) {
+                    <div class="film-char">{{ initial(p.character_name) }}</div>
+                  }
+                  <div class="film-num">{{ padNum(si + 1) }}</div>
+                </div>
+                <div class="film-label">
+                  <span class="film-name">{{ p.label }}</span>
+                  <span class="film-time">{{ fmt(bd().beats.find(b => b.sceneIdx === si)?.start ?? 0) }}</span>
+                </div>
+              </button>
+            }
+          </div>
+        </div>
+
+      </div><!-- /player-col -->
+
+      <!-- ════════════════ SIDEBAR (direita) ════════════════ -->
+      <div class="side-col">
+
+        <!-- Elenco de voz -->
+        <div class="side-card">
+          <div class="side-head">
+            <span class="eyebrow">ELENCO DE VOZ</span>
+            <span class="mic-icon">🎙</span>
+          </div>
+          @for (name of castNames(); track name) {
+            <div class="voice-row" [class.voice-row--active]="beat()?.speaker === name && playing()">
+              @if (name === 'Narrador') {
+                <div class="voice-narrator">🎙</div>
+              } @else {
+                <div class="voice-avatar">{{ initial(name) }}</div>
+              }
+              <div class="voice-info">
+                <div class="voice-name">{{ name }}</div>
+                <select class="voice-select"
+                        [value]="voices()[name]?.voice ?? voiceOptions[0]"
+                        (change)="setVoice(name, { voice: $any($event.target).value })">
+                  @for (opt of voiceOptions; track opt) {
+                    <option [value]="opt">{{ opt }}</option>
+                  }
+                </select>
+              </div>
+              <button class="mute-btn" [class.mute-btn--muted]="voices()[name]?.muted"
+                      (click)="setVoice(name, { muted: !voices()[name]?.muted })"
+                      [title]="voices()[name]?.muted ? 'Ativar voz' : 'Silenciar'">
+                {{ voices()[name]?.muted ? '🔇' : '🔊' }}
+              </button>
+            </div>
+          }
+        </div>
+
+        <!-- Linhas da cena atual -->
+        <div class="side-card">
+          <p class="eyebrow" style="margin-bottom:10px">
+            CENA {{ padNum(sceneIdx() + 1) }} · {{ scene()?.label }}
+          </p>
+          @for (b of sceneBeatLines(); track $index) {
+            <div class="beat-line" [class.beat-line--active]="isBeatNow(b)"
+                 (click)="jumpToBeat(b)">
+              @if (b.speaker === 'Narrador') {
+                <div class="beat-icon beat-icon--nar">🎙</div>
+              } @else if (b.speaker === '—') {
+                <div class="beat-icon beat-icon--sil">·</div>
+              } @else {
+                <div class="beat-icon beat-icon--char">{{ initial(b.speaker) }}</div>
+              }
+              <div class="beat-body">
+                <div class="beat-speaker">
+                  {{ b.speaker }}
+                  @if (b.kind !== 'narration' && b.kind !== 'silent') {
+                    <span class="beat-kind">· {{ b.kind === 'thought' ? 'pensamento' : b.kind === 'shout' ? 'grito' : 'fala' }}</span>
+                  }
+                  @if (b.kind === 'narration') { <span class="beat-kind">· narração</span> }
+                </div>
+                @if (b.text) {
+                  <div class="beat-text">{{ b.text }}</div>
+                } @else {
+                  <em class="beat-silent">(cena silenciosa)</em>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Ajustes do vídeo -->
+        <div class="side-card">
+          <p class="eyebrow" style="margin-bottom:12px">AJUSTES DO VÍDEO</p>
+
+          <div class="setting-row">
+            <span class="setting-label">Mostrar balões</span>
+            <button class="toggle-btn" [class.toggle-btn--on]="showBubbles()" (click)="showBubbles.update(v => !v)">
+              <span class="toggle-knob"></span>
+            </button>
+          </div>
+
+          <div class="setting-field">
+            <span class="setting-label">Transição entre cenas</span>
+            <div class="chips">
+              @for (tr of transitions; track tr.id) {
+                <button class="chip" [class.chip--active]="transition() === tr.id" (click)="transition.set(tr.id)">
+                  {{ tr.label }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <span class="setting-label">Trilha sonora suave</span>
+            <button class="toggle-btn" [class.toggle-btn--on]="music()" (click)="music.update(v => !v)">
+              <span class="toggle-knob"></span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Duração estimada -->
+        <div class="side-card side-card--accent">
+          <strong class="dur-title">Duração estimada</strong>
+          <div class="dur-row">
+            <span>{{ panels().length }} cenas · {{ bd().beats.length }} falas</span>
+            <span class="dur-time">{{ fmt(bd().total) }}</span>
+          </div>
+        </div>
+
+      </div><!-- /side-col -->
+    </div><!-- /main-grid -->
+  }
+
+</div>

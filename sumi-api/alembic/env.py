@@ -7,7 +7,7 @@ from logging.config import fileConfig
 
 from alembic import context
 from dotenv import load_dotenv
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy import create_engine, pool
 
 # ---------------------------------------------------------------------------
 # Coloca src/ e models/ no sys.path para que Alembic encontre os pacotes
@@ -31,16 +31,24 @@ alembic_cfg = context.config
 fileConfig(alembic_cfg.config_file_name)  # type: ignore[arg-type]
 
 database_url = os.environ["DATABASE_URL"]
-alembic_cfg.set_main_option("sqlalchemy.url", database_url)
 
 target_metadata = Base.metadata
 
+_managed_tables = set(target_metadata.tables.keys())
+
+
+def include_object(obj: object, name: str, type_: str, reflected: bool, compare_to: object) -> bool:
+    # ignora tabelas que existem no banco mas não estão nos nossos models
+    if type_ == "table" and name not in _managed_tables:
+        return False
+    return True
+
 
 def run_migrations_offline() -> None:
-    url = alembic_cfg.get_main_option("sqlalchemy.url")
     context.configure(
-        url=url,
+        url=database_url,
         target_metadata=target_metadata,
+        include_object=include_object,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
     )
@@ -49,13 +57,13 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    connectable = engine_from_config(
-        alembic_cfg.get_section(alembic_cfg.config_ini_section, {}),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
+    connectable = create_engine(database_url, poolclass=pool.NullPool)
     with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+        context.configure(
+            connection=connection,
+            target_metadata=target_metadata,
+            include_object=include_object,
+        )
         with context.begin_transaction():
             context.run_migrations()
 

@@ -1,0 +1,286 @@
+<div class="chars-layout">
+
+  <!-- ── Cabeçalho ── -->
+  <div class="page-head">
+    <div>
+      <p class="eyebrow">ETAPA 2 DE 5</p>
+      <h1>Quem habita essa história?</h1>
+      <p class="lede">Escolha da biblioteca, crie manualmente, ou peça à IA para gerar um novo personagem.</p>
+    </div>
+    <div class="selected-badge">
+      {{ selectedCount() }} {{ selectedCount() === 1 ? 'personagem' : 'personagens' }} no elenco
+    </div>
+  </div>
+
+  <!-- ── Abas ── -->
+  <div class="tabs-bar">
+    <button class="tab-btn" [class.tab-btn--active]="tab() === 'library'" (click)="tab.set('library')">
+      Biblioteca
+    </button>
+    <button class="tab-btn" [class.tab-btn--active]="tab() === 'manual'" (click)="tab.set('manual')">
+      Criar manualmente
+    </button>
+    <button class="tab-btn" [class.tab-btn--active]="tab() === 'ai'" (click)="tab.set('ai')">
+      ✦ Gerar com IA
+    </button>
+  </div>
+
+  <!-- ── Aba: Biblioteca ── -->
+  @if (tab() === 'library') {
+    @if (loading()) {
+      <div class="char-grid">
+        @for (i of [1,2,3,4]; track i) {
+          <div class="skeleton-char"></div>
+        }
+      </div>
+    }
+    @if (!loading() && characters().length === 0) {
+      <div class="empty-hint">
+        Nenhum personagem ainda. Crie um manualmente ou use a IA.
+      </div>
+    }
+    @if (!loading() && characters().length > 0) {
+      <div class="char-grid">
+        @for (c of characters(); track c.id) {
+          <div class="char-card" [class.char-card--selected]="isSelected(c.id)"
+               (click)="toggleChar(c.id)">
+            @if (isSelected(c.id)) {
+              <div class="check-badge">✓</div>
+            }
+            <div class="char-header">
+              <div class="avatar">{{ initial(c.name) }}</div>
+              <div>
+                <div class="char-name">{{ c.name }}</div>
+                <div class="char-sub">{{ c.role }}{{ c.age ? ' · ' + c.age + ' anos' : '' }}</div>
+              </div>
+            </div>
+            @if (c.summary) {
+              <p class="char-summary">{{ c.summary }}</p>
+            }
+            @if (c.traits.length > 0) {
+              <div class="trait-chips">
+                @for (t of c.traits; track t) {
+                  <span class="trait-chip">{{ t }}</span>
+                }
+              </div>
+            }
+            @if (!c.approved) {
+              <div class="draft-label">RASCUNHO · AGUARDA APROVAÇÃO</div>
+            }
+          </div>
+        }
+      </div>
+    }
+  }
+
+  <!-- ── Aba: Criar manualmente ── -->
+  @if (tab() === 'manual') {
+    <div class="manual-grid">
+      <div class="card">
+        <div class="field-row-3">
+          <div class="field">
+            <label class="field-label">Nome do personagem</label>
+            <input class="input serif" placeholder="Ex: Aiko Tanaka"
+                   [value]="mName()" (input)="setField(mName, $event)">
+          </div>
+        </div>
+
+        <div class="field-row-3">
+          <div class="field">
+            <label class="field-label">Papel</label>
+            <input class="input" placeholder="Protagonista"
+                   [value]="mRole()" (input)="setField(mRole, $event)">
+          </div>
+          <div class="field">
+            <label class="field-label">Idade</label>
+            <input class="input" type="number"
+                   [value]="mAge()" (input)="setField(mAge, $event)">
+          </div>
+          <div class="field">
+            <label class="field-label">Altura</label>
+            <input class="input" placeholder="1.60 m"
+                   [value]="mHeight()" (input)="setField(mHeight, $event)">
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Descrição visual</label>
+          <p class="field-hint">Cabelo, olhos, expressão — a IA usa para manter coerência entre quadros.</p>
+          <textarea class="textarea" rows="3"
+                    placeholder="Olhos grandes castanho-âmbar, franja reta, sempre carrega um caderno surrado…"
+                    [value]="mSummary()" (input)="setField(mSummary, $event)"></textarea>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Figurino padrão</label>
+          <input class="input" placeholder="Uniforme escolar, meia-calça preta"
+                 [value]="mOutfit()" (input)="setField(mOutfit, $event)">
+        </div>
+
+        <div class="field">
+          <label class="field-label">Traços de personalidade</label>
+          <p class="field-hint">Separe por vírgula. A IA usa para escrever os balões.</p>
+          <input class="input" placeholder="curiosa, sarcástica, leal"
+                 [value]="mTraits()" (input)="setField(mTraits, $event)">
+        </div>
+      </div>
+
+      <div class="card preview-card">
+        <p class="eyebrow" style="margin-bottom: 12px">PRÉVIA</p>
+        <div class="preview-body">
+          <div class="avatar avatar--lg">{{ mName() ? initial(mName()) : '?' }}</div>
+          <div class="preview-name">{{ mName() || 'Novo personagem' }}</div>
+          <div class="preview-sub">
+            {{ mRole() || '—' }}{{ mAge() ? ' · ' + mAge() + ' anos' : '' }}
+          </div>
+        </div>
+        <div class="divider"></div>
+        <button class="btn-primary" style="width:100%;justify-content:center"
+                (click)="submitManual()" [disabled]="!mName().trim() || mSaving()">
+          {{ mSaving() ? 'Salvando…' : '✓ Adicionar ao elenco' }}
+        </button>
+        <p class="field-hint" style="text-align:center;margin-top:8px">Você pode editar depois.</p>
+      </div>
+    </div>
+  }
+
+  <!-- ── Aba: Gerar com IA ── -->
+  @if (tab() === 'ai') {
+    <div class="ai-grid">
+
+      <!-- Input -->
+      <div class="card">
+        <div class="mode-toggle">
+          <button class="mode-btn" [class.mode-btn--active]="aiMode() === 'prompt'" (click)="aiMode.set('prompt')">Prompt livre</button>
+          <button class="mode-btn" [class.mode-btn--active]="aiMode() === 'attrs'" (click)="aiMode.set('attrs')">Por atributos</button>
+        </div>
+
+        @if (aiMode() === 'prompt') {
+          <div class="field">
+            <label class="field-label">Descreva o personagem em linguagem natural</label>
+            <p class="field-hint">Quanto mais detalhe visual, melhor a IA mantém coerência.</p>
+            <textarea class="textarea" rows="7"
+                      [value]="aiPrompt()" (input)="setField(aiPrompt, $event)"></textarea>
+          </div>
+        }
+
+        @if (aiMode() === 'attrs') {
+          <div class="field-row-2">
+            <div class="field">
+              <label class="field-label">Arquétipo</label>
+              <input class="input" [value]="aiAttrs().archetype" (input)="setAiAttr('archetype', $event)">
+            </div>
+            <div class="field">
+              <label class="field-label">Idade</label>
+              <input class="input" type="number" [value]="aiAttrs().age" (input)="setAiAttr('age', $event)">
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label">Cabelo</label>
+            <input class="input" [value]="aiAttrs().hair" (input)="setAiAttr('hair', $event)">
+          </div>
+          <div class="field">
+            <label class="field-label">Olhos</label>
+            <input class="input" [value]="aiAttrs().eyes" (input)="setAiAttr('eyes', $event)">
+          </div>
+          <div class="field">
+            <label class="field-label">Figurino</label>
+            <input class="input" [value]="aiAttrs().outfit" (input)="setAiAttr('outfit', $event)">
+          </div>
+          <div class="field">
+            <label class="field-label">Personalidade (vírgulas)</label>
+            <input class="input" [value]="aiAttrs().personality" (input)="setAiAttr('personality', $event)">
+          </div>
+          <div class="field">
+            <label class="field-label">Marca / quirk</label>
+            <input class="input" [value]="aiAttrs().quirk" (input)="setAiAttr('quirk', $event)">
+          </div>
+        }
+
+        <button class="btn-accent" style="width:100%;justify-content:center;margin-top:8px"
+                (click)="generateAi()" [disabled]="aiGenerating()">
+          {{ aiGenerating() ? 'Gerando 4 esboços…' : '✦ Gerar 4 retratos' }}
+        </button>
+        <p class="field-hint" style="text-align:center;margin-top:6px">
+          A IA propõe quatro variações. Você confirma a que combina.
+        </p>
+      </div>
+
+      <!-- Candidatos -->
+      <div>
+        <p class="eyebrow" style="margin-bottom:12px">
+          {{ aiCandidates().length ? 'ESCOLHA O RETRATO' : 'OS RETRATOS APARECEM AQUI' }}
+        </p>
+
+        @if (aiGenerating()) {
+          <div class="portraits-grid">
+            @for (i of [1,2,3,4]; track i) {
+              <div class="portrait-skeleton"></div>
+            }
+          </div>
+        }
+
+        @if (!aiGenerating() && aiCandidates().length === 0) {
+          <div class="empty-hint">Escreva a descrição e clique em <strong>Gerar 4 retratos</strong>.</div>
+        }
+
+        @if (!aiGenerating() && aiCandidates().length > 0) {
+          <div class="portraits-grid">
+            @for (c of aiCandidates(); track c.id; let i = $index) {
+              <button class="portrait" [class.portrait--picked]="aiPicked() === c.id"
+                      [style.--palette-bg]="'var(--' + c.palette + '-soft)'"
+                      (click)="pickCandidate(c.id)">
+                <div class="portrait-pattern"
+                     [style.background-image]="coverPattern(c.tone)"
+                     [style.background-size]="coverBgSize(c.tone)"></div>
+                <div class="portrait-inner">
+                  <div class="portrait-avatar" [style.background]="'var(--' + c.palette + ')'">?</div>
+                  <div class="portrait-idx">VAR · {{ (i + 1).toString().padStart(2, '0') }}</div>
+                </div>
+                <div class="portrait-notes">{{ c.notes }}</div>
+                @if (aiPicked() === c.id) {
+                  <div class="portrait-check">✓</div>
+                }
+              </button>
+            }
+          </div>
+
+          <div class="ai-actions">
+            <button class="btn-ghost" (click)="generateAi()">↻ Gerar outras 4</button>
+            <span class="field-hint">Clique em um retrato para selecioná-lo.</span>
+          </div>
+
+          @if (aiPicked()) {
+            <div class="card" style="margin-top:18px">
+              <p class="eyebrow" style="margin-bottom:10px">CONFIRMAR PERSONAGEM</p>
+              <div class="field">
+                <label class="field-label">Nome</label>
+                <input class="input serif" placeholder="Ex: Aiko Tanaka"
+                       [value]="aiName()" (input)="setField(aiName, $event)">
+              </div>
+              <div style="display:flex;justify-content:flex-end;margin-top:14px">
+                <button class="btn-primary" (click)="confirmAi()"
+                        [disabled]="!aiName().trim() || aiSaving()">
+                  {{ aiSaving() ? 'Salvando…' : '✓ Adicionar ao elenco' }}
+                </button>
+              </div>
+            </div>
+          }
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ── Footer ── -->
+  <div class="footer-row">
+    <button class="btn-ghost" (click)="back()">← Voltar</button>
+    <div class="footer-actions">
+      <button class="btn-secondary" (click)="skip()">Pular — IA decide depois</button>
+      <button class="btn-primary" (click)="advance()"
+              [disabled]="selectedCount() === 0 || saving()">
+        {{ saving() ? 'Salvando…' : 'Avançar — roteiro →' }}
+      </button>
+    </div>
+  </div>
+
+</div>

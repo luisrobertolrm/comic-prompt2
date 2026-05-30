@@ -1,0 +1,126 @@
+<div class="final-layout">
+
+  <!-- ── Cabeçalho ── -->
+  <div class="page-head">
+    <div>
+      <p class="eyebrow">ETAPA 5 DE 5</p>
+      <h1>Pronto para o leitor.</h1>
+      <p class="lede">Visualize a HQ completa, exporte ou compartilhe com um link de leitura vertical.</p>
+    </div>
+    <div class="head-actions">
+      <button class="btn-ghost" (click)="goEditor()">← Voltar ao editor</button>
+      <button class="btn-primary">⬇ Exportar</button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-state">Preparando visualização…</div>
+  }
+
+  @if (!loading()) {
+    <div class="main-grid">
+
+      <!-- ── Preview completo ── -->
+      <div class="preview-book">
+
+        <!-- Capa -->
+        @if (project()) {
+          <div class="cover-page">
+            <div class="cover-pattern"></div>
+            <p class="eyebrow cover-meta">
+              {{ project()!.genre.toUpperCase() }} · {{ panels().length }} QUADROS · {{ pages().length }} PÁGINAS
+            </p>
+            <h2 class="cover-title">{{ project()!.title }}</h2>
+            <p class="cover-sub">uma história sua</p>
+          </div>
+        }
+
+        <!-- Páginas -->
+        @for (page of pages(); track $index; let pi = $index) {
+          <div class="page-section">
+            <div class="page-header">
+              <span class="eyebrow">PÁGINA {{ padNum(pi + 1) }}</span>
+              <span class="page-count">{{ page.length }} quadros</span>
+            </div>
+            <div class="page-stage">
+              @for (p of page; track p.id) {
+                <app-manga-panel
+                  [index]="p.index_order"
+                  [label]="p.label"
+                  [aspect]="p.aspect"
+                  [tone]="p.tone"
+                  [characterName]="p.character_name"
+                  [bubbles]="p.bubbles" />
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- ── Sidebar ── -->
+      <div class="side-col">
+
+        <!-- Resumo -->
+        <div class="side-card">
+          <p class="eyebrow" style="margin-bottom:12px">RESUMO</p>
+          <div class="summary-list">
+            <div class="summary-row">
+              <span class="summary-label">Quadros</span>
+              <span class="summary-val">{{ panels().length }}</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-label">Aprovados</span>
+              <span class="summary-val">{{ approvedCount() }} / {{ panels().length }}</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-label">Páginas</span>
+              <span class="summary-val">{{ pages().length }}</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-label">Personagens</span>
+              <span class="summary-val">{{ project()?.characters?.length ?? 0 }}</span>
+            </div>
+            <div class="summary-row">
+              <span class="summary-label">Estilo</span>
+              <span class="summary-val">{{ styleLabel() }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Exportação -->
+        <div class="side-card">
+          <p class="eyebrow" style="margin-bottom:10px">EXPORTAR</p>
+          <div class="export-list">
+            <button class="export-btn export-btn--accent" (click)="goVideo()" style="cursor:pointer">
+              <span class="export-icon">▶</span> Gerar vídeo narrado
+            </button>
+            <button class="export-btn">
+              <span class="export-icon">⬇</span> PDF — página única
+            </button>
+            <button class="export-btn">
+              <span class="export-icon">⬇</span> PNG — cada quadro
+            </button>
+            <button class="export-btn">
+              <span class="export-icon">⬇</span> EPUB · leitura vertical
+            </button>
+            <button class="export-btn">
+              <span class="export-icon">↗</span> Compartilhar link
+            </button>
+          </div>
+        </div>
+
+        <!-- CTA -->
+        <div class="side-card side-card--mint">
+          <strong class="cta-title">Sua HQ está pronta.</strong>
+          <p class="cta-sub">Você pode voltar a qualquer etapa — o progresso fica salvo.</p>
+          <button class="btn-primary" style="width:100%;justify-content:center;margin-top:4px"
+                  (click)="goHome()">
+            Voltar para meus projetos
+          </button>
+        </div>
+
+      </div>
+    </div>
+  }
+
+</div>

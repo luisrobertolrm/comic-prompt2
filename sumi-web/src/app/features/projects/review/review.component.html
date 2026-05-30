@@ -1,0 +1,163 @@
+<div class="review-layout">
+
+  @if (loading()) {
+    <div class="loading-state">Carregando quadros…</div>
+  }
+
+  @if (!loading() && cur) {
+    <!-- ── Cabeçalho ── -->
+    <div class="page-head">
+      <div>
+        <p class="eyebrow">ETAPA 4 DE 5 — REVISÃO QUADRO A QUADRO</p>
+        <h1>Quadro {{ padNum(cur.index_order) }} · {{ cur.label }}</h1>
+        <p class="lede">Use ← → para navegar. Cada quadro pode ser aprovado, ajustado ou regerado.</p>
+      </div>
+      <button class="btn-ghost" (click)="goScript()">Ver storyboard</button>
+    </div>
+
+    <!-- ── Progress strip ── -->
+    <div class="progress-strip" [style.grid-template-columns]="'repeat(' + panels().length + ', 1fr)'">
+      @for (p of panels(); track p.id; let i = $index) {
+        <button class="prog-btn" [class.prog-btn--active]="i === idx()"
+                [style.background]="progressBg(i)" (click)="jumpTo(i)" [title]="p.label">
+          <span class="prog-num" [style.font-weight]="i === idx() ? '700' : '400'">
+            {{ padNum(i + 1) }}
+          </span>
+          <span class="prog-dot" [style.background]="progressDot(p)"></span>
+        </button>
+      }
+    </div>
+
+    <!-- ── Grid principal ── -->
+    <div class="main-grid">
+
+      <!-- Coluna esquerda: painel grande + nav -->
+      <div class="panel-col">
+        <div class="panel-view" [class.panel-view--regen]="regenAnim()">
+          <app-manga-panel
+            [index]="cur.index_order"
+            [label]="cur.label"
+            [aspect]="cur.aspect"
+            [tone]="cur.tone"
+            [characterName]="cur.character_name"
+            [bubbles]="cur.bubbles"
+            [imageUrl]="cur.image_url" />
+          @if (regenAnim()) {
+            <div class="regen-overlay">REGERANDO QUADRO…</div>
+          }
+        </div>
+
+        <div class="panel-nav">
+          <button class="btn-ghost" (click)="prev()" [disabled]="idx() === 0">← Anterior</button>
+          <div class="panel-actions">
+            <button class="icon-btn" title="Excluir quadro" (click)="deletePanel()"
+                    [disabled]="panels().length <= 1">🗑</button>
+            <button class="icon-btn" title="Mover para a esquerda" (click)="movePanel(-1)"
+                    [disabled]="idx() === 0">←</button>
+            <button class="icon-btn" title="Mover para a direita" (click)="movePanel(1)"
+                    [disabled]="idx() === panels().length - 1">→</button>
+            <button class="icon-btn" title="Inserir quadro depois deste" (click)="insertPanel()">+</button>
+          </div>
+          <button class="btn-ghost" (click)="next()" [disabled]="idx() === panels().length - 1">Próximo →</button>
+        </div>
+      </div>
+
+      <!-- Coluna direita: controles -->
+      <div class="side-col">
+
+        <!-- Status + ações -->
+        <div class="side-card" [style.background]="cur.status === 'approved' ? 'var(--mint-soft)' : 'var(--paper-3)'">
+          <div class="side-card-head">
+            <span class="eyebrow">STATUS</span>
+            <span class="status-badge" [style.background]="cur.status === 'approved' ? 'var(--mint)' : 'var(--peach-soft)'">
+              {{ cur.status === 'approved' ? 'APROVADO' : 'AGUARDA APROVAÇÃO' }}
+            </span>
+          </div>
+          <div class="action-row">
+            <button class="btn-accent" style="flex:1;justify-content:center" (click)="approve()">
+              ✓ Aprovar e avançar
+            </button>
+            <button class="btn-secondary" (click)="regen()" [disabled]="regenAnim()">↻ Regerar</button>
+          </div>
+          <button class="btn-image" (click)="generateImage()" [disabled]="generatingImage()">
+            @if (generatingImage()) { ⏳ Gerando imagem… }
+            @else if (cur.image_url) { 🖼 Regenerar imagem }
+            @else { ✦ Gerar imagem com IA }
+          </button>
+        </div>
+
+        <!-- Direção da cena -->
+        <div class="side-card">
+          <div class="side-card-head">
+            <span class="eyebrow">DIREÇÃO DA CENA</span>
+            <button class="framing-btn" (click)="showFramingPicker.update(v => !v)">
+              {{ cur.framing }}
+            </button>
+          </div>
+          <textarea class="textarea" rows="3" [value]="cur.caption" (input)="setCaption($event)"></textarea>
+          @if (showFramingPicker()) {
+            <div class="framing-picker">
+              <p class="tiny-label">Enquadramento</p>
+              <div class="chips">
+                @for (f of framings; track f) {
+                  <button class="chip" [class.chip--active]="cur.framing === f" (click)="setFraming(f)">{{ f }}</button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Balões -->
+        <div class="side-card">
+          <div class="side-card-head">
+            <span class="eyebrow">BALÕES</span>
+            <button class="btn-sm-ghost" (click)="addBubble()">+ Adicionar</button>
+          </div>
+          @if (cur.bubbles.length === 0) {
+            <p class="empty-hint">Sem balões. Adicione manualmente.</p>
+          }
+          @for (b of cur.bubbles; track $index; let i = $index) {
+            <div class="bubble-editor">
+              <div class="bubble-controls">
+                <select class="select-sm" [value]="b.kind"
+                        (change)="updateBubble(i, { kind: $any($event.target).value })">
+                  <option value="say">Fala</option>
+                  <option value="thought">Pensamento</option>
+                  <option value="shout">Grito</option>
+                </select>
+                <select class="select-sm" [value]="b.side"
+                        (change)="updateBubble(i, { side: $any($event.target).value })">
+                  <option value="left">Esquerda</option>
+                  <option value="right">Direita</option>
+                </select>
+                <button class="btn-remove" (click)="removeBubble(i)" title="Remover">✕</button>
+              </div>
+              <input class="input-sm" [value]="b.text"
+                     (input)="updateBubble(i, { text: $any($event.target).value })">
+            </div>
+          }
+        </div>
+
+        <!-- Prompt visual -->
+        <div class="side-card">
+          <div class="side-card-head">
+            <span class="eyebrow">PROMPT VISUAL</span>
+          </div>
+          <textarea class="textarea mono" rows="4" [value]="cur.prompt" (input)="setPrompt($event)"></textarea>
+          <p class="tiny-label">Enviado ao gerador de imagem. Edite para refinar.</p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Footer ── -->
+    <div class="footer-row">
+      <button class="btn-ghost" (click)="goScript()">← Voltar ao roteiro</button>
+      <div style="display:flex;gap:10px">
+        <button class="btn-ghost" (click)="goEditor()">Editor visual</button>
+        <button class="btn-primary" (click)="goFinal()">Finalizar HQ →</button>
+      </div>
+    </div>
+  }
+
+</div>

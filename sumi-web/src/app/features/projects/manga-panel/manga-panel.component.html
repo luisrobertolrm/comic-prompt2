@@ -1,0 +1,39 @@
+<div class="panel-wrap" [style.aspect-ratio]="aspectRatio">
+
+  <!-- Screentone -->
+  <div class="panel-tone"
+       [style.background-image]="patternBg"
+       [style.background-size]="patternSize">
+  </div>
+
+  <!-- Shimmer (loading) -->
+  @if (isLoading) {
+    <div class="panel-shimmer"></div>
+  }
+
+  <!-- Imagem gerada por IA -->
+  @if (!isLoading && fullImageUrl) {
+    <img class="panel-image" [src]="fullImageUrl" alt="">
+  }
+
+  <!-- Personagem placeholder (só quando sem imagem) -->
+  @if (!isLoading && !fullImageUrl && characterName) {
+    <div class="panel-char">
+      <div class="char-circle" [style.background]="charColor">{{ charInitial }}</div>
+      <div class="char-label">{{ characterName }}</div>
+    </div>
+  }
+
+  <!-- Balões -->
+  @if (!isLoading) {
+    @for (b of bubbles; track $index) {
+      <div [class]="bubbleClass(b)" [ngStyle]="bubbleStyle(b)">{{ b.text }}</div>
+    }
+  }
+
+  <!-- Meta tag -->
+  @if (!isLoading) {
+    <div class="panel-meta">{{ indexLabel() }}</div>
+  }
+
+</div>

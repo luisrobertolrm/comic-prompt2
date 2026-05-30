@@ -1,0 +1,115 @@
+<div class="home">
+
+  <!-- ── Cabeçalho ── -->
+  <div class="page-head">
+    <div>
+      <p class="eyebrow">SEUS PROJETOS</p>
+      <h1>Onde sua próxima história começa.</h1>
+      <p class="lede">Continue um capítulo em andamento ou inicie uma nova HQ.</p>
+    </div>
+    <button class="btn-accent" (click)="goNewProject()">+ Nova HQ</button>
+  </div>
+
+  <!-- ── Filtros + toggle ── -->
+  <div class="toolbar">
+    <div class="chips">
+      @for (s of statuses; track s) {
+        <button class="chip" [class.chip--active]="filter() === s" (click)="filter.set(s)">
+          {{ s }}
+        </button>
+      }
+    </div>
+    <button class="icon-btn" title="Alternar visualização" (click)="view.set(view() === 'grid' ? 'list' : 'grid')">
+      @if (view() === 'grid') { ☰ } @else { ⊞ }
+    </button>
+  </div>
+
+  <!-- ── Loading ── -->
+  @if (loading()) {
+    <div class="loading-row">
+      @for (i of [1,2,3]; track i) {
+        <div class="skeleton-card"></div>
+      }
+    </div>
+  }
+
+  <!-- ── Grid de projetos ── -->
+  @if (!loading() && view() === 'grid') {
+    <div class="project-grid">
+      @for (p of filteredProjects(); track p.id) {
+        <div class="project-card" [style.--accent-bg]="'var(--' + p.cover_accent + '-soft)'" [style.--accent-color]="'var(--' + p.cover_accent + ')'"
+             (click)="openProject(p)" style="cursor:pointer">
+          <!-- Capa -->
+          <div class="cover">
+            <div class="cover-pattern"
+                 [style.background-image]="coverPattern(p.cover_tone)"
+                 [style.background-size]="coverBgSize(p.cover_tone)">
+            </div>
+            <span class="cover-tag cover-tag--genre">{{ p.genre.toUpperCase() }}</span>
+            <span class="cover-tag cover-tag--pages">{{ p.pages }} pg</span>
+            <h2 class="cover-title">{{ p.title }}</h2>
+          </div>
+          <!-- Meta -->
+          <div class="card-meta">
+            <div>
+              <div class="card-subtitle">{{ p.subtitle }}</div>
+              <div class="card-detail">{{ p.status }} · {{ formatDate(p.updated_at) }}</div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Tile novo projeto -->
+      <button class="new-tile" (click)="goNewProject()">
+        <div class="new-tile__cover">PÁGINA EM BRANCO</div>
+        <div>
+          <h3>Começar uma nova história</h3>
+          <p class="muted">Diga uma ideia. A IA propõe o roteiro.</p>
+        </div>
+      </button>
+    </div>
+  }
+
+  <!-- ── Lista de projetos ── -->
+  @if (!loading() && view() === 'list') {
+    <div class="project-list">
+      @for (p of filteredProjects(); track p.id) {
+        <div class="list-row" [style.--accent-bg]="'var(--' + p.cover_accent + '-soft)'" (click)="openProject(p)">
+          <div class="list-thumb" [style.background]="'var(--' + p.cover_accent + '-soft)'"></div>
+          <div class="list-info">
+            <div class="list-title">{{ p.title }}</div>
+            <div class="card-detail">{{ p.subtitle }}</div>
+          </div>
+          <div class="list-genre">{{ p.genre }}</div>
+          <div class="list-status">{{ p.status }}</div>
+          <div class="list-date">{{ formatDate(p.updated_at) }}</div>
+          <span class="arr">›</span>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ── Biblioteca — personagens recentes ── -->
+  <div class="library-section">
+    <p class="eyebrow" style="margin-bottom: 14px">BIBLIOTECA — PERSONAGENS RECENTES</p>
+    <div class="char-grid">
+      @for (c of characters(); track c.id) {
+        <div class="char-card">
+          <div class="avatar">{{ initial(c.name) }}</div>
+          <div class="char-info">
+            <div class="char-name">{{ c.name }}</div>
+            <div class="char-role">{{ c.role }}</div>
+          </div>
+        </div>
+      }
+      @if (characters().length === 0 && !loading()) {
+        <div class="char-empty">Nenhum personagem ainda.</div>
+      }
+      <button class="char-add" (click)="goLibrary()">
+        <span>+</span>
+        <span>Ver biblioteca completa</span>
+      </button>
+    </div>
+  </div>
+
+</div>

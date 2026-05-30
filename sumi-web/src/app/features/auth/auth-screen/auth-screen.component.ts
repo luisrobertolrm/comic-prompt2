@@ -70,7 +70,10 @@ export class AuthScreenComponent {
     this.authService
       .login({ email: email!, password: password!, remember: remember ?? false })
       .subscribe({
-        next: () => { void this.router.navigate(['/home']); },
+        next: () => {
+          void this.router.navigate(['/home']);
+          this.loading.set(false);
+        },
         error: (err: Error) => {
           this.serverError.set(err.message);
           this.loading.set(false);
@@ -96,7 +99,10 @@ export class AuthScreenComponent {
         terms_accepted: terms!,
       })
       .subscribe({
-        next: () => { void this.router.navigate(['/home']); },
+        next: () => {
+          void this.router.navigate(['/home']);
+          this.loading.set(false);
+        },
         error: (err: Error) => {
           this.serverError.set(err.message);
           this.loading.set(false);

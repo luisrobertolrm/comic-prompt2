@@ -1,11 +1,14 @@
 import prompt_clinica._paths  # noqa: F401 — models/ no sys.path antes de tudo
 
+from pathlib import Path
+
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from prompt_clinica.config import settings
-from prompt_clinica.routers import auth, health
+from prompt_clinica.routers import auth, characters, health, panels, projects
 
 app = FastAPI(
     title="Sumi API",
@@ -24,6 +27,13 @@ app.add_middleware(
 
 app.include_router(health.router)
 app.include_router(auth.router)
+app.include_router(projects.router)
+app.include_router(characters.router)
+app.include_router(panels.router)
+
+_static_root = Path(settings.images_dir).parent
+_static_root.mkdir(parents=True, exist_ok=True)
+app.mount("/static", StaticFiles(directory=str(_static_root)), name="static")
 
 
 if __name__ == "__main__":

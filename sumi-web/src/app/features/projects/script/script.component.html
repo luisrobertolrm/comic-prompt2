@@ -1,0 +1,91 @@
+<div class="script-layout">
+
+  <!-- ── Cabeçalho ── -->
+  <div class="page-head">
+    <div>
+      <p class="eyebrow">ETAPA 3 DE 5</p>
+      <h1>A IA propôs um roteiro.</h1>
+      <p class="lede">Aqui está o storyboard sugerido. Você pode regerar tudo ou seguir para revisar quadro por quadro.</p>
+    </div>
+    <button class="btn-ghost" (click)="runGenerate()" [disabled]="generating()">
+      ↻ Regerar tudo
+    </button>
+  </div>
+
+  <!-- ── Synopsis card ── -->
+  @if (project()) {
+    <div class="synopsis-card">
+      <div class="synopsis-main">
+        <p class="eyebrow" style="margin-bottom:8px">SINOPSE PROPOSTA</p>
+        <p class="synopsis-text">{{ project()!.premise || project()!.title }}</p>
+        <div class="chips">
+          <span class="chip">{{ project()!.genre }}</span>
+          <span class="chip">{{ project()!.tone }}</span>
+          <span class="chip">{{ project()!.pages }} páginas</span>
+          <span class="chip">{{ panels().length || '…' }} quadros</span>
+        </div>
+      </div>
+      <div class="synopsis-divider"></div>
+      <div class="synopsis-cast">
+        <p class="eyebrow" style="margin-bottom:10px">ELENCO</p>
+        @if (project()!.characters.length === 0) {
+          <p class="muted-sm">Sem personagens definidos.</p>
+        }
+        @for (c of project()!.characters; track c.id) {
+          <div class="cast-row">
+            <div class="avatar">{{ c.name.charAt(0).toUpperCase() }}</div>
+            <div>
+              <div class="cast-name">{{ c.name }}</div>
+              <div class="cast-role">{{ c.role }}</div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ── Storyboard ── -->
+  <p class="eyebrow" style="margin-bottom:12px">
+    STORYBOARD · {{ generating() ? '…' : panels().length }} QUADROS
+  </p>
+
+  <div class="storyboard-grid">
+    @if (generating()) {
+      @for (s of skeletons; track s) {
+        <div class="storyboard-item">
+          <app-manga-panel [index]="s" label="gerando…" [isLoading]="true" />
+          <div class="skeleton-text"></div>
+        </div>
+      }
+    }
+    @if (!generating()) {
+      @for (p of panels(); track p.id; let i = $index) {
+        <div class="storyboard-item" (click)="openReview(i)">
+          <app-manga-panel
+            [index]="p.index_order"
+            [label]="p.label"
+            [aspect]="p.aspect"
+            [tone]="p.tone"
+            [characterName]="p.character_name"
+            [bubbles]="p.bubbles"
+            [imageUrl]="p.image_url" />
+          <div class="storyboard-meta">
+            <span class="storyboard-caption">{{ p.caption }}</span>
+            <span class="status-badge" [style.background]="statusColor(p.status)">
+              {{ statusLabel(p.status) }}
+            </span>
+          </div>
+        </div>
+      }
+    }
+  </div>
+
+  <!-- ── Footer ── -->
+  <div class="footer-row">
+    <button class="btn-ghost" (click)="back()">← Voltar</button>
+    <button class="btn-primary" (click)="openReview()" [disabled]="generating() || panels().length === 0">
+      Revisar quadro a quadro →
+    </button>
+  </div>
+
+</div>
