@@ -12,6 +12,9 @@
       <button class="btn-primary" (click)="startExport()" [disabled]="exporting()">
         @if (exporting()) { ⏳ Exportando… } @else { ⬇ Exportar quadros }
       </button>
+      <button class="btn-youtube" (click)="openYoutubeModal()" [disabled]="exporting()">
+        ▶ YouTube
+      </button>
     </div>
   </div>
 
@@ -293,6 +296,154 @@
 
       </div><!-- /side-col -->
     </div><!-- /main-grid -->
+  }
+
+  <!-- ════════════════ MODAL YOUTUBE ════════════════ -->
+  @if (ytModalOpen()) {
+    <div class="yt-overlay" (click)="closeYtModal()">
+      <div class="yt-modal" (click)="$event.stopPropagation()">
+
+        <!-- Cabeçalho -->
+        <div class="yt-head">
+          <div>
+            <p class="eyebrow">PUBLICAR NO YOUTUBE</p>
+            <h2 class="yt-title">Metadados do vídeo</h2>
+          </div>
+          <div class="yt-head-actions">
+            <button class="btn-ghost-sm" (click)="generateYtMeta()" [disabled]="ytGenerating()">
+              @if (ytGenerating()) { ⏳ Gerando… } @else { ✦ Gerar com IA }
+            </button>
+            <button class="yt-close" (click)="closeYtModal()">✕</button>
+          </div>
+        </div>
+
+        <div class="yt-body">
+
+          <!-- Título -->
+          <div class="yt-field">
+            <label class="yt-label">Título</label>
+            <input class="yt-input"
+                   [value]="ytMeta().yt_title"
+                   (input)="setYtField('yt_title', $any($event.target).value)"
+                   placeholder="Ex: A Última Samurai — Motion Comic Completo"
+                   maxlength="100">
+            <span class="yt-char-count">{{ ytMeta().yt_title.length }}/100</span>
+          </div>
+
+          <!-- Descrição -->
+          <div class="yt-field">
+            <label class="yt-label">Descrição</label>
+            <textarea class="yt-textarea"
+                      [value]="ytMeta().yt_description"
+                      (input)="setYtField('yt_description', $any($event.target).value)"
+                      placeholder="Descreva o enredo, personagens e o que o espectador vai encontrar…"
+                      rows="5"></textarea>
+          </div>
+
+          <!-- Tags -->
+          <div class="yt-field">
+            <label class="yt-label">Tags</label>
+            <div class="yt-tags-row">
+              <input class="yt-input yt-tag-input"
+                     [value]="ytTagInput()"
+                     (input)="ytTagInput.set($any($event.target).value)"
+                     (keydown.enter)="addYtTag()"
+                     placeholder="Digite uma tag e pressione Enter (separe com vírgula)">
+              <button class="btn-ghost-sm" (click)="addYtTag()">+ Adicionar</button>
+            </div>
+            @if (ytMeta().yt_tags.length) {
+              <div class="yt-tags-list">
+                @for (tag of ytMeta().yt_tags; track tag) {
+                  <span class="yt-tag">
+                    {{ tag }}
+                    <button class="yt-tag-remove" (click)="removeYtTag(tag)">✕</button>
+                  </span>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Categoria + Privacidade (linha) -->
+          <div class="yt-row-2">
+            <div class="yt-field">
+              <label class="yt-label">Categoria</label>
+              <select class="yt-select"
+                      [value]="ytMeta().yt_category_id"
+                      (change)="setYtField('yt_category_id', $any($event.target).value)">
+                @for (cat of ytCategories; track cat.id) {
+                  <option [value]="cat.id">{{ cat.label }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="yt-field">
+              <label class="yt-label">Privacidade</label>
+              <div class="chips">
+                <button class="chip" [class.chip--active]="ytMeta().privacy_status === 'public'"
+                        (click)="setYtField('privacy_status', 'public')">Público</button>
+                <button class="chip" [class.chip--active]="ytMeta().privacy_status === 'unlisted'"
+                        (click)="setYtField('privacy_status', 'unlisted')">Não listado</button>
+                <button class="chip" [class.chip--active]="ytMeta().privacy_status === 'private'"
+                        (click)="setYtField('privacy_status', 'private')">Privado</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Data de publicação (só quando público) -->
+          @if (ytMeta().privacy_status === 'public') {
+            <div class="yt-field">
+              <label class="yt-label">Data de publicação <span class="yt-optional">(opcional — deixe vazio para publicar imediatamente)</span></label>
+              <input class="yt-input"
+                     type="datetime-local"
+                     [value]="ytMeta().publish_at ? (ytMeta().publish_at! | date:'yyyy-MM-ddTHH:mm') : ''"
+                     (change)="setYtField('publish_at', $any($event.target).value || null)">
+            </div>
+          }
+
+          <!-- Thumbnail -->
+          <div class="yt-field">
+            <label class="yt-label">Thumbnail <span class="yt-optional">(escolha um quadro)</span></label>
+            @if (panels().length) {
+              <div class="yt-thumb-grid">
+                @for (p of panels(); track p.id) {
+                  <button class="yt-thumb-cell"
+                          [class.yt-thumb-cell--selected]="ytMeta().thumbnail_panel_id === p.id"
+                          (click)="selectThumbnail(p.id)">
+                    <div class="yt-thumb-img-wrap">
+                      <div class="film-tone"
+                           [style.background-image]="tonePattern(p.tone)"
+                           [style.background-size]="toneBgSize(p.tone)">
+                      </div>
+                      @if (imageUrl(p)) {
+                        <img [src]="imageUrl(p)" alt="">
+                      } @else {
+                        <div class="yt-thumb-placeholder">{{ padNum(p.index_order) }}</div>
+                      }
+                    </div>
+                    <span class="yt-thumb-label">{{ p.label }}</span>
+                    @if (ytMeta().thumbnail_panel_id === p.id) {
+                      <span class="yt-thumb-check">✓</span>
+                    }
+                  </button>
+                }
+              </div>
+            } @else {
+              <p class="yt-empty">Gere os quadros para selecionar um thumbnail.</p>
+            }
+          </div>
+
+        </div><!-- /yt-body -->
+
+        <!-- Footer -->
+        <div class="yt-footer">
+          <button class="btn-ghost" (click)="closeYtModal()">Cancelar</button>
+          <button class="btn-youtube" (click)="saveAndOpenYoutube()" [disabled]="ytSaving()">
+            @if (ytSaving()) { ⏳ Salvando… } @else { ▶ Salvar e abrir YouTube Studio }
+          </button>
+        </div>
+
+      </div><!-- /yt-modal -->
+    </div><!-- /yt-overlay -->
   }
 
 </div>

@@ -1,9 +1,10 @@
 import { Component, computed, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
+import { DecimalPipe, DatePipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import type { PanelOut } from '../../../core/models/panel.models';
 import { PanelService } from '../../../core/services/panel.service';
 import { ProjectDraftService } from '../../../core/services/project-draft.service';
+import { ProjectService, YtMeta } from '../../../core/services/project.service';
 import { environment } from '../../../../environments/environment';
 
 // ── Tipos ────────────────────────────────────────────────────────────
@@ -21,6 +22,26 @@ interface BeatData { beats: Beat[]; total: number; }
 interface VoiceData { voice: string; muted: boolean; }
 
 // ── Constantes ───────────────────────────────────────────────────────
+
+const YT_CATEGORIES = [
+  { id: '1',  label: 'Filme e Animação' },
+  { id: '24', label: 'Entretenimento' },
+  { id: '27', label: 'Educação' },
+  { id: '23', label: 'Comédia' },
+  { id: '20', label: 'Games' },
+  { id: '28', label: 'Ciência e Tecnologia' },
+  { id: '22', label: 'Pessoas e Blogs' },
+];
+
+const DEFAULT_YT_META: YtMeta = {
+  yt_title: '',
+  yt_description: '',
+  yt_tags: [],
+  yt_category_id: '1',
+  privacy_status: 'private',
+  publish_at: null,
+  thumbnail_panel_id: null,
+};
 
 const VOICE_OPTIONS = [
   'Narração suave', 'Jovem feminina', 'Jovem masculina',
@@ -72,7 +93,7 @@ export function fmt(s: number): string {
 @Component({
   selector: 'app-video',
   standalone: true,
-  imports: [DecimalPipe],
+  imports: [DecimalPipe, DatePipe],
   templateUrl: './video.component.html',
   styleUrl: './video.component.scss',
 })
@@ -81,10 +102,12 @@ export class VideoComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private draft = inject(ProjectDraftService);
   private panelService = inject(PanelService);
+  private projectService = inject(ProjectService);
 
   readonly voiceOptions = VOICE_OPTIONS;
   readonly speeds = SPEEDS;
   readonly transitions = TRANSITIONS;
+  readonly ytCategories = YT_CATEGORIES;
   readonly baseUrl = environment.apiUrl;
 
   projectId = signal('');
@@ -95,6 +118,13 @@ export class VideoComponent implements OnInit, OnDestroy {
   exporting       = signal(false);
   exportProgress  = signal(0);
   private exportTimer: ReturnType<typeof setInterval> | null = null;
+
+  // YouTube modal
+  ytModalOpen  = signal(false);
+  ytMeta       = signal<YtMeta>({ ...DEFAULT_YT_META });
+  ytGenerating = signal(false);
+  ytSaving     = signal(false);
+  ytTagInput   = signal('');
 
   // Playback
   t          = signal(0);
@@ -348,4 +378,61 @@ export class VideoComponent implements OnInit, OnDestroy {
   }
 
   goFinal(): void { void this.router.navigate(['/projects', this.projectId(), 'final']); }
+
+  // ── YouTube ───────────────────────────────────────────────────────────────
+
+  openYoutubeModal(): void {
+    this.ytModalOpen.set(true);
+    this.projectService.getYtMeta(this.projectId()).subscribe({
+      next: meta => this.ytMeta.set(meta),
+      error: () => this.ytMeta.set({ ...DEFAULT_YT_META }),
+    });
+  }
+
+  closeYtModal(): void { this.ytModalOpen.set(false); }
+
+  generateYtMeta(): void {
+    if (this.ytGenerating()) return;
+    this.ytGenerating.set(true);
+    this.projectService.generateYtMeta(this.projectId()).subscribe({
+      next: meta => { this.ytMeta.set(meta); this.ytGenerating.set(false); },
+      error: () => this.ytGenerating.set(false),
+    });
+  }
+
+  setYtField<K extends keyof YtMeta>(field: K, value: YtMeta[K]): void {
+    this.ytMeta.update(m => ({ ...m, [field]: value }));
+  }
+
+  addYtTag(): void {
+    const raw = this.ytTagInput().trim();
+    if (!raw) return;
+    const tags = raw.split(',').map(t => t.trim()).filter(Boolean);
+    this.ytMeta.update(m => ({ ...m, yt_tags: [...new Set([...m.yt_tags, ...tags])] }));
+    this.ytTagInput.set('');
+  }
+
+  removeYtTag(tag: string): void {
+    this.ytMeta.update(m => ({ ...m, yt_tags: m.yt_tags.filter(t => t !== tag) }));
+  }
+
+  selectThumbnail(panelId: string): void {
+    this.ytMeta.update(m => ({
+      ...m,
+      thumbnail_panel_id: m.thumbnail_panel_id === panelId ? null : panelId,
+    }));
+  }
+
+  saveAndOpenYoutube(): void {
+    if (this.ytSaving()) return;
+    this.ytSaving.set(true);
+    this.projectService.saveYtMeta(this.projectId(), this.ytMeta()).subscribe({
+      next: () => {
+        this.ytSaving.set(false);
+        this.ytModalOpen.set(false);
+        window.open('https://studio.youtube.com/', '_blank');
+      },
+      error: () => this.ytSaving.set(false),
+    });
+  }
 }

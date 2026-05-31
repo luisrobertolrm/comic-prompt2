@@ -4,5 +4,6 @@ from panel import Panel
 from project import Project
 from project_character import ProjectCharacter
 from user import PasswordResetToken, User, UserOAuth, UserSession
+from youtube_metadata import VideoMetadata
 
-__all__ = ["User", "UserOAuth", "PasswordResetToken", "UserSession", "Project", "Character", "ProjectCharacter"]
+__all__ = ["User", "UserOAuth", "PasswordResetToken", "UserSession", "Project", "Character", "ProjectCharacter", "VideoMetadata"]

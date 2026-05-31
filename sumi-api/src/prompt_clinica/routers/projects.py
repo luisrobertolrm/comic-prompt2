@@ -1,19 +1,23 @@
 import io
+import json
 import uuid
 import zipfile
 from pathlib import Path
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
+from prompt_clinica.ai.youtube_metadata import generate_youtube_metadata
 from prompt_clinica.config import settings
 from prompt_clinica.database import get_db
 from prompt_clinica.deps import get_current_user
 from prompt_clinica.schemas.panel import InsertPanelBody, PanelOut, ReorderBody
 from prompt_clinica.schemas.project import CharacterIdsBody, ProjectCreate, ProjectDetailOut, ProjectOut
+from prompt_clinica.schemas.youtube_metadata import VideoMetadataOut, VideoMetadataUpdate
 from prompt_clinica.services import panel_service, project_service
 from user import User
+from youtube_metadata import VideoMetadata
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
@@ -138,3 +142,110 @@ def reorder_panels(
     db: Session = Depends(get_db),
 ) -> None:
     panel_service.reorder(project_id, body, user, db)
+
+
+# ── YouTube Metadata ─────────────────────────────────────────────────────────
+
+def _get_project_or_404(project_id: uuid.UUID, user: User, db: Session):
+    from project import Project
+    p = db.query(Project).filter(Project.id == project_id, Project.user_id == user.id).first()
+    if p is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Projeto não encontrado.")
+    return p
+
+
+def _meta_to_out(m: VideoMetadata) -> VideoMetadataOut:
+    return VideoMetadataOut(
+        yt_title=m.yt_title,
+        yt_description=m.yt_description,
+        yt_tags=json.loads(m.yt_tags or "[]"),
+        yt_category_id=m.yt_category_id,
+        privacy_status=m.privacy_status,
+        publish_at=m.publish_at,
+        thumbnail_panel_id=m.thumbnail_panel_id,
+    )
+
+
+@router.get("/{project_id}/youtube-metadata", response_model=VideoMetadataOut)
+def get_youtube_metadata(
+    project_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> VideoMetadataOut:
+    _get_project_or_404(project_id, user, db)
+    m = db.query(VideoMetadata).filter(VideoMetadata.project_id == project_id).first()
+    if m is None:
+        return VideoMetadataOut(
+            yt_title="", yt_description="", yt_tags=[], yt_category_id="1",
+            privacy_status="private", publish_at=None, thumbnail_panel_id=None,
+        )
+    return _meta_to_out(m)
+
+
+@router.put("/{project_id}/youtube-metadata", response_model=VideoMetadataOut)
+def save_youtube_metadata(
+    project_id: uuid.UUID,
+    body: VideoMetadataUpdate,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> VideoMetadataOut:
+    _get_project_or_404(project_id, user, db)
+    m = db.query(VideoMetadata).filter(VideoMetadata.project_id == project_id).first()
+    if m is None:
+        m = VideoMetadata(project_id=project_id)
+        db.add(m)
+    m.yt_title = body.yt_title
+    m.yt_description = body.yt_description
+    m.yt_tags = json.dumps(body.yt_tags, ensure_ascii=False)
+    m.yt_category_id = body.yt_category_id
+    m.privacy_status = body.privacy_status
+    m.publish_at = body.publish_at
+    m.thumbnail_panel_id = body.thumbnail_panel_id
+    db.commit()
+    db.refresh(m)
+    return _meta_to_out(m)
+
+
+@router.post("/{project_id}/youtube-metadata/generate", response_model=VideoMetadataOut)
+def generate_youtube_metadata_endpoint(
+    project_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> VideoMetadataOut:
+    project = _get_project_or_404(project_id, user, db)
+    panels = panel_service.list_panels(project_id, user, db)
+
+    from character import Character
+    from project_character import ProjectCharacter
+    chars = (
+        db.query(Character)
+        .join(ProjectCharacter, ProjectCharacter.character_id == Character.id)
+        .filter(ProjectCharacter.project_id == project_id)
+        .all()
+    )
+    char_names = [c.name for c in chars]
+    panel_labels = [p.label for p in panels]
+
+    data = generate_youtube_metadata(
+        project_title=project.title,
+        premise=project.premise or "",
+        genre=project.genre,
+        tone=project.tone,
+        character_names=char_names,
+        panel_labels=panel_labels,
+    )
+
+    m = db.query(VideoMetadata).filter(VideoMetadata.project_id == project_id).first()
+    if m is None:
+        m = VideoMetadata(project_id=project_id)
+        db.add(m)
+    m.yt_title = str(data.get("title", project.title))[:100]
+    m.yt_description = str(data.get("description", ""))
+    m.yt_tags = json.dumps(data.get("tags", []), ensure_ascii=False)
+    if not m.yt_category_id:
+        m.yt_category_id = "1"
+    if not m.privacy_status:
+        m.privacy_status = "private"
+    db.commit()
+    db.refresh(m)
+    return _meta_to_out(m)

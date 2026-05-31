@@ -4,6 +4,16 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import type { ProjectCreate, ProjectDetailOut, ProjectOut } from '../models/home.models';
 
+export interface YtMeta {
+  yt_title: string;
+  yt_description: string;
+  yt_tags: string[];
+  yt_category_id: string;
+  privacy_status: 'public' | 'unlisted' | 'private';
+  publish_at: string | null;
+  thumbnail_panel_id: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ProjectService {
   private http = inject(HttpClient);
@@ -25,5 +35,17 @@ export class ProjectService {
     return this.http.put<void>(`${this.base}/projects/${projectId}/characters`, {
       character_ids: characterIds,
     });
+  }
+
+  getYtMeta(projectId: string): Observable<YtMeta> {
+    return this.http.get<YtMeta>(`${this.base}/projects/${projectId}/youtube-metadata`);
+  }
+
+  saveYtMeta(projectId: string, meta: YtMeta): Observable<YtMeta> {
+    return this.http.put<YtMeta>(`${this.base}/projects/${projectId}/youtube-metadata`, meta);
+  }
+
+  generateYtMeta(projectId: string): Observable<YtMeta> {
+    return this.http.post<YtMeta>(`${this.base}/projects/${projectId}/youtube-metadata/generate`, {});
   }
 }
