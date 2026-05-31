@@ -38,3 +38,12 @@ def generate_panel_image(
     db: Session = Depends(get_db),
 ) -> PanelOut:
     return panel_service.generate_image(panel_id, user, db)
+
+
+@router.post("/panels/{panel_id}/bubbles/generate", response_model=PanelOut)
+def generate_bubbles(
+    panel_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> PanelOut:
+    return panel_service.generate_bubbles(panel_id, user, db)

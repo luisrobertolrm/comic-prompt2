@@ -14,6 +14,17 @@ class CharacterCreate(BaseModel):
     summary: str | None = None
     outfit: str | None = None
     traits: list[str] = Field(default_factory=list)
+    image_url: str | None = None
+
+
+class PortraitCandidate(BaseModel):
+    id: str
+    url: str
+    notes: str
+
+
+class PortraitRequest(BaseModel):
+    prompt: str
 
 
 class CharacterOut(BaseModel):
@@ -26,6 +37,7 @@ class CharacterOut(BaseModel):
     outfit: str | None
     traits: list[str]
     approved: bool
+    image_url: str | None
 
     model_config = {"from_attributes": True}
 

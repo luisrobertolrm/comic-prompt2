@@ -74,8 +74,9 @@ export class ShellComponent {
   inCreation = computed(() => this.url().startsWith('/projects'));
 
   projectId = computed(() => {
-    const m = this.url().match(/\/projects\/([^/]+)\//);
-    return m?.[1] ?? '';
+    const m = this.url().match(/\/projects\/([^/]+)(?:\/|$)/);
+    const id = m?.[1] ?? '';
+    return id === 'new' ? '' : id;
   });
 
   constructor() {
@@ -133,15 +134,19 @@ export class ShellComponent {
 
   navigateToStep(stepId: string): void {
     const pid = this.projectId();
-    const fixedRoutes: Record<string, string> = {
-      new: '/projects/new',
-      characters: '/projects/new/characters',
-    };
-    if (fixedRoutes[stepId]) {
-      void this.router.navigate([fixedRoutes[stepId]]);
+
+    // Dentro de um projeto existente: "Ideia" e "Personagens" não têm rota própria,
+    // redireciona para o roteiro que é o ponto de entrada do projeto.
+    if (pid && (stepId === 'new' || stepId === 'characters')) {
+      void this.router.navigate(['/projects', pid, 'script']);
       return;
     }
-    if (pid) void this.router.navigate([`/projects/${pid}/${stepId}`]);
+
+    // Fluxo de criação (sem projeto ativo ainda)
+    if (stepId === 'new') { void this.router.navigate(['/projects/new']); return; }
+    if (stepId === 'characters') { void this.router.navigate(['/projects/new/characters']); return; }
+
+    if (pid) void this.router.navigate(['/projects', pid, stepId]);
   }
 
   logout(): void {

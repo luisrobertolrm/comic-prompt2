@@ -36,4 +36,14 @@ export class PanelService {
   generateImage(panelId: string): Observable<PanelOut> {
     return this.http.post<PanelOut>(`${this.base}/panels/${panelId}/image`, {});
   }
+
+  generateBubbles(panelId: string): Observable<PanelOut> {
+    return this.http.post<PanelOut>(`${this.base}/panels/${panelId}/bubbles/generate`, {});
+  }
+
+  generateAllImages(projectId: string): Observable<PanelOut[]> {
+    return this.http.post<PanelOut[]>(
+      `${this.base}/projects/${projectId}/panels/generate-images`, {}
+    );
+  }
 }

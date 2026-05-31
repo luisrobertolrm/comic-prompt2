@@ -3,7 +3,12 @@ from sqlalchemy.orm import Session
 
 from prompt_clinica.database import get_db
 from prompt_clinica.deps import get_current_user
-from prompt_clinica.schemas.character import CharacterCreate, CharacterOut
+from prompt_clinica.schemas.character import (
+    CharacterCreate,
+    CharacterOut,
+    PortraitCandidate,
+    PortraitRequest,
+)
 from prompt_clinica.services import character_service
 from user import User
 
@@ -25,3 +30,11 @@ def create_character(
     db: Session = Depends(get_db),
 ) -> CharacterOut:
     return CharacterOut.model_validate(character_service.create(req, user, db))
+
+
+@router.post("/generate-portrait", response_model=list[PortraitCandidate])
+def generate_portrait(
+    req: PortraitRequest,
+    user: User = Depends(get_current_user),
+) -> list[PortraitCandidate]:
+    return character_service.generate_portrait(req.prompt)

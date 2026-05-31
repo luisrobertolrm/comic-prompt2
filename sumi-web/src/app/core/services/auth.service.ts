@@ -11,12 +11,13 @@ import type {
 } from '../models/auth.models';
 
 const TOKEN_KEY = 'sumi_token';
+const USER_KEY  = 'sumi_user';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private http = inject(HttpClient);
+  private http   = inject(HttpClient);
   private router = inject(Router);
-  private base = environment.apiUrl;
+  private base   = environment.apiUrl;
 
   currentUser = signal<UserOut | null>(this.loadStoredUser());
 
@@ -49,6 +50,7 @@ export class AuthService {
 
   logout(): void {
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
     this.currentUser.set(null);
     void this.router.navigate(['/auth']);
   }
@@ -57,8 +59,16 @@ export class AuthService {
     return localStorage.getItem(TOKEN_KEY);
   }
 
+  handleUnauthorized(): void {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+    this.currentUser.set(null);
+    void this.router.navigate(['/auth']);
+  }
+
   private persist(res: TokenResponse): void {
     localStorage.setItem(TOKEN_KEY, res.access_token);
+    localStorage.setItem(USER_KEY, JSON.stringify(res.user));
     this.currentUser.set(res.user);
   }
 
@@ -70,9 +80,11 @@ export class AuthService {
       const decoded = JSON.parse(atob(payload)) as { exp: number };
       if (decoded.exp * 1000 < Date.now()) {
         localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(USER_KEY);
         return null;
       }
-      return null; // user será recarregado via /me (a implementar)
+      const stored = localStorage.getItem(USER_KEY);
+      return stored ? (JSON.parse(stored) as UserOut) : null;
     } catch {
       return null;
     }

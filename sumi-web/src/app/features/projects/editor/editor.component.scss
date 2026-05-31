@@ -77,10 +77,20 @@ h1 { font-family: var(--serif); font-size: 28px; line-height: 1.1; margin-bottom
   }
 }
 
+.panel-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+}
+
 .panel-tone {
   position: absolute;
   inset: 0;
-  opacity: .5;
+  opacity: .25;
   pointer-events: none;
 }
 
@@ -115,9 +125,43 @@ h1 { font-family: var(--serif); font-size: 28px; line-height: 1.1; margin-bottom
   line-height: 1.3;
   color: var(--ink);
   z-index: 10;
+  cursor: grab;
+  user-select: none;
+  max-width: 55%;
 
+  &:active { cursor: grabbing; }
   &.thought { border-style: dashed; border-radius: 40px; }
   &.shout { font-weight: 700; border-width: 2px; border-radius: 3px; }
+}
+
+/* ── Paginação ── */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.btn-page {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-sm);
+  background: var(--paper-2);
+  cursor: pointer;
+  font-size: 14px;
+  display: grid;
+  place-items: center;
+  &:disabled { opacity: .3; cursor: default; }
+  &:hover:not(:disabled) { background: var(--paper-3); }
+}
+
+.page-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-3);
+  letter-spacing: .06em;
 }
 
 /* ── Side panel ── */
@@ -183,6 +227,15 @@ h1 { font-family: var(--serif); font-size: 28px; line-height: 1.1; margin-bottom
   height: 7px;
   border-radius: 50%;
   background: var(--mint);
+  flex-shrink: 0;
+}
+
+.img-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 1px solid var(--ink-4);
   flex-shrink: 0;
 }
 

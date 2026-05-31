@@ -36,6 +36,7 @@ export interface CharacterOut {
   outfit: string | null;
   traits: string[];
   approved: boolean;
+  image_url: string | null;
 }
 
 export interface CharacterCreate {
@@ -46,4 +47,11 @@ export interface CharacterCreate {
   summary?: string;
   outfit?: string;
   traits?: string[];
+  image_url?: string;
+}
+
+export interface PortraitCandidate {
+  id: string;
+  url: string;
+  notes: string;
 }

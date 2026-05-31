@@ -25,6 +25,7 @@ export class ScriptComponent implements OnInit {
   project = signal<ProjectDetailOut | null>(null);
   panels = signal<PanelOut[]>([]);
   generating = signal(false);
+  generatingImages = signal(false);
   skeletons = [1, 2, 3, 4, 5, 6, 7];
 
   ngOnInit(): void {
@@ -64,6 +65,15 @@ export class ScriptComponent implements OnInit {
 
   statusLabel(status: string): string {
     return status === 'approved' ? 'OK' : 'REVISAR';
+  }
+
+  generateAllImages(): void {
+    if (this.generatingImages() || this.generating()) return;
+    this.generatingImages.set(true);
+    this.panelService.generateAllImages(this.projectId()).subscribe({
+      next: panels => { this.panels.set(panels); this.generatingImages.set(false); },
+      error: () => this.generatingImages.set(false),
+    });
   }
 
   back(): void {

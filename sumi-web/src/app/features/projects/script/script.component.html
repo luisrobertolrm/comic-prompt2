@@ -7,9 +7,16 @@
       <h1>A IA propôs um roteiro.</h1>
       <p class="lede">Aqui está o storyboard sugerido. Você pode regerar tudo ou seguir para revisar quadro por quadro.</p>
     </div>
-    <button class="btn-ghost" (click)="runGenerate()" [disabled]="generating()">
-      ↻ Regerar tudo
-    </button>
+    <div style="display:flex;gap:8px">
+      <button class="btn-ghost" (click)="generateAllImages()"
+              [disabled]="generatingImages() || generating() || panels().length === 0">
+        @if (generatingImages()) { ⏳ Gerando {{ panels().length }} imagens… }
+        @else { ✦ Gerar todas as imagens }
+      </button>
+      <button class="btn-ghost" (click)="runGenerate()" [disabled]="generating() || generatingImages()">
+        ↻ Regerar tudo
+      </button>
+    </div>
   </div>
 
   <!-- ── Synopsis card ── -->

@@ -30,6 +30,7 @@ class Character(Base):
     summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     outfit: Mapped[str | None] = mapped_column(Text, nullable=True)
     traits: Mapped[str | None] = mapped_column(String(500), nullable=True)  # CSV
+    image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     approved: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()

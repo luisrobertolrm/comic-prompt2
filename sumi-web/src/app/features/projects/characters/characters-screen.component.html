@@ -228,15 +228,9 @@
           <div class="portraits-grid">
             @for (c of aiCandidates(); track c.id; let i = $index) {
               <button class="portrait" [class.portrait--picked]="aiPicked() === c.id"
-                      [style.--palette-bg]="'var(--' + c.palette + '-soft)'"
                       (click)="pickCandidate(c.id)">
-                <div class="portrait-pattern"
-                     [style.background-image]="coverPattern(c.tone)"
-                     [style.background-size]="coverBgSize(c.tone)"></div>
-                <div class="portrait-inner">
-                  <div class="portrait-avatar" [style.background]="'var(--' + c.palette + ')'">?</div>
-                  <div class="portrait-idx">VAR · {{ (i + 1).toString().padStart(2, '0') }}</div>
-                </div>
+                <img class="portrait-img" [src]="c.imageUrl" [alt]="c.notes">
+                <div class="portrait-idx">VAR · {{ (i + 1).toString().padStart(2, '0') }}</div>
                 <div class="portrait-notes">{{ c.notes }}</div>
                 @if (aiPicked() === c.id) {
                   <div class="portrait-check">✓</div>

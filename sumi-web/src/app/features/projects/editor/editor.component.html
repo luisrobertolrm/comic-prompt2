@@ -26,7 +26,7 @@
         <div class="layout-bar">
           <span class="eyebrow" style="margin-right:8px">LAYOUT DA PÁGINA</span>
           @for (key of layoutKeys; track key) {
-            <button class="chip" [class.chip--active]="layout() === key" (click)="layout.set(key)">
+            <button class="chip" [class.chip--active]="layout() === key" (click)="setLayout(key)">
               {{ layoutLabel(key) }}
             </button>
           }
@@ -34,13 +34,18 @@
 
         <!-- Page stage -->
         <div class="stage" [ngStyle]="stageStyle()">
-          @for (p of visiblePanels; track p.id; let i = $index) {
+          @for (p of visiblePanels(); track p.id; let i = $index) {
             <div class="editor-panel"
                  [ngStyle]="slotStyle(i)"
                  [class.editor-panel--selected]="isSelected(p.id)"
                  (click)="selectedId.set(p.id)">
 
-              <!-- Screentone -->
+              <!-- Imagem gerada -->
+              @if (imageUrl(p)) {
+                <img class="panel-img" [src]="imageUrl(p)" [alt]="p.label">
+              }
+
+              <!-- Screentone (sobre a imagem) -->
               <div class="panel-tone"
                    [style.background-image]="tonePattern(p.tone)"
                    [style.background-size]="toneBgSize(p.tone)">
@@ -50,7 +55,6 @@
               @for (b of p.bubbles; track $index; let bi = $index) {
                 <div [class]="bubbleClass(b)"
                      [ngStyle]="bubbleStyle(b)"
-                     style="position:absolute;cursor:grab;user-select:none;max-width:55%"
                      (mousedown)="startDrag(p.id, bi, $event)">
                   {{ b.text }}
                 </div>
@@ -62,10 +66,15 @@
           }
         </div>
 
-        <p class="stage-hint">
-          Página 1 de {{ visiblePanels.length ? Math.ceil(panels().length / currentLayout.slots.length) : 1 }}
-          · arraste balões diretamente sobre os quadros
-        </p>
+        <!-- Paginação -->
+        <div class="pagination">
+          <button class="btn-page" (click)="prevPage()" [disabled]="page() === 0">←</button>
+          <span class="page-label">
+            Página {{ page() + 1 }} de {{ totalPages() }}
+            · {{ panels().length }} quadros no total
+          </span>
+          <button class="btn-page" (click)="nextPage()" [disabled]="page() === totalPages() - 1">→</button>
+        </div>
       </div>
 
       <!-- ── Painel lateral ── -->
@@ -73,15 +82,18 @@
 
         <!-- Lista de quadros -->
         <div class="side-card">
-          <p class="eyebrow" style="margin-bottom:10px">QUADROS NA PÁGINA</p>
+          <p class="eyebrow" style="margin-bottom:10px">TODOS OS QUADROS</p>
           <div class="panel-list">
             @for (p of panels(); track p.id; let i = $index) {
               <button class="panel-list-item" [class.panel-list-item--active]="isSelected(p.id)"
-                      (click)="selectedId.set(p.id)">
+                      (click)="selectPanel(p.id, i)">
                 <span class="panel-num">{{ padNum(i + 1) }}</span>
                 <span class="panel-label-text">{{ p.label }}</span>
                 @if (p.status === 'approved') {
                   <span class="approved-dot"></span>
+                }
+                @if (p.image_url) {
+                  <span class="img-dot" title="imagem gerada"></span>
                 }
               </button>
             }

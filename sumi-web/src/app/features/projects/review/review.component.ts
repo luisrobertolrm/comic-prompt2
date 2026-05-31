@@ -32,7 +32,9 @@ export class ReviewComponent implements OnInit {
   loading = signal(true);
   regenAnim = signal(false);
   showFramingPicker = signal(false);
-  generatingImage = signal(false);
+  generatingImage     = signal(false);
+  generatingAllImages = signal(false);
+  generatingBubbles   = signal(false);
 
   private patchSubject = new Subject<{ id: string; patch: PanelPatch }>();
 
@@ -79,7 +81,11 @@ export class ReviewComponent implements OnInit {
 
   approve(): void {
     this.patchCur({ status: 'approved' });
-    if (this.idx() < this.panels().length - 1) this.idx.update(i => i + 1);
+    if (this.idx() < this.panels().length - 1) {
+      this.idx.update(i => i + 1);
+    } else {
+      void this.router.navigate(['/projects', this.projectId(), 'editor']);
+    }
   }
 
   regen(): void {
@@ -176,6 +182,19 @@ export class ReviewComponent implements OnInit {
     return this.panels()[i]?.status === 'approved' ? 'var(--mint-soft)' : 'var(--paper-2)';
   }
 
+  generateBubbles(): void {
+    const cur = this.cur;
+    if (!cur || this.generatingBubbles()) return;
+    this.generatingBubbles.set(true);
+    this.panelService.generateBubbles(cur.id).subscribe({
+      next: updated => {
+        this.panels.update(ps => ps.map(p => p.id === updated.id ? updated : p));
+        this.generatingBubbles.set(false);
+      },
+      error: () => this.generatingBubbles.set(false),
+    });
+  }
+
   generateImage(): void {
     const cur = this.cur;
     if (!cur || this.generatingImage()) return;
@@ -186,6 +205,15 @@ export class ReviewComponent implements OnInit {
         this.generatingImage.set(false);
       },
       error: () => this.generatingImage.set(false),
+    });
+  }
+
+  generateAllImages(): void {
+    if (this.generatingAllImages()) return;
+    this.generatingAllImages.set(true);
+    this.panelService.generateAllImages(this.projectId()).subscribe({
+      next: updated => { this.panels.set(updated); this.generatingAllImages.set(false); },
+      error: () => this.generatingAllImages.set(false),
     });
   }
 

@@ -1,5 +1,6 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { environment } from '../../../../environments/environment';
 import type { CharacterCreate, CharacterOut } from '../../../core/models/home.models';
 import { CharacterService } from '../../../core/services/character.service';
 import { ProjectDraftService } from '../../../core/services/project-draft.service';
@@ -10,17 +11,9 @@ type AiMode = 'prompt' | 'attrs';
 
 interface AiCandidate {
   id: string;
-  palette: string;
-  tone: string;
+  imageUrl: string;
   notes: string;
 }
-
-const AI_CANDIDATES: AiCandidate[] = [
-  { id: 'c0', palette: 'blush', tone: 'dots', notes: 'Linha leve · olhos marcantes' },
-  { id: 'c1', palette: 'peach', tone: 'diag', notes: 'Sombras suaves · postura tímida' },
-  { id: 'c2', palette: 'mint', tone: 'dense', notes: 'Olhar direto · mais maturidade' },
-  { id: 'c3', palette: 'lilac', tone: 'dots', notes: 'Estilo retrô · screentone denso' },
-];
 
 @Component({
   selector: 'app-characters-screen',
@@ -60,15 +53,9 @@ export class CharactersScreenComponent implements OnInit {
   aiName = signal('');
   aiSaving = signal(false);
 
-  readonly candidates = AI_CANDIDATES;
-
   selectedCount = computed(() => this.selectedIds().size);
 
   ngOnInit(): void {
-    if (!this.draftService.projectId()) {
-      void this.router.navigate(['/projects/new']);
-      return;
-    }
     this.characterService.listAll().subscribe({
       next: chars => { this.characters.set(chars); this.loading.set(false); },
       error: () => this.loading.set(false),
@@ -136,33 +123,37 @@ export class CharactersScreenComponent implements OnInit {
     this.aiGenerating.set(true);
     this.aiCandidates.set([]);
     this.aiPicked.set(null);
-    setTimeout(() => {
-      this.aiCandidates.set([...AI_CANDIDATES]);
-      this.aiGenerating.set(false);
-    }, 1200);
+
+    const prompt = this.aiMode() === 'prompt'
+      ? this.aiPrompt()
+      : Object.values(this.aiAttrs()).join(', ');
+
+    this.characterService.generatePortrait(prompt).subscribe({
+      next: candidates => {
+        this.aiCandidates.set(candidates.map(c => ({
+          id: c.id,
+          imageUrl: `${environment.apiUrl}${c.url}`,
+          notes: c.notes,
+        })));
+        this.aiGenerating.set(false);
+      },
+      error: () => this.aiGenerating.set(false),
+    });
   }
 
   pickCandidate(id: string): void {
     this.aiPicked.set(this.aiPicked() === id ? null : id);
   }
 
-  coverPattern(tone: string): string {
-    if (tone === 'diag') return 'repeating-linear-gradient(45deg,rgba(30,24,18,.2) 0 1px,transparent 1px 6px)';
-    if (tone === 'dense') return 'radial-gradient(circle,rgba(30,24,18,.24) .8px,transparent 1px)';
-    return 'radial-gradient(circle,rgba(30,24,18,.18) .6px,transparent 1px)';
-  }
-
-  coverBgSize(tone: string): string {
-    return tone === 'dense' ? '4px 4px' : '7px 7px';
-  }
-
   confirmAi(): void {
     if (!this.aiPicked() || !this.aiName().trim() || this.aiSaving()) return;
+    const picked = this.aiCandidates().find(c => c.id === this.aiPicked());
     this.aiSaving.set(true);
     const req: CharacterCreate = {
       name: this.aiName(),
       role: this.aiMode() === 'attrs' ? this.aiAttrs().archetype : 'Personagem',
       traits: ['gerado por IA'],
+      image_url: picked?.imageUrl,
     };
     this.characterService.create(req).subscribe({
       next: char => {
@@ -179,8 +170,12 @@ export class CharactersScreenComponent implements OnInit {
   // ── Navegação ──
 
   advance(): void {
+    if (this.saving()) return;
     const projectId = this.draftService.projectId();
-    if (!projectId || this.saving()) return;
+    if (!projectId) {
+      void this.router.navigate(['/projects/new']);
+      return;
+    }
     this.saving.set(true);
     this.projectService.setCharacters(projectId, [...this.selectedIds()]).subscribe({
       next: () => {
@@ -193,8 +188,12 @@ export class CharactersScreenComponent implements OnInit {
 
   skip(): void {
     const projectId = this.draftService.projectId();
+    if (!projectId) {
+      void this.router.navigate(['/projects/new']);
+      return;
+    }
     this.draftService.projectId.set(null);
-    void this.router.navigate(['/projects', projectId ?? '', 'script']);
+    void this.router.navigate(['/projects', projectId, 'script']);
   }
 
   back(): void {

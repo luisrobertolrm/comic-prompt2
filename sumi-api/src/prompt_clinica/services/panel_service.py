@@ -3,7 +3,9 @@ from __future__ import annotations
 import base64
 import json
 import logging
+import re
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
@@ -15,8 +17,24 @@ from character import Character
 from panel import Panel
 from project import Project
 from project_character import ProjectCharacter
-from prompt_clinica.ai import ImageRequest, ai
+from prompt_clinica.ai import ImageRequest, Message, TextRequest, ai
 from prompt_clinica.ai.roteiro import generate_roteiro
+
+_BUBBLES_SYSTEM = """\
+Você é roteirista de mangá shojo. Gere balões de diálogo para um quadro específico.
+
+Retorne APENAS um array JSON (sem markdown, sem texto extra). Exemplo:
+[{"text": "Eu não sei o que dizer.", "kind": "say", "side": "left", "x": 8, "y": 10},
+ {"text": "(Por que agora?)", "kind": "thought", "side": "right", "x": 50, "y": 55}]
+
+Regras:
+- Gere entre 1 e 3 balões por quadro
+- "say" = fala, "thought" = pensamento interno, "shout" = grito/emoção intensa
+- "side" indica o lado de origem do balão: "left" ou "right"
+- x e y são posições percentuais (5–70); distribua verticalmente para não sobrepor
+- Em enquadramentos Close-up ou Extreme close, prefira "thought"
+- Texto em português, conciso e natural para mangá\
+"""
 from prompt_clinica.config import settings
 from prompt_clinica.schemas.panel import (
     BubbleSchema,
@@ -289,6 +307,102 @@ def reorder(project_id: uuid.UUID, body: ReorderBody, user: User, db: Session) -
             Panel.id == panel_id, Panel.project_id == project_id
         ).update({Panel.index_order: i})  # type: ignore[arg-type]
     db.commit()
+
+
+def generate_bubbles(panel_id: uuid.UUID, user: User, db: Session) -> PanelOut:
+    """Gera balões de diálogo via IA baseado na direção de cena do quadro."""
+    panel: Panel | None = (
+        db.query(Panel)
+        .join(Project, Project.id == Panel.project_id)
+        .filter(Panel.id == panel_id, Project.user_id == user.id)
+        .first()
+    )
+    if panel is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quadro não encontrado.")
+
+    user_msg = (
+        f"Quadro: {panel.label}\n"
+        f"Enquadramento: {panel.framing}\n"
+        f"Personagem em cena: {panel.character_name or 'não especificado'}\n"
+        f"Direção de cena: {panel.caption}\n\n"
+        "Gere os balões para este quadro. Retorne APENAS o array JSON."
+    )
+
+    try:
+        resp = ai.text(TextRequest(
+            messages=[
+                Message(role="system", content=_BUBBLES_SYSTEM),
+                Message(role="user", content=user_msg),
+            ],
+            temperature=0.8,
+            max_tokens=600,
+        ))
+        match = re.search(r'\[.*?\]', resp.content, re.DOTALL)
+        if not match:
+            raise ValueError("Nenhum array JSON na resposta.")
+        raw: list[dict[str, Any]] = json.loads(match.group())
+
+        valid: list[dict[str, Any]] = []
+        for b in raw:
+            if not isinstance(b, dict) or not b.get("text"):
+                continue
+            valid.append({
+                "text": str(b["text"])[:300],
+                "kind": b.get("kind") if b.get("kind") in ("say", "thought", "shout") else "say",
+                "side": b.get("side") if b.get("side") in ("left", "right") else "left",
+                "x": max(5, min(70, int(b.get("x", 8)))),
+                "y": max(5, min(70, int(b.get("y", 12)))),
+            })
+
+        panel.bubbles_json = json.dumps(valid, ensure_ascii=False)
+        db.commit()
+        db.refresh(panel)
+        logger.info("Balões gerados — quadro %s: %d balões", panel_id, len(valid))
+        return panel_to_out(panel)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Geração de balões falhou: {exc}",
+        ) from exc
+
+
+def generate_all_images(project_id: uuid.UUID, user: User, db: Session) -> list[PanelOut]:
+    """Gera imagens para todos os quadros do projeto em paralelo."""
+    _check_project(project_id, user, db)
+    panels = (
+        db.query(Panel)
+        .filter(Panel.project_id == project_id)
+        .order_by(Panel.index_order)
+        .all()
+    )
+
+    def _gen_one(panel: Panel) -> None:
+        base_prompt = panel.prompt or panel.caption or "manga panel"
+        img_prompt = (
+            "Manga shojo style, black and white screentone, clean ink line art, "
+            "no text, no speech bubbles, expressive eyes, high contrast. "
+            f"{base_prompt}"
+        )
+        try:
+            resp = ai.image(ImageRequest(prompt=img_prompt, size="1024x1024", quality="medium"))
+            if resp.b64_json:
+                img_bytes = base64.b64decode(resp.b64_json)
+                out_path = _images_dir() / f"{panel.id}.png"
+                out_path.write_bytes(img_bytes)
+                panel.image_url = f"/static/images/{panel.id}.png"
+                logger.info("Imagem gerada: quadro %s", panel.id)
+        except Exception as exc:
+            logger.warning("Falha ao gerar imagem — quadro %s: %s", panel.id, exc)
+
+    with ThreadPoolExecutor(max_workers=5) as pool:
+        list(pool.map(_gen_one, panels))
+
+    db.commit()
+    for p in panels:
+        db.refresh(p)
+    return [panel_to_out(p) for p in panels]
 
 
 def _reindex(project_id: uuid.UUID, db: Session) -> None:

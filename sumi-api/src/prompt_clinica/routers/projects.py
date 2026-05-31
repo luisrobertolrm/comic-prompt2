@@ -77,6 +77,15 @@ def insert_panel(
     return panel_service.insert_panel(project_id, body, user, db)
 
 
+@router.post("/{project_id}/panels/generate-images", response_model=list[PanelOut])
+def generate_all_images(
+    project_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[PanelOut]:
+    return panel_service.generate_all_images(project_id, user, db)
+
+
 @router.put("/{project_id}/panels/order", status_code=204)
 def reorder_panels(
     project_id: uuid.UUID,

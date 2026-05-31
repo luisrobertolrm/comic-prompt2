@@ -73,17 +73,18 @@
               {{ cur.status === 'approved' ? 'APROVADO' : 'AGUARDA APROVAÇÃO' }}
             </span>
           </div>
-          <div class="action-row">
-            <button class="btn-accent" style="flex:1;justify-content:center" (click)="approve()">
-              ✓ Aprovar e avançar
-            </button>
-            <button class="btn-secondary" (click)="regen()" [disabled]="regenAnim()">↻ Regerar</button>
-          </div>
-          <button class="btn-image" (click)="generateImage()" [disabled]="generatingImage()">
-            @if (generatingImage()) { ⏳ Gerando imagem… }
-            @else if (cur.image_url) { 🖼 Regenerar imagem }
-            @else { ✦ Gerar imagem com IA }
+          <button class="btn-accent" style="justify-content:center" (click)="approve()">
+            @if (idx() === panels().length - 1) { ✓ Aprovar e ir para o Editor → }
+            @else { ✓ Aprovar e avançar }
           </button>
+          <div class="action-row">
+            <button class="btn-secondary" style="flex:1;justify-content:center" (click)="regen()" [disabled]="regenAnim()">↻ Regerar texto</button>
+            <button class="btn-image" style="flex:1" (click)="generateImage()" [disabled]="generatingImage()">
+              @if (generatingImage()) { ⏳ Gerando… }
+              @else if (cur.image_url) { 🖼 Nova imagem }
+              @else { ✦ Imagem IA (opcional) }
+            </button>
+          </div>
         </div>
 
         <!-- Direção da cena -->
@@ -111,7 +112,12 @@
         <div class="side-card">
           <div class="side-card-head">
             <span class="eyebrow">BALÕES</span>
-            <button class="btn-sm-ghost" (click)="addBubble()">+ Adicionar</button>
+            <div style="display:flex;gap:6px">
+              <button class="btn-sm-ghost" (click)="generateBubbles()" [disabled]="generatingBubbles()">
+                @if (generatingBubbles()) { ⏳ } @else { ✦ IA }
+              </button>
+              <button class="btn-sm-ghost" (click)="addBubble()">+ Adicionar</button>
+            </div>
           </div>
           @if (cur.bubbles.length === 0) {
             <p class="empty-hint">Sem balões. Adicione manualmente.</p>
@@ -154,6 +160,10 @@
     <div class="footer-row">
       <button class="btn-ghost" (click)="goScript()">← Voltar ao roteiro</button>
       <div style="display:flex;gap:10px">
+        <button class="btn-ghost" (click)="generateAllImages()" [disabled]="generatingAllImages() || generatingImage()">
+          @if (generatingAllImages()) { ⏳ Gerando {{ panels().length }} imagens… }
+          @else { ✦ Gerar todas as imagens }
+        </button>
         <button class="btn-ghost" (click)="goEditor()">Editor visual</button>
         <button class="btn-primary" (click)="goFinal()">Finalizar HQ →</button>
       </div>

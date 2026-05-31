@@ -1,10 +1,11 @@
-import { Component, DestroyRef, HostListener, inject, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, HostListener, inject, OnInit, signal, computed } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NgStyle } from '@angular/common';
 import { Subject, debounceTime, switchMap } from 'rxjs';
 import type { Bubble, PanelOut, PanelPatch } from '../../../core/models/panel.models';
 import { PanelService } from '../../../core/services/panel.service';
+import { environment } from '../../../../environments/environment';
 
 interface LayoutSlot { gridColumn: string; gridRow: string; }
 interface Layout { label: string; cols: string; rows: string; gap: string; aspect: string; slots: LayoutSlot[]; }
@@ -50,28 +51,40 @@ interface DragState { panelId: string; bubbleIdx: number; rect: DOMRect; }
   styleUrl: './editor.component.scss',
 })
 export class EditorComponent implements OnInit {
-  private route = inject(ActivatedRoute);
-  private router = inject(Router);
+  private route       = inject(ActivatedRoute);
+  private router      = inject(Router);
   private panelService = inject(PanelService);
-  private destroyRef = inject(DestroyRef);
+  private destroyRef  = inject(DestroyRef);
 
-  readonly layoutKeys = Object.keys(LAYOUTS);
+  readonly layoutKeys  = Object.keys(LAYOUTS);
   readonly readingDirs = READING_DIRS;
+  readonly apiUrl      = environment.apiUrl;
 
-  projectId = signal('');
-  panels = signal<PanelOut[]>([]);
-  loading = signal(true);
-  layout = signal('manga-vertical');
+  projectId  = signal('');
+  panels     = signal<PanelOut[]>([]);
+  loading    = signal(true);
+  layout     = signal('manga-vertical');
   selectedId = signal('');
   readingDir = signal(READING_DIRS[0]);
+  page       = signal(0);
 
   private dragging: DragState | null = null;
   private patchSubject = new Subject<{ id: string; patch: PanelPatch }>();
 
-  readonly Math = Math;
   get currentLayout(): Layout { return LAYOUTS[this.layout()]; }
-  get visiblePanels(): PanelOut[] { return this.panels().slice(0, this.currentLayout.slots.length); }
-  get selectedPanel(): PanelOut | undefined { return this.panels().find(p => p.id === this.selectedId()); }
+
+  get slotsPerPage(): number { return this.currentLayout.slots.length; }
+
+  totalPages = computed(() => Math.max(1, Math.ceil(this.panels().length / this.slotsPerPage)));
+
+  visiblePanels = computed(() => {
+    const start = this.page() * this.slotsPerPage;
+    return this.panels().slice(start, start + this.slotsPerPage);
+  });
+
+  get selectedPanel(): PanelOut | undefined {
+    return this.panels().find(p => p.id === this.selectedId());
+  }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id') ?? '';
@@ -92,19 +105,45 @@ export class EditorComponent implements OnInit {
     ).subscribe();
   }
 
+  // ── Layout ──
+
+  setLayout(key: string): void {
+    this.layout.set(key);
+    this.page.set(0);
+  }
+
   layoutLabel(key: string): string { return LAYOUTS[key]?.label ?? key; }
-  slotStyle(i: number): Record<string, string> { return this.currentLayout.slots[i] as unknown as Record<string, string>; }
+
+  slotStyle(i: number): Record<string, string> {
+    return this.currentLayout.slots[i] as unknown as Record<string, string>;
+  }
+
   stageStyle(): Record<string, string> {
     const l = this.currentLayout;
     return { 'grid-template-columns': l.cols, 'grid-template-rows': l.rows, gap: l.gap, 'aspect-ratio': l.aspect };
   }
 
+  // ── Paginação ──
+
+  prevPage(): void { if (this.page() > 0) this.page.update(p => p - 1); }
+  nextPage(): void { if (this.page() < this.totalPages() - 1) this.page.update(p => p + 1); }
+
+  // ── Seleção ──
+
   isSelected(id: string): boolean { return this.selectedId() === id; }
+
+  selectPanel(id: string, listIndex: number): void {
+    this.selectedId.set(id);
+    this.page.set(Math.floor(listIndex / this.slotsPerPage));
+  }
 
   padNum(n: number): string { return String(n).padStart(2, '0'); }
 
+  // ── Drag de balões ──
+
   startDrag(panelId: string, bubbleIdx: number, event: MouseEvent): void {
     event.stopPropagation();
+    event.preventDefault(); // evita drag nativo do browser no texto
     const bubbleEl = event.currentTarget as HTMLElement;
     const containerEl = bubbleEl.parentElement!;
     this.dragging = { panelId, bubbleIdx, rect: containerEl.getBoundingClientRect() };
@@ -130,11 +169,13 @@ export class EditorComponent implements OnInit {
     this.dragging = null;
   }
 
+  // ── Estilos ──
+
   bubbleStyle(b: Bubble): Record<string, string> {
     return {
-      left: b.side === 'left' ? `${b.x}%` : 'auto',
+      left:  b.side === 'left'  ? `${b.x}%` : 'auto',
       right: b.side === 'right' ? `${b.x}%` : 'auto',
-      top: `${b.y}%`,
+      top:   `${b.y}%`,
     };
   }
 
@@ -142,12 +183,18 @@ export class EditorComponent implements OnInit {
     const alpha = tone === 'dense' ? '.22' : '.18';
     return `radial-gradient(circle,rgba(30,24,18,${alpha}) .6px,transparent 1px)`;
   }
+
   toneBgSize(tone: string): string { return tone === 'dense' ? '4px 4px' : '6px 6px'; }
 
   bubbleClass(b: Bubble): string {
-    return ['bubble', b.kind === 'thought' ? 'thought' : b.kind === 'shout' ? 'shout' : ''].filter(Boolean).join(' ');
+    return ['bubble', b.kind === 'thought' ? 'thought' : b.kind === 'shout' ? 'shout' : '']
+      .filter(Boolean).join(' ');
+  }
+
+  imageUrl(panel: PanelOut): string {
+    return panel.image_url ? `${this.apiUrl}${panel.image_url}` : '';
   }
 
   goReview(): void { void this.router.navigate(['/projects', this.projectId(), 'review']); }
-  goFinal(): void { void this.router.navigate(['/projects', this.projectId(), 'final']); }
+  goFinal(): void  { void this.router.navigate(['/projects', this.projectId(), 'final']); }
 }
