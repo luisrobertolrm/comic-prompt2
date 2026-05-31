@@ -10,7 +10,7 @@
       <div>
         <p class="eyebrow">ETAPA 4 DE 5 — REVISÃO QUADRO A QUADRO</p>
         <h1>Quadro {{ padNum(cur.index_order) }} · {{ cur.label }}</h1>
-        <p class="lede">Use ← → para navegar. Cada quadro pode ser aprovado, ajustado ou regerado.</p>
+        <p class="lede">Use ← → para navegar. Arraste os balões diretamente no quadro para reposicioná-los.</p>
       </div>
       <button class="btn-ghost" (click)="goScript()">Ver storyboard</button>
     </div>
@@ -41,7 +41,10 @@
             [tone]="cur.tone"
             [characterName]="cur.character_name"
             [bubbles]="cur.bubbles"
-            [imageUrl]="cur.image_url" />
+            [imageUrl]="cur.image_url"
+            [interactive]="true"
+            (bubbleDrag)="onBubbleDrag($event)"
+            (bubbleDragEnd)="onBubbleDragEnd($event)" />
           @if (regenAnim()) {
             <div class="regen-overlay">REGERANDO QUADRO…</div>
           }
@@ -130,11 +133,19 @@
                   <option value="say">Fala</option>
                   <option value="thought">Pensamento</option>
                   <option value="shout">Grito</option>
+                  <option value="whisper">Sussurro</option>
+                  <option value="narration">Narrador</option>
                 </select>
                 <select class="select-sm" [value]="b.side"
                         (change)="updateBubble(i, { side: $any($event.target).value })">
-                  <option value="left">Esquerda</option>
-                  <option value="right">Direita</option>
+                  <option value="left">Esq</option>
+                  <option value="right">Dir</option>
+                </select>
+                <select class="select-sm" [value]="b.tail ?? 'none'"
+                        (change)="updateBubble(i, { tail: $any($event.target).value })">
+                  <option value="none">Sem seta</option>
+                  <option value="left">Seta ←</option>
+                  <option value="right">Seta →</option>
                 </select>
                 <button class="btn-remove" (click)="removeBubble(i)" title="Remover">✕</button>
               </div>

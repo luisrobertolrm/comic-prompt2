@@ -46,4 +46,11 @@ export class PanelService {
       `${this.base}/projects/${projectId}/panels/generate-images`, {}
     );
   }
+
+  exportZip(projectId: string): Observable<Blob> {
+    return this.http.get(
+      `${this.base}/projects/${projectId}/export/panels`,
+      { responseType: 'blob' }
+    );
+  }
 }

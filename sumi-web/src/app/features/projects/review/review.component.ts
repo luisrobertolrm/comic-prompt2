@@ -155,7 +155,7 @@ export class ReviewComponent implements OnInit {
   addBubble(): void {
     const cur = this.cur;
     if (!cur) return;
-    const bubble: Bubble = { text: 'Novo balão', kind: 'say', side: 'left', x: 8, y: 12 };
+    const bubble: Bubble = { text: 'Novo balão', kind: 'say', side: 'left', tail: 'none', x: 8, y: 12 };
     this.patchCur({ bubbles: [...cur.bubbles, bubble] });
   }
 
@@ -170,6 +170,22 @@ export class ReviewComponent implements OnInit {
     const cur = this.cur;
     if (!cur) return;
     this.patchCur({ bubbles: cur.bubbles.filter((_, j) => j !== i) });
+  }
+
+  onBubbleDrag(e: { idx: number; x: number; y: number }): void {
+    const cur = this.cur;
+    if (!cur) return;
+    // Atualização otimista local sem debounce (para feedback imediato)
+    this.panels.update(ps => ps.map((p, pi) => pi !== this.idx() ? p : {
+      ...p,
+      bubbles: p.bubbles.map((b, bi) => bi !== e.idx ? b : { ...b, x: e.x, y: e.y }),
+    }));
+  }
+
+  onBubbleDragEnd(e: { idx: number; x: number; y: number }): void {
+    const cur = this.cur;
+    if (!cur) return;
+    this.patchSubject.next({ id: cur.id, patch: { bubbles: cur.bubbles } });
   }
 
   padNum(n: number): string { return String(n).padStart(2, '0'); }

@@ -1,7 +1,11 @@
+export type BubbleKind = 'say' | 'thought' | 'shout' | 'whisper' | 'narration';
+export type BubbleTail = 'none' | 'left' | 'right';
+
 export interface Bubble {
   text: string;
-  kind: 'say' | 'thought' | 'shout';
+  kind: BubbleKind;
   side: 'left' | 'right';
+  tail: BubbleTail;
   x: number;
   y: number;
 }

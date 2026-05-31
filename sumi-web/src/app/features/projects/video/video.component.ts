@@ -1,4 +1,5 @@
 import { Component, computed, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import type { PanelOut } from '../../../core/models/panel.models';
 import { PanelService } from '../../../core/services/panel.service';
@@ -71,7 +72,7 @@ export function fmt(s: number): string {
 @Component({
   selector: 'app-video',
   standalone: true,
-  imports: [],
+  imports: [DecimalPipe],
   templateUrl: './video.component.html',
   styleUrl: './video.component.scss',
 })
@@ -89,6 +90,11 @@ export class VideoComponent implements OnInit, OnDestroy {
   projectId = signal('');
   panels    = signal<PanelOut[]>([]);
   loading   = signal(true);
+
+  // Export
+  exporting       = signal(false);
+  exportProgress  = signal(0);
+  private exportTimer: ReturnType<typeof setInterval> | null = null;
 
   // Playback
   t          = signal(0);
@@ -127,25 +133,92 @@ export class VideoComponent implements OnInit, OnDestroy {
 
   private intervalId: ReturnType<typeof setInterval> | null = null;
   private prevScene = -1;
+  private speechActive = false;
+  private availableVoices = signal<SpeechSynthesisVoice[]>([]);
 
   constructor() {
+    // Transição de cena
     effect(() => {
       const idx = this.sceneIdx();
       if (idx !== this.prevScene && this.prevScene !== -1) this.triggerTransition();
       this.prevScene = idx;
+    });
+
+    // Narração: fala o beat atual sempre que ele muda durante o play
+    effect(() => {
+      const idx      = this.beatIdx();
+      const isPlaying = this.playing();
+      const beat     = this.bd().beats[idx];
+      const voiceMap = this.voices();
+      const names    = this.castNames();
+      const spd      = this.speed();
+      const avail    = this.availableVoices();
+
+      if (!isPlaying || !beat?.text || beat.kind === 'silent') {
+        this.cancelSpeech();
+        return;
+      }
+      const vd = voiceMap[beat.speaker];
+      if (vd?.muted) { this.cancelSpeech(); return; }
+
+      this.cancelSpeech();
+      const utter = new SpeechSynthesisUtterance(beat.text);
+      utter.lang  = 'pt-BR';
+      utter.rate  = Math.max(0.5, Math.min(2, spd));
+
+      const opt = vd?.voice ?? '';
+      if (opt.includes('Grave'))                               { utter.pitch = 0.5; }
+      else if (opt.includes('Energética'))                     { utter.pitch = 1.35; }
+      else if (opt.includes('Suave') || opt.includes('Doce')) { utter.pitch = 1.1; }
+      else if (opt.includes('Misteriosa') || opt.includes('Madura')) { utter.pitch = 0.7; }
+      else if (opt.includes('feminina'))                       { utter.pitch = 1.2; }
+      else if (opt.includes('masculina'))                      { utter.pitch = 0.85; }
+
+      const ptVoices = avail.filter(v => v.lang.startsWith('pt'));
+      if (ptVoices.length) {
+        const si = names.indexOf(beat.speaker);
+        utter.voice = ptVoices[si % ptVoices.length] ?? null;
+      }
+
+      // Pausa o timer até o áudio terminar
+      this.speechActive = true;
+      utter.onend = () => {
+        this.speechActive = false;
+        // Avança t para o fim do beat se ainda estiver atrás dele
+        if (this.playing() && this.t() < beat.start + beat.dur) {
+          this.t.set(beat.start + beat.dur);
+        }
+      };
+      utter.onerror = () => { this.speechActive = false; };
+      window.speechSynthesis.speak(utter);
     });
   }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id') ?? '';
     this.projectId.set(id);
+    this.loadVoices();
     this.panelService.list(id).subscribe({
       next: ps => { this.panels.set(ps); this.initVoices(ps); this.loading.set(false); },
       error: () => this.loading.set(false),
     });
   }
 
-  ngOnDestroy(): void { this.stopTicker(); }
+  ngOnDestroy(): void {
+    this.stopTicker();
+    this.clearExportTimer();
+    this.cancelSpeech();
+  }
+
+  private loadVoices(): void {
+    if (!('speechSynthesis' in window)) return;
+    const load = (): void => {
+      const v = window.speechSynthesis.getVoices();
+      if (v.length) this.availableVoices.set(v);
+    };
+    load();
+    window.speechSynthesis.onvoiceschanged = load;
+  }
 
   private initVoices(panels: PanelOut[]): void {
     const names = ['Narrador'];
@@ -173,6 +246,7 @@ export class VideoComponent implements OnInit, OnDestroy {
 
   private startTicker(): void {
     this.intervalId = setInterval(() => {
+      if (this.speechActive) return;          // aguarda o áudio terminar
       const next = this.t() + 0.07 * this.speed();
       if (next >= this.bd().total) { this.t.set(this.bd().total); this.stopTicker(); }
       else { this.t.set(next); }
@@ -181,23 +255,32 @@ export class VideoComponent implements OnInit, OnDestroy {
 
   private stopTicker(): void {
     if (this.intervalId) { clearInterval(this.intervalId); this.intervalId = null; }
+    this.cancelSpeech();
     this.playing.set(false);
   }
 
+  private cancelSpeech(): void {
+    window.speechSynthesis?.cancel();
+    this.speechActive = false;
+  }
+
   jumpScene(dir: -1 | 1): void {
+    this.cancelSpeech();
     const target = this.sceneIdx() + dir;
     const b = this.bd().beats.find(x => x.sceneIdx === target);
     if (b) this.t.set(b.start + 0.001);
   }
 
   jumpToScene(si: number): void {
+    this.cancelSpeech();
     const b = this.bd().beats.find(x => x.sceneIdx === si);
     if (b) this.t.set(b.start + 0.001);
   }
 
-  jumpToBeat(b: Beat): void { this.t.set(b.start + 0.001); }
+  jumpToBeat(b: Beat): void { this.cancelSpeech(); this.t.set(b.start + 0.001); }
 
   onSeek(event: MouseEvent): void {
+    this.cancelSpeech();
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
     const pct = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
     this.t.set(pct * this.bd().total);
@@ -232,6 +315,37 @@ export class VideoComponent implements OnInit, OnDestroy {
   }
 
   isBeatNow(b: Beat): boolean { return b === this.beat(); }
+
+  startExport(): void {
+    if (this.exporting()) return;
+    this.exporting.set(true);
+    this.exportProgress.set(0);
+
+    // Barra de progresso animada enquanto o servidor processa
+    this.exportTimer = setInterval(() => {
+      const cur = this.exportProgress();
+      if (cur < 88) this.exportProgress.set(cur + (88 - cur) * 0.08);
+    }, 120);
+
+    this.panelService.exportZip(this.projectId()).subscribe({
+      next: blob => {
+        this.clearExportTimer();
+        this.exportProgress.set(100);
+        const url = URL.createObjectURL(blob);
+        const a   = document.createElement('a');
+        a.href     = url;
+        a.download = `sumi-${this.projectId().slice(0, 8)}.zip`;
+        a.click();
+        URL.revokeObjectURL(url);
+        setTimeout(() => { this.exporting.set(false); this.exportProgress.set(0); }, 1200);
+      },
+      error: () => { this.clearExportTimer(); this.exporting.set(false); this.exportProgress.set(0); },
+    });
+  }
+
+  private clearExportTimer(): void {
+    if (this.exportTimer) { clearInterval(this.exportTimer); this.exportTimer = null; }
+  }
 
   goFinal(): void { void this.router.navigate(['/projects', this.projectId(), 'final']); }
 }

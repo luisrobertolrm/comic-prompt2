@@ -9,8 +9,9 @@ from pydantic import BaseModel, Field, field_serializer
 
 class BubbleSchema(BaseModel):
     text: str
-    kind: Literal["say", "thought", "shout"] = "say"
+    kind: Literal["say", "thought", "shout", "whisper", "narration"] = "say"
     side: Literal["left", "right"] = "left"
+    tail: Literal["none", "left", "right"] = "none"
     x: int = 8
     y: int = 12
 

@@ -26,8 +26,9 @@
 
   <!-- Balões -->
   @if (!isLoading) {
-    @for (b of bubbles; track $index) {
-      <div [class]="bubbleClass(b)" [ngStyle]="bubbleStyle(b)">{{ b.text }}</div>
+    @for (b of bubbles; track $index; let i = $index) {
+      <div [class]="bubbleClass(b)" [ngStyle]="bubbleStyle(b)"
+           (mousedown)="onBubbleMousedown(i, $event)">{{ b.text }}</div>
     }
   }
 

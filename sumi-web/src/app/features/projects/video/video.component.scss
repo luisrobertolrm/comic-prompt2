@@ -18,6 +18,55 @@ h1 { font-family: var(--serif); font-size: 26px; line-height: 1.1; margin: 6px 0
 
 .loading-state { padding: 80px; text-align: center; color: var(--ink-3); font-family: var(--mono); font-size: 13px; }
 
+/* ── Export overlay ── */
+.export-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(30,24,18,.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.export-box {
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  border-radius: var(--r-lg);
+  padding: 32px 40px;
+  min-width: 340px;
+  box-shadow: var(--shadow-2);
+}
+
+.export-track {
+  height: 6px;
+  background: var(--paper-3);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.export-fill {
+  height: 100%;
+  background: var(--ink);
+  border-radius: 999px;
+  transition: width .12s linear;
+}
+
+.export-label {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+.export-pct {
+  color: var(--ink);
+  font-weight: 600;
+}
+
 /* ── Main grid ── */
 .main-grid {
   display: grid;

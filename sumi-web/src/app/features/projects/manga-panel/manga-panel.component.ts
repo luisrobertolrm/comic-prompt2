@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, HostListener, Input, Output } from '@angular/core';
 import { NgStyle } from '@angular/common';
 import type { Bubble } from '../../../core/models/panel.models';
 import { environment } from '../../../../environments/environment';
@@ -27,6 +27,12 @@ export class MangaPanelComponent {
   @Input() bubbles: Bubble[] = [];
   @Input() isLoading = false;
   @Input() imageUrl: string | null = null;
+  @Input() interactive = false;
+
+  @Output() bubbleDrag = new EventEmitter<{ idx: number; x: number; y: number }>();
+  @Output() bubbleDragEnd = new EventEmitter<{ idx: number; x: number; y: number }>();
+
+  private dragging: { idx: number; rect: DOMRect; lastX: number; lastY: number } | null = null;
 
   get fullImageUrl(): string | null {
     return this.imageUrl ? `${environment.apiUrl}${this.imageUrl}` : null;
@@ -43,30 +49,61 @@ export class MangaPanelComponent {
     return 'radial-gradient(circle,rgba(30,24,18,.18) .6px,transparent 1px)';
   }
 
-  get patternSize(): string {
-    return this.tone === 'dense' ? '5px 5px' : '7px 7px';
-  }
-
-  get charColor(): string {
-    return this.characterName ? toneFor(this.characterName) : '#F4D6D7';
-  }
-
-  get charInitial(): string {
-    return this.characterName ? this.characterName.charAt(0).toUpperCase() : '?';
-  }
+  get patternSize(): string { return this.tone === 'dense' ? '5px 5px' : '7px 7px'; }
+  get charColor(): string { return this.characterName ? toneFor(this.characterName) : '#F4D6D7'; }
+  get charInitial(): string { return this.characterName ? this.characterName.charAt(0).toUpperCase() : '?'; }
 
   bubbleClass(b: Bubble): string {
-    return ['bubble', b.kind === 'thought' ? 'thought' : b.kind === 'shout' ? 'shout' : '', b.side === 'right' ? 'right' : ''].filter(Boolean).join(' ');
+    return [
+      'bubble',
+      b.kind !== 'say' ? b.kind : '',
+      b.side === 'right' ? 'right' : '',
+      b.tail !== 'none' ? `tail-${b.tail}` : '',
+    ].filter(Boolean).join(' ');
   }
 
   bubbleStyle(b: Bubble): Record<string, string> {
-    return {
-      top: `${b.y}%`,
-      ...(b.side === 'right' ? { right: `${b.x}%` } : { left: `${b.x}%` }),
-    };
+    const style: Record<string, string> = { top: `${b.y}%` };
+    if (b.side === 'right') style['right'] = `${b.x}%`;
+    else style['left'] = `${b.x}%`;
+    if (this.interactive) style['cursor'] = 'grab';
+    return style;
   }
 
   indexLabel(): string {
     return `PANEL · ${String(this.index).padStart(2, '0')}${this.label ? ' · ' + this.label : ''}`;
+  }
+
+  onBubbleMousedown(idx: number, event: MouseEvent): void {
+    if (!this.interactive) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const el = event.currentTarget as HTMLElement;
+    const container = el.closest('.panel-wrap') as HTMLElement;
+    const { lastX, lastY } = this.posFromEvent(event, container.getBoundingClientRect());
+    this.dragging = { idx, rect: container.getBoundingClientRect(), lastX, lastY };
+  }
+
+  @HostListener('document:mousemove', ['$event'])
+  onMouseMove(e: MouseEvent): void {
+    if (!this.dragging) return;
+    const { rect, idx } = this.dragging;
+    const { lastX, lastY } = this.posFromEvent(e, rect);
+    this.dragging.lastX = lastX;
+    this.dragging.lastY = lastY;
+    this.bubbleDrag.emit({ idx, x: lastX, y: lastY });
+  }
+
+  @HostListener('document:mouseup')
+  onMouseUp(): void {
+    if (!this.dragging) return;
+    this.bubbleDragEnd.emit({ idx: this.dragging.idx, x: this.dragging.lastX, y: this.dragging.lastY });
+    this.dragging = null;
+  }
+
+  private posFromEvent(e: MouseEvent, rect: DOMRect): { lastX: number; lastY: number } {
+    const lastX = Math.max(0, Math.min(80, ((e.clientX - rect.left) / rect.width) * 100 - 5));
+    const lastY = Math.max(0, Math.min(78, ((e.clientY - rect.top) / rect.height) * 100 - 5));
+    return { lastX: Math.round(lastX), lastY: Math.round(lastY) };
   }
 }

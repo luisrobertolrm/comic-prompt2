@@ -9,9 +9,26 @@
     </div>
     <div class="head-actions">
       <button class="btn-ghost" (click)="goFinal()">← Voltar</button>
-      <button class="btn-primary">⬇ Exportar vídeo</button>
+      <button class="btn-primary" (click)="startExport()" [disabled]="exporting()">
+        @if (exporting()) { ⏳ Exportando… } @else { ⬇ Exportar quadros }
+      </button>
     </div>
   </div>
+
+  @if (exporting()) {
+    <div class="export-overlay">
+      <div class="export-box">
+        <p class="eyebrow" style="margin-bottom:12px">PREPARANDO ARQUIVO</p>
+        <div class="export-track">
+          <div class="export-fill" [style.width]="exportProgress() + '%'"></div>
+        </div>
+        <p class="export-label">
+          {{ exportProgress() < 100 ? 'Compactando quadros e roteiro…' : 'Pronto! Download iniciado.' }}
+          <span class="export-pct">{{ exportProgress() | number:'1.0-0' }}%</span>
+        </p>
+      </div>
+    </div>
+  }
 
   @if (loading()) {
     <div class="loading-state">Carregando quadros…</div>
