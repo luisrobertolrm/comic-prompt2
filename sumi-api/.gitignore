@@ -20,7 +20,6 @@ env/
 
 # uv
 .uv/
-uv.lock
 
 # Alembic
 # (versions tracked; lock files not)
