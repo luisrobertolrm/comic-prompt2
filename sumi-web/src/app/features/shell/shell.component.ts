@@ -139,16 +139,18 @@ export class ShellComponent {
   navigateToStep(stepId: string): void {
     const pid = this.projectId();
 
-    // Dentro de um projeto existente: "Ideia" e "Personagens" não têm rota própria,
-    // redireciona para o roteiro que é o ponto de entrada do projeto.
-    if (pid && (stepId === 'new' || stepId === 'characters')) {
-      void this.router.navigate(['/projects', pid, 'script']);
+    if (stepId === 'new') {
+      void this.router.navigate(['/projects/new']);
+      this.closeSidebar();
       return;
     }
 
-    // Fluxo de criação (sem projeto ativo ainda)
-    if (stepId === 'new') { void this.router.navigate(['/projects/new']); return; }
-    if (stepId === 'characters') { void this.router.navigate(['/projects/new/characters']); return; }
+    if (stepId === 'characters') {
+      if (pid) this.draft.projectId.set(pid);
+      void this.router.navigate(['/projects/new/characters']);
+      this.closeSidebar();
+      return;
+    }
 
     if (pid) void this.router.navigate(['/projects', pid, stepId]);
     this.closeSidebar();
