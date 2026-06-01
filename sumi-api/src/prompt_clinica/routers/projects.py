@@ -11,7 +11,7 @@ from prompt_clinica.ai.youtube_metadata import generate_youtube_metadata
 from prompt_clinica.database import get_db
 from prompt_clinica.deps import get_current_user
 from prompt_clinica.schemas.panel import InsertPanelBody, PanelOut, ReorderBody
-from prompt_clinica.schemas.project import CharacterIdsBody, ProjectCreate, ProjectDetailOut, ProjectOut
+from prompt_clinica.schemas.project import CharacterIdsBody, ProjectCreate, ProjectDetailOut, ProjectOut, ProjectPatch
 from prompt_clinica.schemas.youtube_metadata import VideoMetadataOut, VideoMetadataUpdate
 from prompt_clinica.services import panel_service, project_service
 from prompt_clinica.storage import get_storage
@@ -45,6 +45,16 @@ def get_project(
     db: Session = Depends(get_db),
 ) -> ProjectDetailOut:
     return project_service.get_by_id(project_id, user, db)
+
+
+@router.patch("/{project_id}", response_model=ProjectOut)
+def update_project(
+    project_id: uuid.UUID,
+    patch: ProjectPatch,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ProjectOut:
+    return ProjectOut.model_validate(project_service.update(project_id, patch, user, db))
 
 
 @router.put("/{project_id}/characters", status_code=204)

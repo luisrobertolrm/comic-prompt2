@@ -11,7 +11,7 @@ from character import Character
 from project import Project
 from project_character import ProjectCharacter
 from prompt_clinica.schemas.character import CharacterOut
-from prompt_clinica.schemas.project import ProjectCreate, ProjectDetailOut, ProjectOut
+from prompt_clinica.schemas.project import ProjectCreate, ProjectDetailOut, ProjectOut, ProjectPatch
 from user import User
 
 _ACCENTS = ["accent", "mint", "peach", "blush", "lilac"]
@@ -65,6 +65,33 @@ def create(req: ProjectCreate, user: User, db: Session) -> Project:
         cover_tone=random.choice(_TONES),
     )
     db.add(project)
+    db.commit()
+    db.refresh(project)
+    return project
+
+
+def update(project_id: uuid.UUID, patch: ProjectPatch, user: User, db: Session) -> Project:
+    project: Project | None = (
+        db.query(Project)
+        .filter(Project.id == project_id, Project.user_id == user.id)
+        .first()
+    )
+    if project is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Projeto não encontrado.")
+    if patch.premise is not None:
+        project.premise = patch.premise
+        project.title = patch.premise[:60].strip() or project.title
+    if patch.genre is not None:
+        project.genre = patch.genre
+    if patch.tone is not None:
+        project.tone = patch.tone
+    if patch.pages is not None:
+        project.pages = patch.pages
+    if patch.style is not None:
+        project.style = patch.style
+    if patch.genre is not None or patch.pages is not None:
+        g = project.genre
+        project.subtitle = f"{g.lower()} · {project.pages * 3}–{project.pages * 4} quadros"
     db.commit()
     db.refresh(project)
     return project

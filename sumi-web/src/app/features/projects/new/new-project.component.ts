@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { ProjectDraftService } from '../../../core/services/project-draft.service';
 import { ProjectService } from '../../../core/services/project.service';
@@ -38,7 +38,7 @@ const LANGUAGES = [
   templateUrl: './new-project.component.html',
   styleUrl: './new-project.component.scss',
 })
-export class NewProjectComponent {
+export class NewProjectComponent implements OnInit {
   private router = inject(Router);
   private projectService = inject(ProjectService);
   private draftService = inject(ProjectDraftService);
@@ -56,6 +56,23 @@ export class NewProjectComponent {
   language = signal('pt-BR');
   style = signal('classic-shoujo');
   loading = signal(false);
+
+  ngOnInit(): void {
+    const pid = this.draftService.projectId();
+    if (!pid) return;
+    this.loading.set(true);
+    this.projectService.get(pid).subscribe({
+      next: p => {
+        this.idea.set(p.premise ?? '');
+        this.genre.set(p.genre);
+        this.tone.set(p.tone);
+        this.pages.set(p.pages);
+        this.style.set(p.style);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false),
+    });
+  }
 
   get panelCount(): string {
     const p = this.pages();
@@ -80,24 +97,42 @@ export class NewProjectComponent {
 
   advance(): void {
     if (!this.idea().trim() || this.loading()) return;
+    const pid = this.draftService.projectId();
     this.loading.set(true);
-    this.projectService.create({
-      premise: this.idea(),
-      genre: this.genre(),
-      tone: this.tone(),
-      pages: this.pages(),
-      language: this.language(),
-      style: this.style(),
-    }).subscribe({
-      next: (project) => {
-        this.draftService.projectId.set(project.id);
-        void this.router.navigate(['/projects/new/characters']);
-      },
-      error: () => this.loading.set(false),
-    });
+    if (pid) {
+      this.projectService.update(pid, {
+        premise: this.idea(),
+        genre: this.genre(),
+        tone: this.tone(),
+        pages: this.pages(),
+        style: this.style(),
+      }).subscribe({
+        next: () => {
+          this.loading.set(false);
+          void this.router.navigate(['/projects/new/characters']);
+        },
+        error: () => this.loading.set(false),
+      });
+    } else {
+      this.projectService.create({
+        premise: this.idea(),
+        genre: this.genre(),
+        tone: this.tone(),
+        pages: this.pages(),
+        language: this.language(),
+        style: this.style(),
+      }).subscribe({
+        next: (project) => {
+          this.draftService.projectId.set(project.id);
+          void this.router.navigate(['/projects/new/characters']);
+        },
+        error: () => this.loading.set(false),
+      });
+    }
   }
 
   cancel(): void {
-    void this.router.navigate(['/home']);
+    const pid = this.draftService.projectId();
+    void this.router.navigate(pid ? ['/projects', pid, 'script'] : ['/home']);
   }
 }

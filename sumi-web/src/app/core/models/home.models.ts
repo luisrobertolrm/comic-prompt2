@@ -26,6 +26,14 @@ export interface ProjectDetailOut extends ProjectOut {
   characters: CharacterOut[];
 }
 
+export interface ProjectUpdate {
+  premise?: string;
+  genre?: string;
+  tone?: string;
+  pages?: number;
+  style?: string;
+}
+
 export interface CharacterOut {
   id: string;
   name: string;

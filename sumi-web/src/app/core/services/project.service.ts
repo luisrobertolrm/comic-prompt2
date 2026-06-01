@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import type { ProjectCreate, ProjectDetailOut, ProjectOut } from '../models/home.models';
+import type { ProjectCreate, ProjectDetailOut, ProjectOut, ProjectUpdate } from '../models/home.models';
 
 export interface YtMeta {
   yt_title: string;
@@ -29,6 +29,10 @@ export class ProjectService {
 
   create(req: ProjectCreate): Observable<ProjectOut> {
     return this.http.post<ProjectOut>(`${this.base}/projects`, req);
+  }
+
+  update(id: string, req: ProjectUpdate): Observable<ProjectOut> {
+    return this.http.patch<ProjectOut>(`${this.base}/projects/${id}`, req);
   }
 
   setCharacters(projectId: string, characterIds: string[]): Observable<void> {

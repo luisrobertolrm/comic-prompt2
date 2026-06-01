@@ -17,6 +17,14 @@ class ProjectCreate(BaseModel):
     style: str = "classic-shoujo"
 
 
+class ProjectPatch(BaseModel):
+    premise: str | None = None
+    genre: str | None = None
+    tone: str | None = None
+    pages: int | None = Field(default=None, ge=1, le=20)
+    style: str | None = None
+
+
 class CharacterIdsBody(BaseModel):
     character_ids: list[uuid.UUID]
 
