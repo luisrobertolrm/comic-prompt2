@@ -1,0 +1,27 @@
+.git
+.claude
+.vscode
+
+# Node
+sumi-web/node_modules
+sumi-web/.angular
+sumi-web/dist
+
+# Python
+sumi-api/.venv
+sumi-api/__pycache__
+sumi-api/**/__pycache__
+**/*.pyc
+**/*.pyo
+
+# Env / secrets
+.env
+.env.*
+**/.env
+**/.env.*
+
+# Runtime data (gerado em produção, não faz parte da imagem)
+sumi-api/static/images
+
+# Projetos não usados no container
+comic-prompt

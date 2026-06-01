@@ -5,6 +5,7 @@ from pathlib import Path
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from prompt_clinica.config import settings
@@ -34,6 +35,15 @@ app.include_router(panels.router)
 _static_root = Path(settings.images_dir).parent
 _static_root.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(_static_root)), name="static")
+
+_spa_dir = Path("static/app")
+if _spa_dir.exists():
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def serve_spa(full_path: str) -> FileResponse:  # noqa: RUF029
+        spa_file = _spa_dir / full_path
+        if spa_file.is_file():
+            return FileResponse(str(spa_file))
+        return FileResponse(str(_spa_dir / "index.html"))
 
 
 if __name__ == "__main__":
