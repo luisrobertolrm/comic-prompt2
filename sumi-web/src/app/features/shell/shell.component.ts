@@ -48,6 +48,7 @@ export class ShellComponent {
 
   readonly steps = STEPS;
   popoverOpen    = signal(false);
+  sidebarOpen    = signal(false);
   private lastFetchedId = '';
 
   // URL reativa — atualiza em cada navegação
@@ -130,7 +131,10 @@ export class ShellComponent {
     return name.charAt(0).toUpperCase();
   });
 
-  navigateTo(path: string): void { void this.router.navigate([path]); }
+  toggleSidebar(): void { this.sidebarOpen.update(v => !v); }
+  closeSidebar(): void  { this.sidebarOpen.set(false); }
+
+  navigateTo(path: string): void { this.closeSidebar(); void this.router.navigate([path]); }
 
   navigateToStep(stepId: string): void {
     const pid = this.projectId();
@@ -147,6 +151,7 @@ export class ShellComponent {
     if (stepId === 'characters') { void this.router.navigate(['/projects/new/characters']); return; }
 
     if (pid) void this.router.navigate(['/projects', pid, stepId]);
+    this.closeSidebar();
   }
 
   logout(): void {

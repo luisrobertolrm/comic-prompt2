@@ -381,3 +381,68 @@
   overflow-y: auto;
   height: 0; /* needed for flex child overflow */
 }
+
+/* ══════════════════════════════
+   HAMBURGER (oculto em desktop)
+══════════════════════════════ */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  padding: 0 8px;
+  flex-shrink: 0;
+
+  span {
+    display: block;
+    height: 1.5px;
+    background: var(--ink-2);
+    border-radius: 1px;
+    transition: background .12s;
+  }
+
+  &:hover span { background: var(--ink); }
+}
+
+/* ══════════════════════════════
+   RESPONSIVO — mobile ≤ 640px
+══════════════════════════════ */
+@media (max-width: 640px) {
+  .app {
+    grid-template-columns: 1fr;
+  }
+
+  .hamburger {
+    display: flex;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 260px;
+    height: 100dvh;
+    z-index: 200;
+    transform: translateX(-100%);
+    transition: transform .22s ease;
+    box-shadow: none;
+
+    &--open {
+      transform: translateX(0);
+      box-shadow: 4px 0 24px rgba(0,0,0,.12);
+    }
+  }
+
+  .sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.35);
+    z-index: 199;
+  }
+}
