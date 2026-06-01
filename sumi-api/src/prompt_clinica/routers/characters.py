@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from prompt_clinica.database import get_db
@@ -37,4 +37,12 @@ def generate_portrait(
     req: PortraitRequest,
     user: User = Depends(get_current_user),
 ) -> list[PortraitCandidate]:
-    return character_service.generate_portrait(req.prompt)
+    try:
+        return character_service.generate_portrait(req.prompt)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc
