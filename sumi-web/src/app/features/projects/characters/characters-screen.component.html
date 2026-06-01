@@ -220,7 +220,10 @@
           </div>
         }
 
-        @if (!aiGenerating() && aiCandidates().length === 0) {
+        @if (!aiGenerating() && aiError()) {
+          <div class="empty-hint" style="color:var(--error,#c0392b)">⚠ {{ aiError() }}</div>
+        }
+        @if (!aiGenerating() && !aiError() && aiCandidates().length === 0) {
           <div class="empty-hint">Escreva a descrição e clique em <strong>Gerar 4 retratos</strong>.</div>
         }
 

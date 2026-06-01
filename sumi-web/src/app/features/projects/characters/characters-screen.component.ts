@@ -48,6 +48,7 @@ export class CharactersScreenComponent implements OnInit {
   aiPrompt = signal('Uma garota tímida de 16 anos, olhos grandes castanho-âmbar com brilho, franja reta, sempre carrega um caderno. Veste uniforme escolar.');
   aiAttrs = signal({ archetype: 'protagonista', age: '16', hair: 'preto, franja reta', eyes: 'âmbar, grandes', outfit: 'uniforme escolar', personality: 'tímida, curiosa', quirk: 'anota tudo em um caderno' });
   aiGenerating = signal(false);
+  aiError = signal('');
   aiCandidates = signal<AiCandidate[]>([]);
   aiPicked = signal<string | null>(null);
   aiName = signal('');
@@ -121,6 +122,7 @@ export class CharactersScreenComponent implements OnInit {
 
   generateAi(): void {
     this.aiGenerating.set(true);
+    this.aiError.set('');
     this.aiCandidates.set([]);
     this.aiPicked.set(null);
 
@@ -132,12 +134,16 @@ export class CharactersScreenComponent implements OnInit {
       next: candidates => {
         this.aiCandidates.set(candidates.map(c => ({
           id: c.id,
-          imageUrl: `${environment.apiUrl}${c.url}`,
+          imageUrl: c.url.startsWith('http') ? c.url : `${environment.apiUrl}${c.url}`,
           notes: c.notes,
         })));
         this.aiGenerating.set(false);
       },
-      error: () => this.aiGenerating.set(false),
+      error: (err) => {
+        this.aiGenerating.set(false);
+        const msg = err?.error?.detail ?? err?.message ?? 'Erro ao gerar retratos.';
+        this.aiError.set(msg);
+      },
     });
   }
 
