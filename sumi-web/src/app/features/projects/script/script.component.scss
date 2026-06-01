@@ -45,6 +45,19 @@ h1 { font-family: var(--serif); font-size: 30px; line-height: 1.1; margin-bottom
   color: var(--ink);
 }
 
+.synopsis-textarea {
+  width: 100%;
+  font-family: var(--serif);
+  font-size: 18px;
+  line-height: 1.55;
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 8px 10px;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
 .synopsis-divider { background: var(--rule); }
 
 .synopsis-cast { display: flex; flex-direction: column; gap: 10px; }

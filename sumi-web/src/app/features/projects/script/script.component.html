@@ -24,7 +24,18 @@
     <div class="synopsis-card">
       <div class="synopsis-main">
         <p class="eyebrow" style="margin-bottom:8px">SINOPSE PROPOSTA</p>
-        <p class="synopsis-text">{{ project()!.premise || project()!.title }}</p>
+        @if (editingSynopsis()) {
+          <textarea class="synopsis-textarea" rows="3" [value]="synopsisEdit()"
+                    (input)="synopsisEdit.set($any($event.target).value)"
+                    (keydown.escape)="cancelEditSynopsis()"></textarea>
+          <div style="display:flex;gap:8px;margin-top:6px">
+            <button class="btn-primary" style="padding:4px 14px;font-size:13px" (click)="saveSynopsis()">Salvar</button>
+            <button class="btn-ghost" style="padding:4px 14px;font-size:13px" (click)="cancelEditSynopsis()">Cancelar</button>
+          </div>
+        } @else {
+          <p class="synopsis-text" title="Clique para editar" style="cursor:pointer"
+             (click)="startEditSynopsis()">{{ project()!.premise || project()!.title }}</p>
+        }
         <div class="chips">
           <span class="chip">{{ project()!.genre }}</span>
           <span class="chip">{{ project()!.tone }}</span>
