@@ -6,7 +6,6 @@ import logging
 import re
 import uuid
 from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
 from typing import Any
 
 import prompt_clinica._paths  # noqa: F401
@@ -35,7 +34,7 @@ Regras:
 - Em enquadramentos Close-up ou Extreme close, prefira "thought"
 - Texto em português, conciso e natural para mangá\
 """
-from prompt_clinica.config import settings
+from prompt_clinica.storage import get_storage
 from prompt_clinica.schemas.panel import (
     BubbleSchema,
     InsertPanelBody,
@@ -89,12 +88,6 @@ _MOCK_TEMPLATES = [
      "prompt": "Dramatic closing manga panel, diagonal screentone, emotional atmosphere, symbolic detail.",
      "character_name": None, "bubbles": []},
 ]
-
-
-def _images_dir() -> Path:
-    p = Path(settings.images_dir)
-    p.mkdir(parents=True, exist_ok=True)
-    return p
 
 
 def _check_project(project_id: uuid.UUID, user: User, db: Session) -> Project:
@@ -231,10 +224,7 @@ def generate_image(panel_id: uuid.UUID, user: User, db: Session) -> PanelOut:
             detail="Nenhuma imagem retornada pelo provider.",
         )
 
-    out_path = _images_dir() / f"{panel.id}.png"
-    out_path.write_bytes(img_bytes)
-
-    panel.image_url = f"/static/images/{panel.id}.png"
+    panel.image_url = get_storage().save(f"{panel.id}.png", img_bytes)
     db.commit()
     db.refresh(panel)
     logger.info("Imagem gerada: %s (%d KB)", panel.image_url, len(img_bytes) // 1024)
@@ -389,9 +379,7 @@ def generate_all_images(project_id: uuid.UUID, user: User, db: Session) -> list[
             resp = ai.image(ImageRequest(prompt=img_prompt, size="1024x1024", quality="medium"))
             if resp.b64_json:
                 img_bytes = base64.b64decode(resp.b64_json)
-                out_path = _images_dir() / f"{panel.id}.png"
-                out_path.write_bytes(img_bytes)
-                panel.image_url = f"/static/images/{panel.id}.png"
+                panel.image_url = get_storage().save(f"{panel.id}.png", img_bytes)
                 logger.info("Imagem gerada: quadro %s", panel.id)
         except Exception as exc:
             logger.warning("Falha ao gerar imagem — quadro %s: %s", panel.id, exc)

@@ -2,20 +2,19 @@ import io
 import json
 import uuid
 import zipfile
-from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from prompt_clinica.ai.youtube_metadata import generate_youtube_metadata
-from prompt_clinica.config import settings
 from prompt_clinica.database import get_db
 from prompt_clinica.deps import get_current_user
 from prompt_clinica.schemas.panel import InsertPanelBody, PanelOut, ReorderBody
 from prompt_clinica.schemas.project import CharacterIdsBody, ProjectCreate, ProjectDetailOut, ProjectOut
 from prompt_clinica.schemas.youtube_metadata import VideoMetadataOut, VideoMetadataUpdate
 from prompt_clinica.services import panel_service, project_service
+from prompt_clinica.storage import get_storage
 from user import User
 from youtube_metadata import VideoMetadata
 
@@ -103,7 +102,7 @@ def export_panels(
 ) -> StreamingResponse:
     """Retorna ZIP com os quadros do projeto (imagens + storyboard.txt)."""
     panels = panel_service.list_panels(project_id, user, db)
-    images_dir = Path(settings.images_dir)
+    storage = get_storage()
 
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
@@ -120,9 +119,9 @@ def export_panels(
                     lines.append(f"  [{b.kind.upper()}] {b.text}\n")
 
             if p.image_url:
-                img_path = images_dir / f"{p.id}.png"
-                if img_path.exists():
-                    zf.write(img_path, f"{p.index_order:02d}_{p.label}.png")
+                img_data = storage.read(f"{p.id}.png")
+                if img_data is not None:
+                    zf.writestr(f"{p.index_order:02d}_{p.label}.png", img_data)
 
         zf.writestr("storyboard.txt", "".join(lines))
 

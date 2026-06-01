@@ -3,7 +3,6 @@ from __future__ import annotations
 import base64
 import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from pathlib import Path
 
 import prompt_clinica._paths  # noqa: F401
 from fastapi import HTTPException, status
@@ -11,8 +10,8 @@ from sqlalchemy.orm import Session
 
 from character import Character
 from prompt_clinica.ai import ImageRequest, ai
-from prompt_clinica.config import settings
 from prompt_clinica.schemas.character import CharacterCreate, PortraitCandidate
+from prompt_clinica.storage import get_storage
 from user import User
 
 _PORTRAIT_VARIANTS = [
@@ -56,9 +55,6 @@ def create(req: CharacterCreate, user: User, db: Session) -> Character:
 
 
 def generate_portrait(prompt: str) -> list[PortraitCandidate]:
-    portraits_dir = Path(settings.images_dir) / "portraits"
-    portraits_dir.mkdir(parents=True, exist_ok=True)
-
     base_prompt = (
         "Manga shojo character portrait, black and white screentone, "
         "clean ink line art, no text, no speech bubbles, no background, "
@@ -76,10 +72,10 @@ def generate_portrait(prompt: str) -> list[PortraitCandidate]:
             )
         img_bytes = base64.b64decode(resp.b64_json)
         img_id = str(uuid.uuid4())
-        (portraits_dir / f"{img_id}.png").write_bytes(img_bytes)
+        url = get_storage().save(f"portraits/{img_id}.png", img_bytes)
         return PortraitCandidate(
             id=img_id,
-            url=f"/static/images/portraits/{img_id}.png",
+            url=url,
             notes=variant_id,
         )
 

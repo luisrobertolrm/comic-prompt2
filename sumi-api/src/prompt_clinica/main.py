@@ -32,7 +32,7 @@ app.include_router(projects.router)
 app.include_router(characters.router)
 app.include_router(panels.router)
 
-_static_root = Path(settings.images_dir).parent
+_static_root = Path("static")
 _static_root.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(_static_root)), name="static")
 
