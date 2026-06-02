@@ -199,10 +199,10 @@
 
         <button class="btn-accent" style="width:100%;justify-content:center;margin-top:8px"
                 (click)="generateAi()" [disabled]="aiGenerating()">
-          {{ aiGenerating() ? 'Gerando 4 esboços…' : '✦ Gerar 4 retratos' }}
+          {{ aiGenerating() ? 'Gerando 2 esboços…' : '✦ Gerar 2 retratos' }}
         </button>
         <p class="field-hint" style="text-align:center;margin-top:6px">
-          A IA propõe quatro variações. Você confirma a que combina.
+          A IA propõe duas variações. Você confirma a que combina.
         </p>
       </div>
 
@@ -214,7 +214,7 @@
 
         @if (aiGenerating()) {
           <div class="portraits-grid">
-            @for (i of [1,2,3,4]; track i) {
+            @for (i of [1,2]; track i) {
               <div class="portrait-skeleton"></div>
             }
           </div>
@@ -224,7 +224,7 @@
           <div class="empty-hint" style="color:var(--error,#c0392b)">⚠ {{ aiError() }}</div>
         }
         @if (!aiGenerating() && !aiError() && aiCandidates().length === 0) {
-          <div class="empty-hint">Escreva a descrição e clique em <strong>Gerar 4 retratos</strong>.</div>
+          <div class="empty-hint">Escreva a descrição e clique em <strong>Gerar 2 retratos</strong>.</div>
         }
 
         @if (!aiGenerating() && aiCandidates().length > 0) {
@@ -243,7 +243,7 @@
           </div>
 
           <div class="ai-actions">
-            <button class="btn-ghost" (click)="generateAi()">↻ Gerar outras 4</button>
+            <button class="btn-ghost" (click)="generateAi()">↻ Gerar outras 2</button>
             <span class="field-hint">Clique em um retrato para selecioná-lo.</span>
           </div>
 
@@ -272,7 +272,6 @@
   <div class="footer-row">
     <button class="btn-ghost" (click)="back()">← Voltar</button>
     <div class="footer-actions">
-      <button class="btn-secondary" (click)="skip()">Pular — IA decide depois</button>
       <button class="btn-primary" (click)="advance()"
               [disabled]="selectedCount() === 0 || saving()">
         {{ saving() ? 'Salvando…' : 'Avançar — roteiro →' }}
