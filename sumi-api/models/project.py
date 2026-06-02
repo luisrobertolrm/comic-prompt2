@@ -32,6 +32,7 @@ class Project(Base):
     language: Mapped[str] = mapped_column(String(30), nullable=False, server_default="pt")
     style: Mapped[str] = mapped_column(String(60), nullable=False, server_default="mangá")
     premise: Mapped[str | None] = mapped_column(Text, nullable=True)
+    synopsis: Mapped[str | None] = mapped_column(Text, nullable=True)
     cover_accent: Mapped[str] = mapped_column(String(30), nullable=False, server_default="accent")
     cover_tone: Mapped[str] = mapped_column(String(30), nullable=False, server_default="dots")
     created_at: Mapped[datetime] = mapped_column(

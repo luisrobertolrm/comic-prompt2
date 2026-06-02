@@ -34,7 +34,7 @@
           </div>
         } @else {
           <p class="synopsis-text" title="Clique para editar" style="cursor:pointer"
-             (click)="startEditSynopsis()">{{ project()!.premise || project()!.title }}</p>
+             (click)="startEditSynopsis()">{{ project()!.synopsis || project()!.premise || project()!.title }}</p>
         }
         <div class="chips">
           <span class="chip">{{ project()!.genre }}</span>

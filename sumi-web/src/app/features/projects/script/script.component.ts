@@ -79,16 +79,17 @@ export class ScriptComponent implements OnInit {
   }
 
   startEditSynopsis(): void {
-    this.synopsisEdit.set(this.project()?.premise ?? '');
+    const p = this.project();
+    this.synopsisEdit.set(p?.synopsis ?? p?.premise ?? '');
     this.editingSynopsis.set(true);
   }
 
   saveSynopsis(): void {
     const text = this.synopsisEdit().trim();
     if (!text) { this.editingSynopsis.set(false); return; }
-    this.projectService.update(this.projectId(), { premise: text }).subscribe({
+    this.projectService.update(this.projectId(), { synopsis: text }).subscribe({
       next: () => {
-        this.project.update(p => p ? { ...p, premise: text } : p);
+        this.project.update(p => p ? { ...p, synopsis: text } : p);
         this.editingSynopsis.set(false);
       },
     });

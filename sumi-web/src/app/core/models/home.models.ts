@@ -23,11 +23,13 @@ export interface ProjectCreate {
 
 export interface ProjectDetailOut extends ProjectOut {
   premise: string | null;
+  synopsis: string | null;
   characters: CharacterOut[];
 }
 
 export interface ProjectUpdate {
   premise?: string;
+  synopsis?: string;
   genre?: string;
   tone?: string;
   pages?: number;

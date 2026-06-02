@@ -140,6 +140,7 @@ export class ShellComponent {
     const pid = this.projectId();
 
     if (stepId === 'new') {
+      if (pid) this.draft.projectId.set(pid);
       void this.router.navigate(['/projects/new']);
       this.closeSidebar();
       return;

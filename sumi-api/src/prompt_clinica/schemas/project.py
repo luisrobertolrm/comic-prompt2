@@ -19,6 +19,7 @@ class ProjectCreate(BaseModel):
 
 class ProjectPatch(BaseModel):
     premise: str | None = None
+    synopsis: str | None = None
     genre: str | None = None
     tone: str | None = None
     pages: int | None = Field(default=None, ge=1, le=20)
@@ -51,4 +52,5 @@ class ProjectOut(BaseModel):
 
 class ProjectDetailOut(ProjectOut):
     premise: str | None
+    synopsis: str | None
     characters: list[CharacterOut] = Field(default_factory=list)

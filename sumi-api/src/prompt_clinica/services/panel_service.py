@@ -177,6 +177,11 @@ def generate(project_id: uuid.UUID, user: User, db: Session) -> list[PanelOut]:
     if ai_title:
         project.title = ai_title[:200]
 
+    # Atualiza sinopse se IA retornou uma
+    ai_synopsis: str = str(ai_data.get("synopsis", "")).strip()
+    if ai_synopsis:
+        project.synopsis = ai_synopsis[:2000]
+
     # Apaga painéis anteriores e cria os novos
     db.query(Panel).filter(Panel.project_id == project_id).delete()
     panels: list[Panel] = []

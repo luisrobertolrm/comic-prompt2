@@ -44,6 +44,7 @@ def get_by_id(project_id: uuid.UUID, user: User, db: Session) -> ProjectDetailOu
     return ProjectDetailOut(
         **ProjectOut.model_validate(project).model_dump(),
         premise=project.premise,
+        synopsis=project.synopsis,
         characters=[CharacterOut.model_validate(c) for c in chars],
     )
 
@@ -81,6 +82,8 @@ def update(project_id: uuid.UUID, patch: ProjectPatch, user: User, db: Session) 
     if patch.premise is not None:
         project.premise = patch.premise
         project.title = patch.premise[:60].strip() or project.title
+    if patch.synopsis is not None:
+        project.synopsis = patch.synopsis
     if patch.genre is not None:
         project.genre = patch.genre
     if patch.tone is not None:

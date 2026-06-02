@@ -1,6 +1,7 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { CharacterService } from '../../core/services/character.service';
+import { ProjectDraftService } from '../../core/services/project-draft.service';
 import { ProjectService } from '../../core/services/project.service';
 import type { CharacterOut, ProjectOut } from '../../core/models/home.models';
 
@@ -17,6 +18,7 @@ const STATUSES = ['Todos', 'Rascunho', 'Roteiro', 'Em revisão', 'Concluído'] a
 export class HomeComponent implements OnInit {
   private projectService = inject(ProjectService);
   private characterService = inject(CharacterService);
+  private draft = inject(ProjectDraftService);
   private router = inject(Router);
 
   projects = signal<ProjectOut[]>([]);
@@ -46,7 +48,7 @@ export class HomeComponent implements OnInit {
     });
   }
 
-  goNewProject(): void { void this.router.navigate(['/projects', 'new']); }
+  goNewProject(): void { this.draft.projectId.set(null); void this.router.navigate(['/projects', 'new']); }
   goLibrary(): void { void this.router.navigate(['/library']); }
 
   openProject(p: ProjectOut): void {
