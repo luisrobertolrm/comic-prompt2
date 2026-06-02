@@ -22,6 +22,19 @@ def storage_health_check() -> dict[str, str]:
         return {"status": "error", "backend": settings.storage_backend, "detail": str(exc)}
 
 
+@router.get("/health/storage/config")
+def storage_config_check() -> dict[str, str]:
+    endpoint = settings.railway_bucket_endpoint_url
+    return {
+        "backend": settings.storage_backend,
+        "endpoint": endpoint or "<vazio>",
+        "bucket": settings.railway_bucket_name or "<vazio>",
+        "region": settings.railway_bucket_region or "<vazio>",
+        "access_key": (settings.railway_bucket_access_key[:6] + "...") if settings.railway_bucket_access_key else "<vazio>",
+        "public_url": settings.railway_public_url or "<vazio>",
+    }
+
+
 @router.get("/health/ai")
 def ai_health_check() -> dict[str, str]:
     try:
