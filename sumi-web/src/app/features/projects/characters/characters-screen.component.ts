@@ -80,6 +80,13 @@ export class CharactersScreenComponent implements OnInit {
       next: chars => { this.characters.set(chars); this.loading.set(false); },
       error: () => this.loading.set(false),
     });
+
+    const projectId = this.draftService.projectId();
+    if (projectId) {
+      this.projectService.get(projectId).subscribe({
+        next: p => this.selectedIds.set(new Set(p.characters.map(c => c.id))),
+      });
+    }
   }
 
   toggleChar(id: string): void {
