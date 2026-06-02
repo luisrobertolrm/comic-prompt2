@@ -16,7 +16,6 @@ Você é roteirista de mangá. Gere um storyboard estruturado.
 
 Retorne APENAS um objeto JSON com:
 - "title": str — título criativo da HQ (2-6 palavras em português)
-- "synopsis": str — sinopse narrativa da história em 1-2 frases (português), apresentando o enredo de forma envolvente (não é direção de cena)
 - "panels": array de quadros
 
 Cada quadro deve ter:

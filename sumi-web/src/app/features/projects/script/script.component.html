@@ -23,7 +23,18 @@
   @if (project()) {
     <div class="synopsis-card">
       <div class="synopsis-main">
-        <p class="eyebrow" style="margin-bottom:8px">SINOPSE PROPOSTA</p>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">
+          <p class="eyebrow" style="margin:0">SINOPSE PROPOSTA</p>
+          <button class="btn-ghost" style="padding:3px 12px;font-size:12px"
+                  (click)="regenSynopsis()" [disabled]="generatingSynopsis()">
+            @if (generatingSynopsis()) { ⏳ Trabalhando… }
+            @else if (project()!.synopsis) { ↻ Regerar com IA }
+            @else { ✦ Trabalhar com IA }
+          </button>
+        </div>
+        @if (!project()!.synopsis && !editingSynopsis()) {
+          <p class="muted-sm" style="margin:0 0 6px">Ainda é a sua ideia original — clique em "Trabalhar com IA" para gerar a sinopse.</p>
+        }
         @if (editingSynopsis()) {
           <textarea class="synopsis-textarea" rows="3" [value]="synopsisEdit()"
                     (input)="synopsisEdit.set($any($event.target).value)"

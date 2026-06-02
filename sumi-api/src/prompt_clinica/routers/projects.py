@@ -57,6 +57,15 @@ def update_project(
     return ProjectOut.model_validate(project_service.update(project_id, patch, user, db))
 
 
+@router.post("/{project_id}/synopsis/generate", response_model=ProjectDetailOut)
+def generate_synopsis(
+    project_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ProjectDetailOut:
+    return project_service.generate_synopsis(project_id, user, db)
+
+
 @router.put("/{project_id}/characters", status_code=204)
 def set_characters(
     project_id: uuid.UUID,

@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from character import Character
 from project import Project
 from project_character import ProjectCharacter
+from prompt_clinica.ai.synopsis import generate_synopsis as ai_generate_synopsis
 from prompt_clinica.schemas.character import CharacterOut
 from prompt_clinica.schemas.project import ProjectCreate, ProjectDetailOut, ProjectOut, ProjectPatch
 from user import User
@@ -98,6 +99,45 @@ def update(project_id: uuid.UUID, patch: ProjectPatch, user: User, db: Session) 
     db.commit()
     db.refresh(project)
     return project
+
+
+def generate_synopsis(project_id: uuid.UUID, user: User, db: Session) -> ProjectDetailOut:
+    project: Project | None = (
+        db.query(Project)
+        .filter(Project.id == project_id, Project.user_id == user.id)
+        .first()
+    )
+    if project is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Projeto não encontrado.")
+
+    chars = (
+        db.query(Character)
+        .join(ProjectCharacter, ProjectCharacter.character_id == Character.id)
+        .filter(ProjectCharacter.project_id == project_id)
+        .all()
+    )
+
+    text = ai_generate_synopsis(
+        premise=project.premise or project.title,
+        genre=project.genre,
+        tone=project.tone,
+        character_names=[c.name for c in chars],
+    )
+    if not text:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Geração de sinopse falhou.",
+        )
+
+    project.synopsis = text[:2000]
+    db.commit()
+    db.refresh(project)
+    return ProjectDetailOut(
+        **ProjectOut.model_validate(project).model_dump(),
+        premise=project.premise,
+        synopsis=project.synopsis,
+        characters=[CharacterOut.model_validate(c) for c in chars],
+    )
 
 
 def set_characters(

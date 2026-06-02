@@ -29,6 +29,7 @@ export class ScriptComponent implements OnInit {
   skeletons = [1, 2, 3, 4, 5, 6, 7];
   editingSynopsis = signal(false);
   synopsisEdit = signal('');
+  generatingSynopsis = signal(false);
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id') ?? '';
@@ -39,10 +40,7 @@ export class ScriptComponent implements OnInit {
 
   private loadPanels(id: string): void {
     this.panelService.list(id).subscribe({
-      next: panels => {
-        if (panels.length === 0) this.runGenerate();
-        else this.panels.set(panels);
-      },
+      next: panels => this.panels.set(panels),
     });
   }
 
@@ -97,6 +95,19 @@ export class ScriptComponent implements OnInit {
 
   cancelEditSynopsis(): void {
     this.editingSynopsis.set(false);
+  }
+
+  regenSynopsis(): void {
+    if (this.generatingSynopsis()) return;
+    this.generatingSynopsis.set(true);
+    this.projectService.generateSynopsis(this.projectId()).subscribe({
+      next: p => {
+        this.project.set(p);
+        this.editingSynopsis.set(false);
+        this.generatingSynopsis.set(false);
+      },
+      error: () => this.generatingSynopsis.set(false),
+    });
   }
 
   back(): void {

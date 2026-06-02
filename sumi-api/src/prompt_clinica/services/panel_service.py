@@ -159,9 +159,9 @@ def generate(project_id: uuid.UUID, user: User, db: Session) -> list[PanelOut]:
     project = _check_project(project_id, user, db)
     char_names = _get_char_names(project_id, db)
 
-    # Chama IA (retorna {} em caso de falha)
+    # Chama IA (retorna {} em caso de falha). Usa a sinopse trabalhada quando existe.
     ai_data = generate_roteiro(
-        premise=project.premise or project.title,
+        premise=project.synopsis or project.premise or project.title,
         genre=project.genre,
         tone=project.tone,
         pages=project.pages,
@@ -176,11 +176,6 @@ def generate(project_id: uuid.UUID, user: User, db: Session) -> list[PanelOut]:
     ai_title: str = str(ai_data.get("title", "")).strip()
     if ai_title:
         project.title = ai_title[:200]
-
-    # Atualiza sinopse se IA retornou uma
-    ai_synopsis: str = str(ai_data.get("synopsis", "")).strip()
-    if ai_synopsis:
-        project.synopsis = ai_synopsis[:2000]
 
     # Apaga painéis anteriores e cria os novos
     db.query(Panel).filter(Panel.project_id == project_id).delete()

@@ -35,6 +35,10 @@ export class ProjectService {
     return this.http.patch<ProjectOut>(`${this.base}/projects/${id}`, req);
   }
 
+  generateSynopsis(id: string): Observable<ProjectDetailOut> {
+    return this.http.post<ProjectDetailOut>(`${this.base}/projects/${id}/synopsis/generate`, {});
+  }
+
   setCharacters(projectId: string, characterIds: string[]): Observable<void> {
     return this.http.put<void>(`${this.base}/projects/${projectId}/characters`, {
       character_ids: characterIds,
