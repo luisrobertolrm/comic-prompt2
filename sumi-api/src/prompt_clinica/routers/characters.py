@@ -88,7 +88,15 @@ def create_character(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> CharacterOut:
-    return CharacterOut.model_validate(character_service.create(req, user, db))
+    char = character_service.create(req, user, db)
+    # Apaga do S3 os candidatos não escolhidos e limpa a tabela temp
+    all_temps = db.query(TempPortrait).filter(TempPortrait.user_id == user.id).all()
+    for tp in all_temps:
+        if tp.url != req.image_url:
+            get_storage().delete(tp.storage_key)
+        db.delete(tp)
+    db.commit()
+    return CharacterOut.model_validate(char)
 
 
 @router.post("/generate-portrait", status_code=202, response_model=PortraitJobOut)
