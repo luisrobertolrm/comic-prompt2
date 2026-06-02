@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from prompt_clinica.config import settings
-from prompt_clinica.routers import auth, characters, health, panels, projects
+from prompt_clinica.routers import auth, characters, health, panels, projects, storage
 
 app = FastAPI(
     title="Sumi API",
@@ -31,6 +31,7 @@ app.include_router(auth.router)
 app.include_router(projects.router)
 app.include_router(characters.router)
 app.include_router(panels.router)
+app.include_router(storage.router)
 
 _static_root = Path("static")
 _static_root.mkdir(parents=True, exist_ok=True)

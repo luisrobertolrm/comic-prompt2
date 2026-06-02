@@ -65,7 +65,7 @@ class RailwayStorageBackend(StorageBackend):
             ExtraArgs={"ContentType": "image/png"},
         )
         logger.info("Uploaded to Railway bucket: %s", key)
-        return f"{self._public_url}/{key}"
+        return f"/storage/{key}"
 
     def read(self, key: str) -> bytes | None:
         try:
