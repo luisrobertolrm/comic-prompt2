@@ -4,19 +4,26 @@
   <div class="page-head">
     <div>
       <p class="eyebrow">ETAPA 3 DE 5</p>
-      <h1>A IA propôs um roteiro.</h1>
-      <p class="lede">Aqui está o storyboard sugerido. Você pode regerar tudo ou seguir para revisar quadro por quadro.</p>
+      @if (panels().length > 0) {
+        <h1>A IA propôs um roteiro.</h1>
+        <p class="lede">Aqui está o storyboard sugerido. Você pode regerar tudo ou seguir para revisar quadro por quadro.</p>
+      } @else {
+        <h1>Roteiro</h1>
+        <p class="lede">Trabalhe a sinopse com a IA e gere o storyboard quando estiver pronto.</p>
+      }
     </div>
-    <div style="display:flex;gap:8px">
-      <button class="btn-ghost" (click)="generateAllImages()"
-              [disabled]="generatingImages() || generating() || panels().length === 0">
-        @if (generatingImages()) { ⏳ Gerando {{ panels().length }} imagens… }
-        @else { ✦ Gerar todas as imagens }
-      </button>
-      <button class="btn-ghost" (click)="runGenerate()" [disabled]="generating() || generatingImages()">
-        ↻ Regerar tudo
-      </button>
-    </div>
+    @if (panels().length > 0) {
+      <div style="display:flex;gap:8px">
+        <button class="btn-ghost" (click)="generateAllImages()"
+                [disabled]="generatingImages() || generating()">
+          @if (generatingImages()) { ⏳ Gerando {{ panels().length }} imagens… }
+          @else { ✦ Gerar todas as imagens }
+        </button>
+        <button class="btn-ghost" (click)="runGenerate()" [disabled]="generating() || generatingImages()">
+          ↻ Regerar tudo
+        </button>
+      </div>
+    }
   </div>
 
   <!-- ── Synopsis card ── -->
@@ -104,6 +111,11 @@
               {{ statusLabel(p.status) }}
             </span>
           </div>
+        </div>
+      } @empty {
+        <div style="grid-column:1/-1;text-align:center;padding:48px 16px">
+          <p class="muted-sm" style="margin-bottom:16px">Nenhum quadro ainda. Gere o storyboard a partir da sua premissa{{ project()?.synopsis ? ' e sinopse' : '' }}.</p>
+          <button class="btn-primary" (click)="runGenerate()">✦ Gerar storyboard</button>
         </div>
       }
     }
