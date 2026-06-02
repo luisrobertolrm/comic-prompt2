@@ -153,7 +153,8 @@ export class ShellComponent {
       return;
     }
 
-    if (pid) void this.router.navigate(['/projects', pid, stepId]);
+    const targetId = pid || this.draft.projectId();
+    if (targetId) void this.router.navigate(['/projects', targetId, stepId]);
     this.closeSidebar();
   }
 
