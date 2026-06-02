@@ -17,8 +17,6 @@ from user import User
 _PORTRAIT_VARIANTS = [
     ("frontal", "Frontal portrait, neutral expression, looking directly at viewer"),
     ("perfil", "Three-quarter view, gentle smile, soft lighting from the side"),
-    ("reflexivo", "Side profile, pensive expression, looking into the distance"),
-    ("determinado", "Close-up face, determined expression, intense gaze"),
 ]
 
 

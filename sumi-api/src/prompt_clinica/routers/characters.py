@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from prompt_clinica.database import get_db
+from prompt_clinica.database import SessionLocal, get_db
 from prompt_clinica.deps import get_current_user
 from prompt_clinica.schemas.character import (
     CharacterCreate,
@@ -17,6 +17,8 @@ from prompt_clinica.schemas.character import (
     PortraitRequest,
 )
 from prompt_clinica.services import character_service
+from prompt_clinica.storage import get_storage
+from temp_portrait import TempPortrait
 from user import User
 
 router = APIRouter(prefix="/characters", tags=["characters"])
@@ -33,11 +35,36 @@ _jobs: dict[str, _PortraitJob] = {}
 _lock = threading.Lock()
 
 
-def _run_job(job_id: str, prompt: str) -> None:
+def _cleanup_old_portraits(user_id: str) -> None:
+    with SessionLocal() as db:
+        old = db.query(TempPortrait).filter(TempPortrait.user_id == uuid.UUID(user_id)).all()
+        for p in old:
+            get_storage().delete(p.storage_key)
+            db.delete(p)
+        db.commit()
+
+
+def _save_portraits_to_db(user_id: str, portraits: list[PortraitCandidate]) -> None:
+    with SessionLocal() as db:
+        for p in portraits:
+            storage_key = p.url.removeprefix("/storage/")
+            record = TempPortrait(
+                user_id=uuid.UUID(user_id),
+                storage_key=storage_key,
+                url=p.url,
+                variant=p.notes,
+            )
+            db.add(record)
+        db.commit()
+
+
+def _run_job(job_id: str, user_id: str, prompt: str) -> None:
+    _cleanup_old_portraits(user_id)
     with _lock:
         _jobs[job_id].status = "running"
     try:
         portraits = character_service.generate_portrait(prompt)
+        _save_portraits_to_db(user_id, portraits)
         with _lock:
             _jobs[job_id].portraits = portraits
             _jobs[job_id].status = "done"
@@ -73,7 +100,7 @@ def generate_portrait(
     job_id = str(uuid.uuid4())
     with _lock:
         _jobs[job_id] = _PortraitJob()
-    background_tasks.add_task(_run_job, job_id, req.prompt)
+    background_tasks.add_task(_run_job, job_id, str(user.id), req.prompt)
     return PortraitJobOut(job_id=job_id, status="pending")
 
 

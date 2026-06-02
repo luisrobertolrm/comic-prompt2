@@ -19,6 +19,10 @@ class StorageBackend(ABC):
     def read(self, key: str) -> bytes | None:
         """Return bytes at key, or None if not found."""
 
+    @abstractmethod
+    def delete(self, key: str) -> None:
+        """Delete the file at key. Silently ignores missing files."""
+
 
 class LocalStorageBackend(StorageBackend):
     def __init__(self, images_dir: str) -> None:
@@ -33,6 +37,11 @@ class LocalStorageBackend(StorageBackend):
     def read(self, key: str) -> bytes | None:
         path = self._root / key
         return path.read_bytes() if path.exists() else None
+
+    def delete(self, key: str) -> None:
+        path = self._root / key
+        if path.exists():
+            path.unlink()
 
 
 class RailwayStorageBackend(StorageBackend):
@@ -74,6 +83,12 @@ class RailwayStorageBackend(StorageBackend):
             return buf.getvalue()
         except Exception:  # noqa: BLE001
             return None
+
+    def delete(self, key: str) -> None:
+        try:
+            self._s3.delete_object(Bucket=self._bucket, Key=key)
+        except Exception:  # noqa: BLE001
+            pass
 
 
 @functools.lru_cache(maxsize=1)
