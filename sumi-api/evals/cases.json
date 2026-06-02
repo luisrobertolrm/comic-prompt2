@@ -1,0 +1,44 @@
+{
+  "cases": [
+    {
+      "id": "japao-feudal",
+      "premise": "Japão feudal. Um samurai ronin chega a uma vila isolada nas montanhas em busca de redenção.",
+      "genre": "Drama",
+      "tone": "Sério",
+      "pages": 2,
+      "characters": ["Takeshi"],
+      "image_prompt": "Feudal Japan: a lone ronin samurai with a katana standing before a traditional wooden mountain village with thatched-roof houses and a torii gate, dusk. Strictly historical, no modern elements.",
+      "expect": {
+        "ambientacao": "Japão feudal: arquitetura tradicional de madeira, casas com telhado de palha, kimono, espadas; nenhum elemento moderno",
+        "personagens": "um samurai ronin (homem, vestes de época)",
+        "anacronismos_proibidos": ["prédios modernos", "escola/universidade", "carros", "eletrônicos", "roupas contemporâneas", "celulares"]
+      }
+    },
+    {
+      "id": "nova-york-garoto",
+      "premise": "Cidade de Nova York, dias atuais. Um garoto negro de 10 anos se perde da mãe em meio à multidão da Times Square.",
+      "genre": "Drama",
+      "tone": "Tenso",
+      "pages": 2,
+      "characters": ["Marcus"],
+      "expect": {
+        "ambientacao": "Nova York moderna: arranha-céus, letreiros luminosos, ruas movimentadas",
+        "personagens": "um garoto negro, criança (~10 anos)",
+        "anacronismos_proibidos": ["cenário rural", "época histórica antiga", "personagem adulto no lugar da criança", "trocar a etnia do garoto"]
+      }
+    },
+    {
+      "id": "descobrimento-brasil",
+      "premise": "Brasil, ano de 1500, época do descobrimento. Um indígena e um navegador português se encontram pela primeira vez na praia.",
+      "genre": "Histórico",
+      "tone": "Contemplativo",
+      "pages": 2,
+      "characters": ["Iberê", "Diogo"],
+      "expect": {
+        "ambientacao": "Brasil colonial de 1500: praia, mata atlântica, caravela ao fundo, sem construções",
+        "personagens": "um indígena brasileiro e um navegador português (trajes de época)",
+        "anacronismos_proibidos": ["prédios modernos", "roupas contemporâneas", "tecnologia", "armas de fogo modernas", "cidade urbana"]
+      }
+    }
+  ]
+}

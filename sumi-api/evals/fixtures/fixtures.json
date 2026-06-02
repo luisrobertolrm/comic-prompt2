@@ -1,0 +1,27 @@
+{
+  "_comment": "Calibração do juiz de visão: imagens versionadas com veredito esperado. Mesmo formato de um caso (premise + expect) + 'image' + 'expect_pass'. Testa o juiz nas duas direções SEM chamar gpt-image-1. O positivo é uma gravura ukiyo-e de domínio público (Met Open Access, samurai, ~1820s); o negativo é um screenshot de UI moderno avaliado contra um briefing feudal.",
+  "fixtures": [
+    {
+      "id": "ukiyo-e-feudal-passa",
+      "image": "ukiyo-e-samurai.jpg",
+      "premise": "Japão feudal, um samurai em trajes tradicionais.",
+      "expect": {
+        "ambientacao": "Japão feudal: estética tradicional japonesa, kimono/armadura, vestes de época; nada moderno",
+        "personagens": "um samurai (homem, trajes tradicionais japoneses)",
+        "anacronismos_proibidos": ["prédios modernos", "tecnologia", "roupas contemporâneas", "carros"]
+      },
+      "expect_pass": true
+    },
+    {
+      "id": "modern-ui-como-feudal",
+      "image": "modern-ui.png",
+      "premise": "Japão feudal, um samurai numa vila de montanha.",
+      "expect": {
+        "ambientacao": "Japão feudal: madeira tradicional, telhado de palha, kimono, espadas; nada moderno",
+        "personagens": "um samurai ronin",
+        "anacronismos_proibidos": ["interface de computador", "tela digital", "UI", "prédios modernos", "texto digital"]
+      },
+      "expect_pass": false
+    }
+  ]
+}
