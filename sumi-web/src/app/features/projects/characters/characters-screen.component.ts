@@ -1,5 +1,7 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, computed, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
+import { timer, switchMap, takeWhile } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import type { CharacterCreate, CharacterOut } from '../../../core/models/home.models';
 import { CharacterService } from '../../../core/services/character.service';
@@ -26,6 +28,7 @@ export class CharactersScreenComponent implements OnInit {
   private draftService = inject(ProjectDraftService);
   private characterService = inject(CharacterService);
   private projectService = inject(ProjectService);
+  private destroyRef = inject(DestroyRef);
 
   tab = signal<Tab>('library');
   characters = signal<CharacterOut[]>([]);
@@ -130,16 +133,29 @@ export class CharactersScreenComponent implements OnInit {
       ? this.aiPrompt()
       : Object.values(this.aiAttrs()).join(', ');
 
-    this.characterService.generatePortrait(prompt).subscribe({
-      next: candidates => {
-        this.aiCandidates.set(candidates.map(c => ({
-          id: c.id,
-          imageUrl: c.url.startsWith('http') ? c.url : `${environment.apiUrl}${c.url}`,
-          notes: c.notes,
-        })));
-        this.aiGenerating.set(false);
+    this.characterService.generatePortrait(prompt).pipe(
+      switchMap(job =>
+        timer(0, 3000).pipe(
+          switchMap(() => this.characterService.pollPortraitJob(job.job_id)),
+          takeWhile(j => j.status !== 'done' && j.status !== 'error', true),
+        )
+      ),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe({
+      next: job => {
+        if (job.status === 'done') {
+          this.aiCandidates.set(job.portraits.map(c => ({
+            id: c.id,
+            imageUrl: c.url.startsWith('http') ? c.url : `${environment.apiUrl}${c.url}`,
+            notes: c.notes,
+          })));
+          this.aiGenerating.set(false);
+        } else if (job.status === 'error') {
+          this.aiError.set(job.detail || 'Erro ao gerar retratos.');
+          this.aiGenerating.set(false);
+        }
       },
-      error: (err) => {
+      error: err => {
         this.aiGenerating.set(false);
         const msg = err?.error?.detail ?? err?.message ?? 'Erro ao gerar retratos.';
         this.aiError.set(msg);

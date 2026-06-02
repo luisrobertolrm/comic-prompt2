@@ -63,3 +63,10 @@ export interface PortraitCandidate {
   url: string;
   notes: string;
 }
+
+export interface PortraitJob {
+  job_id: string;
+  status: 'pending' | 'running' | 'done' | 'error';
+  portraits: PortraitCandidate[];
+  detail: string;
+}

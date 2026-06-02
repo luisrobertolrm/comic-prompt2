@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import type { CharacterCreate, CharacterOut, PortraitCandidate } from '../models/home.models';
+import type { CharacterCreate, CharacterOut, PortraitJob } from '../models/home.models';
 
 @Injectable({ providedIn: 'root' })
 export class CharacterService {
@@ -17,7 +17,11 @@ export class CharacterService {
     return this.http.post<CharacterOut>(`${this.base}/characters`, req);
   }
 
-  generatePortrait(prompt: string): Observable<PortraitCandidate[]> {
-    return this.http.post<PortraitCandidate[]>(`${this.base}/characters/generate-portrait`, { prompt });
+  generatePortrait(prompt: string): Observable<PortraitJob> {
+    return this.http.post<PortraitJob>(`${this.base}/characters/generate-portrait`, { prompt });
+  }
+
+  pollPortraitJob(jobId: string): Observable<PortraitJob> {
+    return this.http.get<PortraitJob>(`${this.base}/characters/portrait-job/${jobId}`);
   }
 }

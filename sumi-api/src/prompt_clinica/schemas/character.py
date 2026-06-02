@@ -27,6 +27,13 @@ class PortraitRequest(BaseModel):
     prompt: str
 
 
+class PortraitJobOut(BaseModel):
+    job_id: str
+    status: str  # pending | running | done | error
+    portraits: list[PortraitCandidate] = Field(default_factory=list)
+    detail: str = ""
+
+
 class CharacterOut(BaseModel):
     id: uuid.UUID
     name: str
