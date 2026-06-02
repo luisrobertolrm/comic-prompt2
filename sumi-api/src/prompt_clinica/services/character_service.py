@@ -10,7 +10,11 @@ from sqlalchemy.orm import Session
 
 from character import Character
 from prompt_clinica.ai import ImageRequest, ai
-from prompt_clinica.schemas.character import CharacterCreate, PortraitCandidate
+from prompt_clinica.schemas.character import (
+    CharacterCreate,
+    CharacterUpdate,
+    PortraitCandidate,
+)
 from prompt_clinica.storage import get_storage
 from user import User
 
@@ -47,6 +51,34 @@ def create(req: CharacterCreate, user: User, db: Session) -> Character:
         approved=True,
     )
     db.add(char)
+    db.commit()
+    db.refresh(char)
+    return char
+
+
+def update(char_id: uuid.UUID, req: CharacterUpdate, user: User, db: Session) -> Character:
+    char = (
+        db.query(Character)
+        .filter(Character.id == char_id, Character.user_id == user.id)
+        .first()
+    )
+    if char is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Personagem não encontrado.")
+
+    data = req.model_dump(exclude_unset=True)
+
+    if "image_url" in data and data["image_url"] != char.image_url and char.image_url:
+        old_key = char.image_url.split("/storage/")[-1]
+        get_storage().delete(old_key)
+
+    for key, value in data.items():
+        if key == "traits":
+            char.traits = ", ".join(value) if value else None
+        elif key == "name" and value is not None:
+            char.name = value.strip()
+        else:
+            setattr(char, key, value)
+
     db.commit()
     db.refresh(char)
     return char

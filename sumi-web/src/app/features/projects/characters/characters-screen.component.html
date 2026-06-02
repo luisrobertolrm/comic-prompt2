@@ -48,11 +48,16 @@
               <div class="check-badge">✓</div>
             }
             <div class="char-header">
-              <div class="avatar">{{ initial(c.name) }}</div>
-              <div>
+              @if (c.image_url) {
+                <img class="char-thumb" [src]="c.image_url" [alt]="c.name">
+              } @else {
+                <div class="avatar">{{ initial(c.name) }}</div>
+              }
+              <div class="char-header-text">
                 <div class="char-name">{{ c.name }}</div>
                 <div class="char-sub">{{ c.role }}{{ c.age ? ' · ' + c.age + ' anos' : '' }}</div>
               </div>
+              <button class="edit-btn" (click)="openEdit(c); $event.stopPropagation()">Editar</button>
             </div>
             @if (c.summary) {
               <p class="char-summary">{{ c.summary }}</p>
@@ -264,6 +269,105 @@
             </div>
           }
         }
+      </div>
+    </div>
+  }
+
+  <!-- ── Modal: Editar personagem ── -->
+  @if (editing(); as ed) {
+    <div class="edit-overlay" (click)="closeEdit()">
+      <div class="edit-modal" (click)="$event.stopPropagation()">
+        <div class="edit-head">
+          <h2 class="edit-title">Editar personagem</h2>
+          <button class="edit-close" (click)="closeEdit()">✕</button>
+        </div>
+
+        <div class="edit-body">
+          <!-- Retrato + regerar -->
+          <div class="edit-portrait-col">
+            @if (eGenerating()) {
+              <div class="portraits-grid">
+                @for (i of [1,2]; track i) {
+                  <div class="portrait-skeleton"></div>
+                }
+              </div>
+            } @else if (eCandidates().length > 0) {
+              <p class="eyebrow" style="margin-bottom:8px">ESCOLHA O NOVO RETRATO</p>
+              <div class="portraits-grid">
+                @for (c of eCandidates(); track c.id; let i = $index) {
+                  <button class="portrait" [class.portrait--picked]="ePicked() === c.id"
+                          (click)="pickEditCandidate(c.id)">
+                    <img class="portrait-img" [src]="c.imageUrl" [alt]="c.notes">
+                    <div class="portrait-idx">VAR · {{ (i + 1).toString().padStart(2, '0') }}</div>
+                    @if (ePicked() === c.id) {
+                      <div class="portrait-check">✓</div>
+                    }
+                  </button>
+                }
+              </div>
+            } @else if (eImageUrl()) {
+              <img class="edit-current-img" [src]="eImageUrl()" [alt]="eName()">
+            } @else {
+              <div class="edit-no-img">Sem retrato</div>
+            }
+
+            @if (eError()) {
+              <p class="field-hint" style="color:var(--error,#c0392b);margin-top:8px">⚠ {{ eError() }}</p>
+            }
+
+            <button class="btn-accent" style="width:100%;justify-content:center;margin-top:10px"
+                    (click)="regenPortrait()" [disabled]="eGenerating() || !eSummary().trim()">
+              {{ eGenerating() ? 'Gerando 2 esboços…' : '✦ Regerar retrato' }}
+            </button>
+            <p class="field-hint" style="text-align:center;margin-top:6px">
+              Usa a descrição visual como base. Escolha um retrato para substituir o atual.
+            </p>
+          </div>
+
+          <!-- Campos -->
+          <div class="edit-fields">
+            <div class="field">
+              <label class="field-label">Nome do personagem</label>
+              <input class="input serif" [value]="eName()" (input)="setField(eName, $event)">
+            </div>
+            <div class="field-row-3">
+              <div class="field">
+                <label class="field-label">Papel</label>
+                <input class="input" [value]="eRole()" (input)="setField(eRole, $event)">
+              </div>
+              <div class="field">
+                <label class="field-label">Idade</label>
+                <input class="input" type="number" [value]="eAge()" (input)="setField(eAge, $event)">
+              </div>
+              <div class="field">
+                <label class="field-label">Altura</label>
+                <input class="input" placeholder="1.60 m" [value]="eHeight()" (input)="setField(eHeight, $event)">
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label">Descrição visual</label>
+              <textarea class="textarea" rows="3"
+                        [value]="eSummary()" (input)="setField(eSummary, $event)"></textarea>
+            </div>
+            <div class="field">
+              <label class="field-label">Figurino padrão</label>
+              <input class="input" [value]="eOutfit()" (input)="setField(eOutfit, $event)">
+            </div>
+            <div class="field">
+              <label class="field-label">Traços de personalidade</label>
+              <p class="field-hint">Separe por vírgula.</p>
+              <input class="input" [value]="eTraits()" (input)="setField(eTraits, $event)">
+            </div>
+          </div>
+        </div>
+
+        <div class="edit-foot">
+          <button class="btn-ghost" (click)="closeEdit()">Cancelar</button>
+          <button class="btn-primary" (click)="saveEdit()"
+                  [disabled]="!eName().trim() || eSaving()">
+            {{ eSaving() ? 'Salvando…' : '✓ Salvar alterações' }}
+          </button>
+        </div>
       </div>
     </div>
   }

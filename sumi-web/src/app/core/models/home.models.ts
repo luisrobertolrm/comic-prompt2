@@ -58,6 +58,17 @@ export interface CharacterCreate {
   image_url?: string;
 }
 
+export interface CharacterUpdate {
+  name?: string;
+  role?: string;
+  age?: number | null;
+  height?: string | null;
+  summary?: string | null;
+  outfit?: string | null;
+  traits?: string[];
+  image_url?: string;
+}
+
 export interface PortraitCandidate {
   id: string;
   url: string;

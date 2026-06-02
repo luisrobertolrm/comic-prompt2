@@ -1,9 +1,9 @@
 import { Component, DestroyRef, computed, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { timer, switchMap, takeWhile } from 'rxjs';
+import { Observable, timer, switchMap, takeWhile } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import type { CharacterCreate, CharacterOut } from '../../../core/models/home.models';
+import type { CharacterCreate, CharacterOut, CharacterUpdate, PortraitJob } from '../../../core/models/home.models';
 import { CharacterService } from '../../../core/services/character.service';
 import { ProjectDraftService } from '../../../core/services/project-draft.service';
 import { ProjectService } from '../../../core/services/project.service';
@@ -56,6 +56,22 @@ export class CharactersScreenComponent implements OnInit {
   aiPicked = signal<string | null>(null);
   aiName = signal('');
   aiSaving = signal(false);
+
+  // Modal de edição
+  editing = signal<CharacterOut | null>(null);
+  eName = signal('');
+  eRole = signal('');
+  eAge = signal('');
+  eHeight = signal('');
+  eSummary = signal('');
+  eOutfit = signal('');
+  eTraits = signal('');
+  eImageUrl = signal<string | null>(null);
+  eGenerating = signal(false);
+  eError = signal('');
+  eCandidates = signal<AiCandidate[]>([]);
+  ePicked = signal<string | null>(null);
+  eSaving = signal(false);
 
   selectedCount = computed(() => this.selectedIds().size);
 
@@ -123,6 +139,26 @@ export class CharactersScreenComponent implements OnInit {
     this.aiAttrs.update(a => ({ ...a, [key]: value }));
   }
 
+  private portraitStream(prompt: string): Observable<PortraitJob> {
+    return this.characterService.generatePortrait(prompt).pipe(
+      switchMap(job =>
+        timer(0, 3000).pipe(
+          switchMap(() => this.characterService.pollPortraitJob(job.job_id)),
+          takeWhile(j => j.status !== 'done' && j.status !== 'error', true),
+        )
+      ),
+      takeUntilDestroyed(this.destroyRef),
+    );
+  }
+
+  private toCandidates(job: PortraitJob): AiCandidate[] {
+    return job.portraits.map(c => ({
+      id: c.id,
+      imageUrl: c.url.startsWith('http') ? c.url : `${environment.apiUrl}${c.url}`,
+      notes: c.notes,
+    }));
+  }
+
   generateAi(): void {
     this.aiGenerating.set(true);
     this.aiError.set('');
@@ -133,22 +169,10 @@ export class CharactersScreenComponent implements OnInit {
       ? this.aiPrompt()
       : Object.values(this.aiAttrs()).join(', ');
 
-    this.characterService.generatePortrait(prompt).pipe(
-      switchMap(job =>
-        timer(0, 3000).pipe(
-          switchMap(() => this.characterService.pollPortraitJob(job.job_id)),
-          takeWhile(j => j.status !== 'done' && j.status !== 'error', true),
-        )
-      ),
-      takeUntilDestroyed(this.destroyRef),
-    ).subscribe({
+    this.portraitStream(prompt).subscribe({
       next: job => {
         if (job.status === 'done') {
-          this.aiCandidates.set(job.portraits.map(c => ({
-            id: c.id,
-            imageUrl: c.url.startsWith('http') ? c.url : `${environment.apiUrl}${c.url}`,
-            notes: c.notes,
-          })));
+          this.aiCandidates.set(this.toCandidates(job));
           this.aiGenerating.set(false);
         } else if (job.status === 'error') {
           this.aiError.set(job.detail || 'Erro ao gerar retratos.');
@@ -186,6 +210,83 @@ export class CharactersScreenComponent implements OnInit {
         this.aiSaving.set(false);
       },
       error: () => this.aiSaving.set(false),
+    });
+  }
+
+  // ── Modal de edição ──
+
+  openEdit(c: CharacterOut): void {
+    this.editing.set(c);
+    this.eName.set(c.name);
+    this.eRole.set(c.role);
+    this.eAge.set(c.age != null ? String(c.age) : '');
+    this.eHeight.set(c.height ?? '');
+    this.eSummary.set(c.summary ?? '');
+    this.eOutfit.set(c.outfit ?? '');
+    this.eTraits.set(c.traits.join(', '));
+    this.eImageUrl.set(c.image_url);
+    this.eGenerating.set(false);
+    this.eError.set('');
+    this.eCandidates.set([]);
+    this.ePicked.set(null);
+  }
+
+  closeEdit(): void {
+    this.editing.set(null);
+  }
+
+  regenPortrait(): void {
+    if (!this.eSummary().trim() || this.eGenerating()) return;
+    this.eGenerating.set(true);
+    this.eError.set('');
+    this.eCandidates.set([]);
+    this.ePicked.set(null);
+
+    this.portraitStream(this.eSummary()).subscribe({
+      next: job => {
+        if (job.status === 'done') {
+          this.eCandidates.set(this.toCandidates(job));
+          this.eGenerating.set(false);
+        } else if (job.status === 'error') {
+          this.eError.set(job.detail || 'Erro ao gerar retratos.');
+          this.eGenerating.set(false);
+        }
+      },
+      error: err => {
+        this.eGenerating.set(false);
+        this.eError.set(err?.error?.detail ?? err?.message ?? 'Erro ao gerar retratos.');
+      },
+    });
+  }
+
+  pickEditCandidate(id: string): void {
+    this.ePicked.set(this.ePicked() === id ? null : id);
+  }
+
+  saveEdit(): void {
+    const current = this.editing();
+    if (!current || !this.eName().trim() || this.eSaving()) return;
+    this.eSaving.set(true);
+
+    const picked = this.eCandidates().find(c => c.id === this.ePicked());
+    const req: CharacterUpdate = {
+      name: this.eName(),
+      role: this.eRole() || 'Personagem',
+      age: this.eAge() ? +this.eAge() : null,
+      height: this.eHeight() || null,
+      summary: this.eSummary() || null,
+      outfit: this.eOutfit() || null,
+      traits: this.eTraits().split(',').map(t => t.trim()).filter(Boolean),
+    };
+    if (picked) req.image_url = picked.imageUrl;
+
+    this.characterService.update(current.id, req).subscribe({
+      next: char => {
+        this.characters.update(list => list.map(c => (c.id === char.id ? char : c)));
+        this.eSaving.set(false);
+        this.closeEdit();
+      },
+      error: () => this.eSaving.set(false),
     });
   }
 

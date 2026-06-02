@@ -107,6 +107,29 @@ h1 { font-family: var(--serif); font-size: 30px; line-height: 1.1; margin-bottom
 }
 
 .char-header { display: flex; align-items: center; gap: 12px; }
+.char-header-text { flex: 1; min-width: 0; }
+
+.char-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.edit-btn {
+  font-size: 12px;
+  color: var(--ink-2);
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-sm);
+  padding: 4px 10px;
+  cursor: pointer;
+  flex-shrink: 0;
+
+  &:hover { background: var(--paper-3); }
+}
 
 .avatar {
   width: 44px;
@@ -420,4 +443,103 @@ h1 { font-family: var(--serif); font-size: 30px; line-height: 1.1; margin-bottom
   cursor: pointer;
   &:disabled { opacity: .5; cursor: default; }
   &:hover:not(:disabled) { background: var(--accent-ink); color: var(--paper); }
+}
+
+/* ── Modal de edição ── */
+.edit-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(30,24,18,.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+  padding: 24px;
+}
+
+.edit-modal {
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  border-radius: var(--r-lg);
+  width: 100%;
+  max-width: 860px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-2);
+  overflow: hidden;
+}
+
+.edit-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--rule);
+  flex-shrink: 0;
+}
+
+.edit-title { font-family: var(--serif); font-size: 20px; margin: 0; }
+
+.edit-close {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-sm);
+  background: var(--paper-2);
+  cursor: pointer;
+  font-size: 14px;
+  &:hover { background: var(--paper-3); }
+}
+
+.edit-body {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 24px;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.edit-portrait-col { display: flex; flex-direction: column; }
+.edit-fields { display: flex; flex-direction: column; gap: 16px; }
+
+.edit-current-img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border: 1.5px solid var(--ink);
+  border-radius: var(--r-lg);
+}
+
+.edit-no-img {
+  width: 100%;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  color: var(--ink-3);
+  font-size: 13px;
+  border: 1px dashed var(--rule);
+  border-radius: var(--r-lg);
+}
+
+.edit-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--rule);
+  flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+  .edit-overlay { padding: 0; }
+  .edit-modal {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 0;
+    border: none;
+  }
+  .edit-body { grid-template-columns: 1fr; }
 }

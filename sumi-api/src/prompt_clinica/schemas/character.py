@@ -17,6 +17,17 @@ class CharacterCreate(BaseModel):
     image_url: str | None = None
 
 
+class CharacterUpdate(BaseModel):
+    name: str | None = None
+    role: str | None = None
+    age: int | None = None
+    height: str | None = None
+    summary: str | None = None
+    outfit: str | None = None
+    traits: list[str] | None = None
+    image_url: str | None = None
+
+
 class PortraitCandidate(BaseModel):
     id: str
     url: str
