@@ -37,6 +37,10 @@ def _build_default() -> AIProvider:
                 text_model=settings.ai_text_model,
                 image_model=settings.ai_image_model,
             )
+        case "minimax":
+            from prompt_clinica.ai.providers.minimax_provider import MinimaxProvider
+
+            return MinimaxProvider()
         case _:
             raise ValueError(f"Provider desconhecido: '{provider}'. Implemente em ai/providers/ e registre aqui.")
 
