@@ -16,6 +16,7 @@ dist/
 .vscode/
 *.iml
 .claude/
+sumi-api/static/images
 
 # OS
 .DS_Store
