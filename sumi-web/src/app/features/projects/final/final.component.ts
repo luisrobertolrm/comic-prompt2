@@ -11,7 +11,6 @@ const STYLES: Record<string, string> = {
   'classic-shoujo': 'Shojo clássico',
   'modern-line': 'Linha moderna limpa',
   'ink-heavy': 'Tinta marcada',
-  'minimal': 'Minimalista',
 };
 
 @Component({

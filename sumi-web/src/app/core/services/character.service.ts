@@ -21,8 +21,12 @@ export class CharacterService {
     return this.http.patch<CharacterOut>(`${this.base}/characters/${id}`, req);
   }
 
-  generatePortrait(prompt: string): Observable<PortraitJob> {
-    return this.http.post<PortraitJob>(`${this.base}/characters/generate-portrait`, { prompt });
+  deleteUnused(ids: string[]): Observable<{ deleted: number }> {
+    return this.http.post<{ deleted: number }>(`${this.base}/characters/delete-unused`, { ids });
+  }
+
+  generatePortrait(prompt: string, style: string, gender?: string): Observable<PortraitJob> {
+    return this.http.post<PortraitJob>(`${this.base}/characters/generate-portrait`, { prompt, style, gender });
   }
 
   pollPortraitJob(jobId: string): Observable<PortraitJob> {

@@ -6,6 +6,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field, field_serializer
 
 from prompt_clinica.schemas.character import CharacterOut
+from prompt_clinica.styles import DEFAULT_STYLE, StyleId
 
 
 class ProjectCreate(BaseModel):
@@ -14,7 +15,7 @@ class ProjectCreate(BaseModel):
     tone: str
     pages: int = Field(default=4, ge=1, le=20)
     language: str = "pt-BR"
-    style: str = "classic-shoujo"
+    style: StyleId = DEFAULT_STYLE
 
 
 class ProjectPatch(BaseModel):
@@ -23,7 +24,7 @@ class ProjectPatch(BaseModel):
     genre: str | None = None
     tone: str | None = None
     pages: int | None = Field(default=None, ge=1, le=20)
-    style: str | None = None
+    style: StyleId | None = None
 
 
 class CharacterIdsBody(BaseModel):

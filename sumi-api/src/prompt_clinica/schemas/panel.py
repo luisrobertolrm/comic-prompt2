@@ -4,7 +4,7 @@ import json
 import uuid
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_serializer
+from pydantic import BaseModel
 
 
 class BubbleSchema(BaseModel):

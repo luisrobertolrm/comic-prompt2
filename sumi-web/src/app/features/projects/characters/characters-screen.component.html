@@ -27,6 +27,25 @@
 
   <!-- ── Aba: Biblioteca ── -->
   @if (tab() === 'library') {
+    @if (!loading() && deletableUnused().length > 0) {
+      <div class="lib-actions">
+        @if (!confirmDeleteUnused()) {
+          <button class="btn-ghost" (click)="confirmDeleteUnused.set(true)">
+            🗑 Excluir não usados ({{ deletableUnused().length }})
+          </button>
+        } @else {
+          <span class="field-hint" style="color:var(--error,#c0392b)">
+            Excluir permanentemente {{ deletableUnused().length }} personagem(ns) sem projeto?
+          </span>
+          <button class="btn-primary" (click)="deleteUnused()" [disabled]="deletingUnused()">
+            {{ deletingUnused() ? 'Excluindo…' : 'Confirmar exclusão' }}
+          </button>
+          <button class="btn-ghost" (click)="confirmDeleteUnused.set(false)" [disabled]="deletingUnused()">
+            Cancelar
+          </button>
+        }
+      </div>
+    }
     @if (loading()) {
       <div class="char-grid">
         @for (i of [1,2,3,4]; track i) {
@@ -56,6 +75,9 @@
               <div class="char-header-text">
                 <div class="char-name">{{ c.name }}</div>
                 <div class="char-sub">{{ c.role }}{{ c.age ? ' · ' + c.age + ' anos' : '' }}</div>
+                @if (c.project_count > 0) {
+                  <div class="char-usage">em uso · {{ c.project_count }} projeto{{ c.project_count === 1 ? '' : 's' }}</div>
+                }
               </div>
               <button class="edit-btn" (click)="openEdit(c); $event.stopPropagation()">Editar</button>
             </div>
@@ -87,6 +109,15 @@
             <label class="field-label">Nome do personagem</label>
             <input class="input serif" placeholder="Ex: Aiko Tanaka"
                    [value]="mName()" (input)="setField(mName, $event)">
+          </div>
+          <div class="field">
+            <label class="field-label">Gênero</label>
+            <select class="input" [value]="mGender()" (change)="setField(mGender, $event)">
+              <option value="" disabled [selected]="!mGender()">Selecione…</option>
+              @for (g of genders; track g) {
+                <option [value]="g" [selected]="mGender() === g">{{ g }}</option>
+              }
+            </select>
           </div>
         </div>
 
@@ -140,13 +171,52 @@
           </div>
         </div>
         <div class="divider"></div>
+
+        <button class="btn-accent" style="width:100%;justify-content:center;margin-top:8px"
+                (click)="generateManual()" [disabled]="!manualComplete() || mGenerating()">
+          {{ mGenerating() ? 'Gerando 2 esboços…' : '✦ Gerar retrato' }}
+        </button>
+        @if (!manualComplete()) {
+          <p class="field-hint" style="text-align:center;margin-top:6px">Preencha todos os campos para gerar o retrato.</p>
+        }
+
+        <div class="divider"></div>
         <button class="btn-primary" style="width:100%;justify-content:center"
                 (click)="submitManual()" [disabled]="!mName().trim() || mSaving()">
           {{ mSaving() ? 'Salvando…' : '✓ Adicionar ao elenco' }}
         </button>
-        <p class="field-hint" style="text-align:center;margin-top:8px">Você pode editar depois.</p>
+        <p class="field-hint" style="text-align:center;margin-top:8px">
+          {{ mPicked() ? 'O retrato selecionado será salvo.' : 'Imagem é opcional — pode salvar sem.' }}
+        </p>
       </div>
     </div>
+
+    @if (mGenerating() || mCandidates().length > 0 || mError()) {
+      <div class="manual-portraits">
+        <p class="eyebrow" style="margin-bottom:10px">
+          {{ mCandidates().length ? 'ESCOLHA O RETRATO' : 'GERANDO RETRATOS' }}
+        </p>
+        @if (mGenerating()) {
+          <div class="portraits-grid">
+            @for (i of [1,2]; track i) { <div class="portrait-skeleton"></div> }
+          </div>
+        } @else if (mCandidates().length > 0) {
+          <div class="portraits-grid">
+            @for (c of mCandidates(); track c.id; let i = $index) {
+              <button class="portrait" [class.portrait--picked]="mPicked() === c.id"
+                      (click)="pickManualCandidate(c.id)">
+                <img class="portrait-img" [src]="c.imageUrl" [alt]="c.notes">
+                <div class="portrait-idx">VAR · {{ (i + 1).toString().padStart(2, '0') }}</div>
+                @if (mPicked() === c.id) { <div class="portrait-check">✓</div> }
+              </button>
+            }
+          </div>
+        }
+        @if (mError()) {
+          <p class="field-hint" style="color:var(--error,#c0392b)">⚠ {{ mError() }}</p>
+        }
+      </div>
+    }
   }
 
   <!-- ── Aba: Gerar com IA ── -->
@@ -315,20 +385,43 @@
               <p class="field-hint" style="color:var(--error,#c0392b);margin-top:8px">⚠ {{ eError() }}</p>
             }
 
-            <button class="btn-accent" style="width:100%;justify-content:center;margin-top:10px"
-                    (click)="regenPortrait()" [disabled]="eGenerating() || !eSummary().trim()">
-              {{ eGenerating() ? 'Gerando 2 esboços…' : '✦ Regerar retrato' }}
-            </button>
-            <p class="field-hint" style="text-align:center;margin-top:6px">
-              Usa a descrição visual como base. Escolha um retrato para substituir o atual.
-            </p>
+            @if (eRegenWarn()) {
+              <div class="regen-warn" style="margin-top:10px">
+                <p class="field-hint" style="color:var(--error,#c0392b)">
+                  ⚠ Este personagem está em uso em {{ editing()?.project_count }} projeto(s). Regerar o retrato troca a referência visual usada nos painéis já existentes.
+                </p>
+                <div style="display:flex;gap:8px;justify-content:center;margin-top:8px">
+                  <button class="btn-accent" (click)="regenPortrait(true)">Regerar mesmo assim</button>
+                  <button class="btn-ghost" (click)="eRegenWarn.set(false)">Cancelar</button>
+                </div>
+              </div>
+            } @else {
+              <button class="btn-accent" style="width:100%;justify-content:center;margin-top:10px"
+                      (click)="regenPortrait()" [disabled]="eGenerating() || !eSummary().trim()">
+                {{ eGenerating() ? 'Gerando 2 esboços…' : '✦ Regerar retrato' }}
+              </button>
+              <p class="field-hint" style="text-align:center;margin-top:6px">
+                Usa a descrição visual como base. Escolha um retrato para substituir o atual.
+              </p>
+            }
           </div>
 
           <!-- Campos -->
           <div class="edit-fields">
-            <div class="field">
-              <label class="field-label">Nome do personagem</label>
-              <input class="input serif" [value]="eName()" (input)="setField(eName, $event)">
+            <div class="field-row-3">
+              <div class="field">
+                <label class="field-label">Nome do personagem</label>
+                <input class="input serif" [value]="eName()" (input)="setField(eName, $event)">
+              </div>
+              <div class="field">
+                <label class="field-label">Gênero</label>
+                <select class="input" [value]="eGender()" (change)="setField(eGender, $event)">
+                  <option value="" disabled [selected]="!eGender()">Selecione…</option>
+                  @for (g of genders; track g) {
+                    <option [value]="g" [selected]="eGender() === g">{{ g }}</option>
+                  }
+                </select>
+              </div>
             </div>
             <div class="field-row-3">
               <div class="field">

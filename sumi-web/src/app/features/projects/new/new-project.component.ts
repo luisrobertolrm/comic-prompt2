@@ -16,7 +16,6 @@ const STYLES = [
   { id: 'classic-shoujo', label: 'Shojo clássico (olhos grandes)', note: '70s–80s, traços líricos' },
   { id: 'modern-line', label: 'Linha moderna limpa', note: 'contornos finos, screentones suaves' },
   { id: 'ink-heavy', label: 'Tinta marcada', note: 'sombras profundas, contraste alto' },
-  { id: 'minimal', label: 'Minimalista', note: 'muito branco, balões grandes' },
 ];
 
 const EXAMPLES = [

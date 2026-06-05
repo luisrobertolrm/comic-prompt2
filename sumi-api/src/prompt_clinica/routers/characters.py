@@ -6,6 +6,8 @@ from dataclasses import dataclass, field
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from temp_portrait import TempPortrait
+from user import User
 
 from prompt_clinica.database import SessionLocal, get_db
 from prompt_clinica.deps import get_current_user
@@ -13,14 +15,13 @@ from prompt_clinica.schemas.character import (
     CharacterCreate,
     CharacterOut,
     CharacterUpdate,
+    DeleteUnusedBody,
     PortraitCandidate,
     PortraitJobOut,
     PortraitRequest,
 )
 from prompt_clinica.services import character_service
 from prompt_clinica.storage import get_storage
-from temp_portrait import TempPortrait
-from user import User
 
 router = APIRouter(prefix="/characters", tags=["characters"])
 
@@ -59,12 +60,12 @@ def _save_portraits_to_db(user_id: str, portraits: list[PortraitCandidate]) -> N
         db.commit()
 
 
-def _run_job(job_id: str, user_id: str, prompt: str) -> None:
+def _run_job(job_id: str, user_id: str, prompt: str, style: str, gender: str | None) -> None:
     _cleanup_old_portraits(user_id)
     with _lock:
         _jobs[job_id].status = "running"
     try:
-        portraits = character_service.generate_portrait(prompt)
+        portraits = character_service.generate_portrait(prompt, style, gender)
         _save_portraits_to_db(user_id, portraits)
         with _lock:
             _jobs[job_id].portraits = portraits
@@ -100,6 +101,15 @@ def create_character(
     return CharacterOut.model_validate(char)
 
 
+@router.post("/delete-unused")
+def delete_unused_characters(
+    body: DeleteUnusedBody,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict[str, int]:
+    return {"deleted": character_service.delete_unused(body.ids, user, db)}
+
+
 @router.patch("/{character_id}", response_model=CharacterOut)
 def update_character(
     character_id: uuid.UUID,
@@ -127,7 +137,7 @@ def generate_portrait(
     job_id = str(uuid.uuid4())
     with _lock:
         _jobs[job_id] = _PortraitJob()
-    background_tasks.add_task(_run_job, job_id, str(user.id), req.prompt)
+    background_tasks.add_task(_run_job, job_id, str(user.id), req.prompt, req.style, req.gender)
     return PortraitJobOut(job_id=job_id, status="pending")
 
 

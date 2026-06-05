@@ -36,6 +36,7 @@ class MinimaxProvider:
             model=req.model,
             temperature=req.temperature,
             max_tokens=req.max_tokens,
+            json_mode=req.json_mode,
         )
         return TextResponse(
             content=result.content,
@@ -45,7 +46,14 @@ class MinimaxProvider:
         )
 
     def image(self, req: ImageRequest) -> ImageResponse:
-        result = self._image.generate(prompt=req.prompt, n=req.n)
+        # Os consumidores (character/panel) decodificam b64_json para salvar no
+        # storage, então pedimos base64 em vez da URL temporária do provider.
+        result = self._image.generate(
+            prompt=req.prompt,
+            n=req.n,
+            response_format="base64",
+            subject_reference=req.subject_reference,
+        )
         return ImageResponse(
             model=result.model,
             url=result.urls[0] if result.urls else "",

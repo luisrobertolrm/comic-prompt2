@@ -11,6 +11,8 @@ import { ProjectService } from '../../../core/services/project.service';
 type Tab = 'library' | 'manual' | 'ai';
 type AiMode = 'prompt' | 'attrs';
 
+const GENDERS = ['Feminino', 'Masculino', 'Outro', 'Não especificado'];
+
 interface AiCandidate {
   id: string;
   imageUrl: string;
@@ -32,19 +34,32 @@ export class CharactersScreenComponent implements OnInit {
 
   tab = signal<Tab>('library');
   characters = signal<CharacterOut[]>([]);
+  projectStyle = signal('classic-shoujo');
   selectedIds = signal<Set<string>>(new Set());
   loading = signal(true);
   saving = signal(false);
 
+  readonly genders = GENDERS;
+
   // Form manual
   mName = signal('');
   mRole = signal('Protagonista');
+  mGender = signal('');
   mAge = signal('16');
   mHeight = signal('');
   mSummary = signal('');
   mOutfit = signal('');
   mTraits = signal('');
   mSaving = signal(false);
+  mGenerating = signal(false);
+  mError = signal('');
+  mCandidates = signal<AiCandidate[]>([]);
+  mPicked = signal<string | null>(null);
+
+  manualComplete = computed(() =>
+    !!(this.mName().trim() && this.mRole().trim() && this.mGender() && this.mAge().trim()
+       && this.mHeight().trim() && this.mSummary().trim() && this.mOutfit().trim() && this.mTraits().trim())
+  );
 
   // IA
   aiMode = signal<AiMode>('prompt');
@@ -61,6 +76,7 @@ export class CharactersScreenComponent implements OnInit {
   editing = signal<CharacterOut | null>(null);
   eName = signal('');
   eRole = signal('');
+  eGender = signal('');
   eAge = signal('');
   eHeight = signal('');
   eSummary = signal('');
@@ -75,6 +91,14 @@ export class CharactersScreenComponent implements OnInit {
 
   selectedCount = computed(() => this.selectedIds().size);
 
+  // Não usados (sem projeto) e fora da seleção atual — seguros para excluir.
+  deletableUnused = computed(() =>
+    this.characters().filter(c => c.project_count === 0 && !this.selectedIds().has(c.id))
+  );
+  confirmDeleteUnused = signal(false);
+  deletingUnused = signal(false);
+  eRegenWarn = signal(false);
+
   ngOnInit(): void {
     this.characterService.listAll().subscribe({
       next: chars => { this.characters.set(chars); this.loading.set(false); },
@@ -84,9 +108,27 @@ export class CharactersScreenComponent implements OnInit {
     const projectId = this.draftService.projectId();
     if (projectId) {
       this.projectService.get(projectId).subscribe({
-        next: p => this.selectedIds.set(new Set(p.characters.map(c => c.id))),
+        next: p => {
+          this.selectedIds.set(new Set(p.characters.map(c => c.id)));
+          this.projectStyle.set(p.style);
+        },
       });
     }
+  }
+
+  deleteUnused(): void {
+    const ids = this.deletableUnused().map(c => c.id);
+    if (ids.length === 0 || this.deletingUnused()) return;
+    this.deletingUnused.set(true);
+    this.characterService.deleteUnused(ids).subscribe({
+      next: () => {
+        const removed = new Set(ids);
+        this.characters.update(list => list.filter(c => !removed.has(c.id)));
+        this.deletingUnused.set(false);
+        this.confirmDeleteUnused.set(false);
+      },
+      error: () => this.deletingUnused.set(false),
+    });
   }
 
   toggleChar(id: string): void {
@@ -112,15 +154,19 @@ export class CharactersScreenComponent implements OnInit {
   submitManual(): void {
     if (!this.mName().trim() || this.mSaving()) return;
     this.mSaving.set(true);
+    const picked = this.mCandidates().find(c => c.id === this.mPicked());
     const req: CharacterCreate = {
       name: this.mName(),
       role: this.mRole() || 'Personagem',
+      gender: this.mGender() || undefined,
       age: this.mAge() ? +this.mAge() : undefined,
       height: this.mHeight() || undefined,
       summary: this.mSummary() || undefined,
       outfit: this.mOutfit() || undefined,
       traits: this.mTraits().split(',').map(t => t.trim()).filter(Boolean),
+      style: this.projectStyle(),
     };
+    if (picked) req.image_url = picked.imageUrl;
     this.characterService.create(req).subscribe({
       next: char => {
         this.characters.update(c => [...c, char]);
@@ -134,9 +180,37 @@ export class CharactersScreenComponent implements OnInit {
   }
 
   private resetManual(): void {
-    this.mName.set(''); this.mRole.set('Protagonista');
+    this.mName.set(''); this.mRole.set('Protagonista'); this.mGender.set('');
     this.mAge.set('16'); this.mHeight.set('');
     this.mSummary.set(''); this.mOutfit.set(''); this.mTraits.set('');
+    this.mCandidates.set([]); this.mPicked.set(null); this.mError.set('');
+  }
+
+  generateManual(): void {
+    if (!this.manualComplete() || this.mGenerating()) return;
+    this.mGenerating.set(true);
+    this.mError.set('');
+    this.mCandidates.set([]);
+    this.mPicked.set(null);
+    this.portraitStream(this.mSummary(), this.mGender()).subscribe({
+      next: job => {
+        if (job.status === 'done') {
+          this.mCandidates.set(this.toCandidates(job));
+          this.mGenerating.set(false);
+        } else if (job.status === 'error') {
+          this.mError.set(job.detail || 'Erro ao gerar retratos.');
+          this.mGenerating.set(false);
+        }
+      },
+      error: err => {
+        this.mGenerating.set(false);
+        this.mError.set(err?.error?.detail ?? err?.message ?? 'Erro ao gerar retratos.');
+      },
+    });
+  }
+
+  pickManualCandidate(id: string): void {
+    this.mPicked.set(this.mPicked() === id ? null : id);
   }
 
   // ── IA ──
@@ -146,8 +220,8 @@ export class CharactersScreenComponent implements OnInit {
     this.aiAttrs.update(a => ({ ...a, [key]: value }));
   }
 
-  private portraitStream(prompt: string): Observable<PortraitJob> {
-    return this.characterService.generatePortrait(prompt).pipe(
+  private portraitStream(prompt: string, gender?: string): Observable<PortraitJob> {
+    return this.characterService.generatePortrait(prompt, this.projectStyle(), gender).pipe(
       switchMap(job =>
         timer(0, 3000).pipe(
           switchMap(() => this.characterService.pollPortraitJob(job.job_id)),
@@ -205,7 +279,9 @@ export class CharactersScreenComponent implements OnInit {
     const req: CharacterCreate = {
       name: this.aiName(),
       role: this.aiMode() === 'attrs' ? this.aiAttrs().archetype : 'Personagem',
+      summary: this.aiMode() === 'prompt' ? this.aiPrompt() : Object.values(this.aiAttrs()).join(', '),
       traits: ['gerado por IA'],
+      style: this.projectStyle(),
       image_url: picked?.imageUrl,
     };
     this.characterService.create(req).subscribe({
@@ -226,6 +302,7 @@ export class CharactersScreenComponent implements OnInit {
     this.editing.set(c);
     this.eName.set(c.name);
     this.eRole.set(c.role);
+    this.eGender.set(c.gender ?? '');
     this.eAge.set(c.age != null ? String(c.age) : '');
     this.eHeight.set(c.height ?? '');
     this.eSummary.set(c.summary ?? '');
@@ -236,20 +313,27 @@ export class CharactersScreenComponent implements OnInit {
     this.eError.set('');
     this.eCandidates.set([]);
     this.ePicked.set(null);
+    this.eRegenWarn.set(false);
   }
 
   closeEdit(): void {
     this.editing.set(null);
   }
 
-  regenPortrait(): void {
+  regenPortrait(force = false): void {
     if (!this.eSummary().trim() || this.eGenerating()) return;
+    const ed = this.editing();
+    if (!force && ed && ed.project_count > 0) {
+      this.eRegenWarn.set(true);
+      return;
+    }
+    this.eRegenWarn.set(false);
     this.eGenerating.set(true);
     this.eError.set('');
     this.eCandidates.set([]);
     this.ePicked.set(null);
 
-    this.portraitStream(this.eSummary()).subscribe({
+    this.portraitStream(this.eSummary(), this.eGender()).subscribe({
       next: job => {
         if (job.status === 'done') {
           this.eCandidates.set(this.toCandidates(job));
@@ -279,6 +363,7 @@ export class CharactersScreenComponent implements OnInit {
     const req: CharacterUpdate = {
       name: this.eName(),
       role: this.eRole() || 'Personagem',
+      gender: this.eGender() || null,
       age: this.eAge() ? +this.eAge() : null,
       height: this.eHeight() || null,
       summary: this.eSummary() || null,

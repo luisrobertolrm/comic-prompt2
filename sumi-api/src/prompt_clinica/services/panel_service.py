@@ -8,14 +8,15 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
-import prompt_clinica._paths  # noqa: F401
-from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
-
 from character import Character
+from fastapi import HTTPException, status
 from panel import Panel
 from project import Project
 from project_character import ProjectCharacter
+from sqlalchemy.orm import Session
+
+import prompt_clinica._paths  # noqa: F401
+from prompt_clinica import styles
 from prompt_clinica.ai import ImageRequest, Message, TextRequest, ai
 from prompt_clinica.ai.roteiro import generate_roteiro
 
@@ -34,16 +35,16 @@ Regras:
 - Em enquadramentos Close-up ou Extreme close, prefira "thought"
 - Texto em português, conciso e natural para mangá\
 """
-from prompt_clinica.storage import get_storage
+from user import User
+
 from prompt_clinica.schemas.panel import (
-    BubbleSchema,
     InsertPanelBody,
     PanelOut,
     PanelPatch,
     ReorderBody,
     panel_to_out,
 )
-from user import User
+from prompt_clinica.storage import get_storage
 
 logger = logging.getLogger(__name__)
 
@@ -109,6 +110,55 @@ def _get_char_names(project_id: uuid.UUID, db: Session) -> list[str]:
         .all()
     )
     return [c.name for c in chars]
+
+
+def _img_prompt(style: str, base_prompt: str) -> str:
+    return (
+        f"{styles.image_fragment(style)}, no text, no speech bubbles. {base_prompt}"
+    )
+
+
+def _portrait_reference(image_url: str | None) -> str | None:
+    """
+    Referência visual do personagem para o subject_reference.
+
+    Quando o retrato está no nosso storage, lê os bytes e devolve um data-URI
+    base64 (o MiniMax não acessa localhost). Se o `image_url` aponta para um host
+    externo que nós não servimos, devolve a própria URL para o MiniMax buscar.
+    """
+    if not image_url:
+        return None
+    key: str | None = None
+    for marker in ("/static/images/", "/storage/"):
+        idx = image_url.find(marker)
+        if idx != -1:
+            key = image_url[idx + len(marker):]
+            break
+    if key is None:
+        return image_url if image_url.startswith("http") else None
+    data = get_storage().read(key)
+    if not data:
+        return None
+    mime = "image/png" if data[:8].startswith(b"\x89PNG") else "image/jpeg"
+    return f"data:{mime};base64,{base64.b64encode(data).decode()}"
+
+
+def _subject_reference(
+    character_name: str | None, project_id: uuid.UUID, db: Session
+) -> list[str] | None:
+    """Retrato do personagem em cena como referência visual (consistência entre painéis)."""
+    if not character_name:
+        return None
+    char: Character | None = (
+        db.query(Character)
+        .join(ProjectCharacter, ProjectCharacter.character_id == Character.id)
+        .filter(ProjectCharacter.project_id == project_id, Character.name == character_name)
+        .first()
+    )
+    if char is None:
+        return None
+    ref = _portrait_reference(char.image_url)
+    return [ref] if ref else None
 
 
 def _panel_from_dict(data: dict[str, Any], project_id: uuid.UUID, index: int) -> Panel:
@@ -202,15 +252,17 @@ def generate_image(panel_id: uuid.UUID, user: User, db: Session) -> PanelOut:
     if panel is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quadro não encontrado.")
 
-    base_prompt = panel.prompt or panel.caption or "manga panel"
-    img_prompt = (
-        "Manga shojo style, black and white screentone, clean ink line art, "
-        "no text, no speech bubbles, expressive eyes, high contrast. "
-        f"{base_prompt}"
+    project_style: str = (
+        db.query(Project.style).filter(Project.id == panel.project_id).scalar() or styles.DEFAULT_STYLE
     )
+    base_prompt = panel.prompt or panel.caption or "manga panel"
+    img_prompt = _img_prompt(project_style, base_prompt)
+    subject_ref = _subject_reference(panel.character_name, panel.project_id, db)
 
     try:
-        resp = ai.image(ImageRequest(prompt=img_prompt, size="1024x1024", quality="medium"))
+        resp = ai.image(ImageRequest(
+            prompt=img_prompt, size="1024x1024", quality="medium", subject_reference=subject_ref,
+        ))
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -327,7 +379,7 @@ def generate_bubbles(panel_id: uuid.UUID, user: User, db: Session) -> PanelOut:
             temperature=0.8,
             max_tokens=600,
         ))
-        match = re.search(r'\[.*?\]', resp.content, re.DOTALL)
+        match = re.search(r"\[.*?\]", resp.content, re.DOTALL)
         if not match:
             raise ValueError("Nenhum array JSON na resposta.")
         raw: list[dict[str, Any]] = json.loads(match.group())
@@ -360,7 +412,7 @@ def generate_bubbles(panel_id: uuid.UUID, user: User, db: Session) -> PanelOut:
 
 def generate_all_images(project_id: uuid.UUID, user: User, db: Session) -> list[PanelOut]:
     """Gera imagens para todos os quadros do projeto em paralelo."""
-    _check_project(project_id, user, db)
+    project = _check_project(project_id, user, db)
     panels = (
         db.query(Panel)
         .filter(Panel.project_id == project_id)
@@ -368,15 +420,19 @@ def generate_all_images(project_id: uuid.UUID, user: User, db: Session) -> list[
         .all()
     )
 
+    # Resolve as referências no thread principal — a Session não é thread-safe.
+    refs: dict[uuid.UUID, list[str] | None] = {
+        p.id: _subject_reference(p.character_name, project_id, db) for p in panels
+    }
+
     def _gen_one(panel: Panel) -> None:
         base_prompt = panel.prompt or panel.caption or "manga panel"
-        img_prompt = (
-            "Manga shojo style, black and white screentone, clean ink line art, "
-            "no text, no speech bubbles, expressive eyes, high contrast. "
-            f"{base_prompt}"
-        )
+        img_prompt = _img_prompt(project.style, base_prompt)
         try:
-            resp = ai.image(ImageRequest(prompt=img_prompt, size="1024x1024", quality="medium"))
+            resp = ai.image(ImageRequest(
+                prompt=img_prompt, size="1024x1024", quality="medium",
+                subject_reference=refs[panel.id],
+            ))
             if resp.b64_json:
                 img_bytes = base64.b64decode(resp.b64_json)
                 panel.image_url = get_storage().save(f"{panel.id}.png", img_bytes)

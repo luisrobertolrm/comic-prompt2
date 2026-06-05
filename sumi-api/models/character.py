@@ -25,11 +25,13 @@ class Character(Base):
     )
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     role: Mapped[str] = mapped_column(String(60), nullable=False, server_default="Personagem")
+    gender: Mapped[str | None] = mapped_column(String(30), nullable=True)
     age: Mapped[int | None] = mapped_column(Integer, nullable=True)
     height: Mapped[str | None] = mapped_column(String(30), nullable=True)
     summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     outfit: Mapped[str | None] = mapped_column(Text, nullable=True)
     traits: Mapped[str | None] = mapped_column(String(500), nullable=True)  # CSV
+    style: Mapped[str] = mapped_column(String(60), nullable=False, server_default="classic-shoujo")
     image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     approved: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
     created_at: Mapped[datetime] = mapped_column(

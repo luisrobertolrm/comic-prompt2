@@ -40,29 +40,35 @@ export interface CharacterOut {
   id: string;
   name: string;
   role: string;
+  gender: string | null;
   age: number | null;
   height: string | null;
   summary: string | null;
   outfit: string | null;
   traits: string[];
+  style: string;
   approved: boolean;
   image_url: string | null;
+  project_count: number;
 }
 
 export interface CharacterCreate {
   name: string;
   role?: string;
+  gender?: string;
   age?: number;
   height?: string;
   summary?: string;
   outfit?: string;
   traits?: string[];
+  style?: string;
   image_url?: string;
 }
 
 export interface CharacterUpdate {
   name?: string;
   role?: string;
+  gender?: string | null;
   age?: number | null;
   height?: string | null;
   summary?: string | null;

@@ -543,3 +543,30 @@ h1 { font-family: var(--serif); font-size: 30px; line-height: 1.1; margin-bottom
   }
   .edit-body { grid-template-columns: 1fr; }
 }
+
+.manual-portraits {
+  margin-top: 24px;
+  max-width: 440px;
+}
+
+.lib-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.char-usage {
+  margin-top: 2px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent-ink, #8a6d3b);
+}
+
+.regen-warn {
+  border: 1px solid var(--error, #c0392b);
+  border-radius: var(--r-sm, 8px);
+  padding: 10px 12px;
+}

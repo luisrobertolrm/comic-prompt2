@@ -30,7 +30,7 @@ class Project(Base):
     status: Mapped[str] = mapped_column(String(60), nullable=False, server_default="Rascunho")
     pages: Mapped[int] = mapped_column(Integer, nullable=False, server_default="24")
     language: Mapped[str] = mapped_column(String(30), nullable=False, server_default="pt")
-    style: Mapped[str] = mapped_column(String(60), nullable=False, server_default="mangá")
+    style: Mapped[str] = mapped_column(String(60), nullable=False, server_default="classic-shoujo")
     premise: Mapped[str | None] = mapped_column(Text, nullable=True)
     synopsis: Mapped[str | None] = mapped_column(Text, nullable=True)
     cover_accent: Mapped[str] = mapped_column(String(30), nullable=False, server_default="accent")
