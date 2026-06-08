@@ -24,6 +24,11 @@ export const routes: Routes = [
           import('./features/library/library.component').then(m => m.LibraryComponent),
       },
       {
+        path: 'voice-test',
+        loadComponent: () =>
+          import('./features/voice-test/voice-test.component').then(m => m.VoiceTestComponent),
+      },
+      {
         path: 'projects/new',
         loadComponent: () =>
           import('./features/projects/new/new-project.component').then(m => m.NewProjectComponent),

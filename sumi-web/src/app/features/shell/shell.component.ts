@@ -18,6 +18,7 @@ const ICON_PATHS: Record<string, string> = {
   film:     'M4 4h16v16H4zM4 9h16M4 15h16M9 4v16M15 4v16',
   star:     'M12 3l2.6 6.3 6.4.5-5 4.3 1.6 6.5L12 17l-5.6 3.6L8 14.1l-5-4.3 6.4-.5L12 3z',
   search:   'M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16zM21 21l-4.3-4.3',
+  mic:      'M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3',
   logout:   'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9',
 };
 
@@ -66,6 +67,7 @@ export class ShellComponent {
     const u = this.url();
     if (u === '/home' || u === '/') return 'home';
     if (u.startsWith('/library'))           return 'library';
+    if (u.startsWith('/voice-test'))        return 'voice-test';
     if (u.endsWith('/new'))                 return 'new';
     if (u.endsWith('/characters'))          return 'characters';
     const m = u.match(/\/projects\/[^/]+\/(.+)/);

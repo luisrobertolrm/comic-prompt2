@@ -1,0 +1,54 @@
+<div style="max-width:760px">
+
+  <p class="eyebrow">TESTE · MINIMAX</p>
+  <h1>Teste de voz</h1>
+  <p class="lede">Escolha uma voz, escreva o texto e gere o áudio. Página isolada, fora do fluxo de produção.</p>
+
+  <!-- Dropdown pesquisável -->
+  <label class="eyebrow" style="display:block;margin:20px 0 8px">VOZ</label>
+  <input class="input" type="text" placeholder="Pesquisar voz (nome ou id)…"
+         [value]="search()" (input)="search.set($any($event.target).value)"
+         style="width:100%;margin-bottom:8px">
+
+  <div style="font-size:12px;color:var(--muted);margin-bottom:8px">
+    Selecionada: <b style="color:var(--ink)">{{ selectedLabel() }}</b>
+  </div>
+
+  <div style="border:1px solid var(--line,#e5e0d8);border-radius:10px;max-height:260px;overflow:auto">
+    @for (v of filtered(); track v.id) {
+      <button type="button" (click)="selectVoice(v.id)"
+              style="display:flex;justify-content:space-between;gap:12px;width:100%;text-align:left;
+                     padding:8px 12px;border:0;cursor:pointer;font-size:13px;background:transparent"
+              [style.background]="v.id === selectedId() ? 'var(--peach-soft,#fbeee6)' : 'transparent'">
+        <span [style.font-weight]="v.id === selectedId() ? '600' : '400'">{{ v.name }}</span>
+        <span style="color:var(--muted);font-size:11px">{{ v.id }}</span>
+      </button>
+    } @empty {
+      <div style="padding:12px;font-size:13px;color:var(--muted)">Nenhuma voz encontrada.</div>
+    }
+  </div>
+
+  <!-- Texto -->
+  <label class="eyebrow" style="display:block;margin:20px 0 8px">TEXTO</label>
+  <textarea class="input" rows="4" [value]="text()"
+            (input)="text.set($any($event.target).value)"
+            style="width:100%;resize:vertical"></textarea>
+
+  <!-- Ação -->
+  <div style="display:flex;align-items:center;gap:12px;margin-top:16px">
+    <button class="btn-primary" (click)="generate()" [disabled]="loading() || !text().trim()">
+      @if (loading()) { ⏳ Gerando… } @else { ✦ Gerar áudio }
+    </button>
+    @if (error()) {
+      <span style="color:var(--danger,#c0392b);font-size:13px">{{ error() }}</span>
+    }
+  </div>
+
+  <!-- Player -->
+  @if (audioUrl()) {
+    <div style="margin-top:20px">
+      <audio [src]="audioUrl()" controls autoplay style="width:100%"></audio>
+    </div>
+  }
+
+</div>
