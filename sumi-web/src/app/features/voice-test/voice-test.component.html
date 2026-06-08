@@ -51,4 +51,86 @@
     </div>
   }
 
+  <!-- Salvar voz selecionada no catálogo -->
+  <hr style="margin:32px 0;border:0;border-top:1px solid var(--line,#e5e0d8)">
+
+  <p class="eyebrow">CATÁLOGO · NARRAÇÃO</p>
+  <h2 style="margin:4px 0 4px">Salvar voz</h2>
+  <p class="lede" style="margin-bottom:16px">
+    Cadastre a voz selecionada (<b>{{ selectedLabel() }}</b>) para narrar as histórias.
+  </p>
+
+  <label class="eyebrow" style="display:block;margin:0 0 8px">NOME DA VOZ</label>
+  <input class="input" type="text" placeholder="Ex.: Menina alegre"
+         [value]="formName()" (input)="formName.set($any($event.target).value)"
+         style="width:100%;margin-bottom:12px">
+
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+    <div style="flex:1;min-width:120px">
+      <label class="eyebrow" style="display:block;margin:0 0 8px">IDADE INICIAL</label>
+      <input class="input" type="number" min="0" placeholder="5"
+             [value]="formAgeStart()" (input)="formAgeStart.set($any($event.target).value)"
+             style="width:100%">
+    </div>
+    <div style="flex:1;min-width:120px">
+      <label class="eyebrow" style="display:block;margin:0 0 8px">IDADE FINAL</label>
+      <input class="input" type="number" min="0" placeholder="10"
+             [value]="formAgeEnd()" (input)="formAgeEnd.set($any($event.target).value)"
+             style="width:100%">
+    </div>
+    <div style="flex:1;min-width:120px">
+      <label class="eyebrow" style="display:block;margin:0 0 8px">SEXO</label>
+      <select class="input" [value]="formSex()" (change)="formSex.set($any($event.target).value)"
+              style="width:100%">
+        <option value="">—</option>
+        <option value="Feminino">Feminino</option>
+        <option value="Masculino">Masculino</option>
+        <option value="Outro">Outro</option>
+      </select>
+    </div>
+  </div>
+
+  <label class="eyebrow" style="display:block;margin:0 0 8px">DETALHES</label>
+  <textarea class="input" rows="2" placeholder="Ex.: menina de 5 a 10 anos, tom doce e animado"
+            [value]="formDetails()" (input)="formDetails.set($any($event.target).value)"
+            style="width:100%;resize:vertical;margin-bottom:12px"></textarea>
+
+  <div style="display:flex;align-items:center;gap:12px">
+    <button class="btn-primary" (click)="save()" [disabled]="saving() || !formName().trim()">
+      @if (saving()) { ⏳ Salvando… } @else { ＋ Salvar voz }
+    </button>
+    @if (saveError()) {
+      <span style="color:var(--danger,#c0392b);font-size:13px">{{ saveError() }}</span>
+    }
+  </div>
+
+  <!-- Vozes salvas -->
+  <h2 style="margin:32px 0 12px">Vozes salvas</h2>
+  @if (saved().length === 0) {
+    <p style="font-size:13px;color:var(--muted)">Nenhuma voz salva ainda.</p>
+  } @else {
+    <div style="border:1px solid var(--line,#e5e0d8);border-radius:10px;overflow:hidden">
+      @for (v of saved(); track v.id) {
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:12px;
+                    border-bottom:1px solid var(--line,#e5e0d8)">
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:14px">
+              {{ v.name }}
+              @if (v.sex) { <span style="color:var(--muted);font-weight:400">· {{ v.sex }}</span> }
+              @if (ageLabel(v)) { <span style="color:var(--muted);font-weight:400">· {{ ageLabel(v) }}</span> }
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">{{ v.voice_id }}</div>
+            @if (v.details) {
+              <div style="font-size:12px;color:var(--ink);margin-top:4px">{{ v.details }}</div>
+            }
+          </div>
+          <button type="button" (click)="remove(v.id)"
+                  style="border:0;background:transparent;cursor:pointer;color:var(--danger,#c0392b);font-size:13px">
+            Excluir
+          </button>
+        </div>
+      }
+    </div>
+  }
+
 </div>
