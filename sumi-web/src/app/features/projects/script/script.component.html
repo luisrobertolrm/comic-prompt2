@@ -13,12 +13,21 @@
       }
     </div>
     @if (panels().length > 0) {
-      <div style="display:flex;gap:8px">
+      <div style="display:flex;gap:8px;align-items:center">
         <button class="btn-ghost" (click)="generateAllImages()"
                 [disabled]="generatingImages() || generating()">
-          @if (generatingImages()) { ⏳ Gerando {{ panels().length }} imagens… }
+          @if (generatingImages()) { ⏳ Gerando imagens… {{ imagesDone() }}/{{ panels().length }} }
           @else { ✦ Gerar todas as imagens }
         </button>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)"
+               title="Quantidade de quadros ao regerar (5 a 30)">
+          Quadros
+          <input type="number" min="5" max="30" class="input"
+                 style="width:60px;padding:4px 8px"
+                 [value]="targetPanels() ?? panels().length"
+                 (input)="targetPanels.set(+$any($event.target).value)"
+                 [disabled]="generating() || generatingImages()">
+        </label>
         <button class="btn-ghost" (click)="runGenerate()" [disabled]="generating() || generatingImages()">
           ↻ Regerar tudo
         </button>
@@ -104,7 +113,8 @@
             [tone]="p.tone"
             [characterName]="p.character_name"
             [bubbles]="p.bubbles"
-            [imageUrl]="p.image_url" />
+            [imageUrl]="p.image_url"
+            [isLoading]="generatingPanelIds().has(p.id)" />
           <div class="storyboard-meta">
             <span class="storyboard-caption">{{ p.caption }}</span>
             <span class="status-badge" [style.background]="statusColor(p.status)">

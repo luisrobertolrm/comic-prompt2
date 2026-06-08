@@ -1,5 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { from, of } from 'rxjs';
+import { catchError, finalize, map, mergeMap } from 'rxjs/operators';
 import type { ProjectDetailOut } from '../../../core/models/home.models';
 import type { PanelOut } from '../../../core/models/panel.models';
 import { PanelService } from '../../../core/services/panel.service';
@@ -26,6 +28,11 @@ export class ScriptComponent implements OnInit {
   panels = signal<PanelOut[]>([]);
   generating = signal(false);
   generatingImages = signal(false);
+  generatingPanelIds = signal<Set<string>>(new Set());
+  imagesDone = signal(0);
+  targetPanels = signal<number | null>(null);
+
+  private readonly IMAGE_CONCURRENCY = 3;
   skeletons = [1, 2, 3, 4, 5, 6, 7];
   editingSynopsis = signal(false);
   synopsisEdit = signal('');
@@ -47,8 +54,12 @@ export class ScriptComponent implements OnInit {
   runGenerate(): void {
     this.generating.set(true);
     this.panels.set([]);
-    this.panelService.generate(this.projectId()).subscribe({
-      next: panels => { this.panels.set(panels); this.generating.set(false); },
+    this.panelService.generate(this.projectId(), this.targetPanels()).subscribe({
+      next: panels => {
+        this.panels.set(panels);
+        this.targetPanels.set(panels.length);
+        this.generating.set(false);
+      },
       error: () => this.generating.set(false),
     });
   }
@@ -69,10 +80,35 @@ export class ScriptComponent implements OnInit {
 
   generateAllImages(): void {
     if (this.generatingImages() || this.generating()) return;
+    const panels = this.panels();
+    if (panels.length === 0) return;
+
     this.generatingImages.set(true);
-    this.panelService.generateAllImages(this.projectId()).subscribe({
-      next: panels => { this.panels.set(panels); this.generatingImages.set(false); },
-      error: () => this.generatingImages.set(false),
+    this.imagesDone.set(0);
+    this.generatingPanelIds.set(new Set(panels.map(p => p.id)));
+
+    from(panels).pipe(
+      mergeMap(
+        panel => this.panelService.generateImage(panel.id).pipe(
+          map(updated => ({ id: panel.id, updated: updated as PanelOut | null })),
+          catchError(() => of({ id: panel.id, updated: null as PanelOut | null })),
+        ),
+        this.IMAGE_CONCURRENCY,
+      ),
+      finalize(() => {
+        this.generatingImages.set(false);
+        this.generatingPanelIds.set(new Set());
+      }),
+    ).subscribe(({ id, updated }) => {
+      this.imagesDone.update(n => n + 1);
+      if (updated) {
+        this.panels.update(list => list.map(p => p.id === updated.id ? updated : p));
+      }
+      this.generatingPanelIds.update(set => {
+        const next = new Set(set);
+        next.delete(id);
+        return next;
+      });
     });
   }
 
