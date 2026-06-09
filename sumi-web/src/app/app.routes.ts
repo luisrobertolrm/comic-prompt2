@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   {
@@ -7,8 +8,8 @@ export const routes: Routes = [
       import('./features/auth/auth-screen/auth-screen.component').then(m => m.AuthScreenComponent),
   },
   {
-    // Shell envolve todas as páginas protegidas
     path: '',
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/shell/shell.component').then(m => m.ShellComponent),
     children: [
