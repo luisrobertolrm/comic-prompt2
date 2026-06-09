@@ -205,7 +205,12 @@ def list_panels(project_id: uuid.UUID, user: User, db: Session) -> list[PanelOut
     return [panel_to_out(p) for p in panels]
 
 
-def generate(project_id: uuid.UUID, user: User, db: Session) -> list[PanelOut]:
+def generate(
+    project_id: uuid.UUID,
+    user: User,
+    db: Session,
+    target_panels: int | None = None,
+) -> list[PanelOut]:
     project = _check_project(project_id, user, db)
     char_names = _get_char_names(project_id, db)
 
@@ -216,6 +221,7 @@ def generate(project_id: uuid.UUID, user: User, db: Session) -> list[PanelOut]:
         tone=project.tone,
         pages=project.pages,
         character_names=char_names,
+        target_panels=target_panels,
     )
 
     templates: list[dict[str, Any]] = ai_data.get("panels") or []  # type: ignore[assignment]

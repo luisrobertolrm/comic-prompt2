@@ -23,7 +23,8 @@ from prompt_clinica.ai.types import (
 class MinimaxProvider:
     def __init__(self, config: MinimaxConfig | None = None) -> None:
         cfg = config or MinimaxConfig()
-        self._text = MinimaxTextClient(cfg)
+        # M3 é modelo de raciocínio: geração longa (roteiro/história) passa de 60s.
+        self._text = MinimaxTextClient(cfg, timeout=180.0)
         self._image = MinimaxImageClient(cfg)
 
     @property

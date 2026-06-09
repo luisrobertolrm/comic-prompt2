@@ -31,6 +31,14 @@ Cada quadro deve ter:
 Varie enquadramentos e aspectos. Inclua balões só onde fizerem sentido narrativo.\
 """
 
+MIN_PANELS = 5
+MAX_PANELS = 30
+
+
+def _token_budget(n_panels: int) -> int:
+    # raciocínio do M3 + ~230 tokens de JSON por quadro
+    return min(9000, 1800 + n_panels * 230)
+
 
 def generate_roteiro(
     premise: str,
@@ -38,18 +46,31 @@ def generate_roteiro(
     tone: str,
     pages: int,
     character_names: list[str],
+    target_panels: int | None = None,
 ) -> dict[str, object]:
     """
-    Chama GPT e retorna {"title": str, "panels": list[dict]}.
+    Chama a IA e retorna {"title": str, "panels": list[dict]}.
+    `target_panels` define quantos quadros gerar; se None, a IA decide pela história.
     Retorna {} se a chamada falhar — o serviço aplica fallback mock.
     """
-    n_panels = max(5, pages * 3)
     chars = ", ".join(character_names) if character_names else "nenhum definido ainda"
+
+    if target_panels is not None:
+        n = max(MIN_PANELS, min(MAX_PANELS, target_panels))
+        count_line = f"Gere exatamente {n} quadros."
+        budget = _token_budget(n)
+    else:
+        hint = max(MIN_PANELS, pages * 3)
+        count_line = (
+            f"Escolha quantos quadros a história precisa, entre {MIN_PANELS} e {MAX_PANELS} "
+            f"(referência do autor: ~{hint}) — mais quadros se a história for rica, menos se for simples."
+        )
+        budget = _token_budget(MAX_PANELS)
 
     user_msg = (
         f"Premissa: {premise}\n"
         f"Gênero: {genre} | Tom: {tone}\n"
-        f"Páginas: {pages} → gere exatamente {n_panels} quadros\n"
+        f"{count_line}\n"
         f"Personagens disponíveis: {chars}\n\n"
         "Distribua os personagens de forma coerente com a história. "
         "Retorne o objeto JSON."
@@ -62,12 +83,13 @@ def generate_roteiro(
                 Message(role="user", content=user_msg),
             ],
             temperature=0.85,
-            max_tokens=3500,
+            max_tokens=budget,
             json_mode=True,
         ))
         data: dict[str, object] = json.loads(resp.content)
         if "panels" not in data or not isinstance(data["panels"], list):
             raise ValueError("JSON sem chave 'panels'")
+        data["panels"] = data["panels"][:MAX_PANELS]  # type: ignore[index]
         logger.info(
             "Roteiro gerado: %d quadros, %d tokens out.",
             len(data["panels"]),  # type: ignore[arg-type]

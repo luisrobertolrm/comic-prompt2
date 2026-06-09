@@ -129,7 +129,7 @@ def generate_synopsis(project_id: uuid.UUID, user: User, db: Session) -> Project
             detail="Geração de sinopse falhou.",
         )
 
-    project.synopsis = text[:2000]
+    project.synopsis = text[:6000]
     db.commit()
     db.refresh(project)
     return ProjectDetailOut(

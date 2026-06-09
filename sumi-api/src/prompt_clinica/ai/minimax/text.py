@@ -10,12 +10,16 @@ from .errors import MinimaxError
 # MiniMax-M3 é um modelo de raciocínio: emite o pensamento como <think>...</think>
 # no início do content. Removemos para devolver só a resposta final.
 _THINK_RE = re.compile(r"<think>.*?</think>", re.DOTALL)
+# Se max_tokens estourar no meio do raciocínio, o <think> vem sem fechamento;
+# descartamos do <think> até o fim para não vazar o pensamento cru como resposta.
+_THINK_OPEN_RE = re.compile(r"<think>.*$", re.DOTALL)
 # Em json_mode o modelo às vezes envolve o JSON em cerca markdown ```json ... ```.
 _FENCE_RE = re.compile(r"^```[a-zA-Z0-9]*\n(.*)\n```$", re.DOTALL)
 
 
 def _clean(content: str, *, json_mode: bool) -> str:
-    content = _THINK_RE.sub("", content).strip()
+    content = _THINK_RE.sub("", content)
+    content = _THINK_OPEN_RE.sub("", content).strip()
     if json_mode:
         match = _FENCE_RE.match(content)
         if match:

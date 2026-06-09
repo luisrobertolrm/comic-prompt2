@@ -186,13 +186,26 @@ export class CharactersScreenComponent implements OnInit {
     this.mCandidates.set([]); this.mPicked.set(null); this.mError.set('');
   }
 
+  private buildManualPrompt(): string {
+    const v = (s: string) => s.trim();
+    return [
+      v(this.mName()),
+      v(this.mRole()),
+      v(this.mAge()) && `${v(this.mAge())} anos`,
+      v(this.mHeight()) && `altura ${v(this.mHeight())}`,
+      v(this.mSummary()),
+      v(this.mOutfit()) && `figurino: ${v(this.mOutfit())}`,
+      v(this.mTraits()) && `personalidade: ${v(this.mTraits())}`,
+    ].filter(Boolean).join(', ');
+  }
+
   generateManual(): void {
     if (!this.manualComplete() || this.mGenerating()) return;
     this.mGenerating.set(true);
     this.mError.set('');
     this.mCandidates.set([]);
     this.mPicked.set(null);
-    this.portraitStream(this.mSummary(), this.mGender()).subscribe({
+    this.portraitStream(this.buildManualPrompt(), this.mGender()).subscribe({
       next: job => {
         if (job.status === 'done') {
           this.mCandidates.set(this.toCandidates(job));

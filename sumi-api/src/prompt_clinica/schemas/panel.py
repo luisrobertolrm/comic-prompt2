@@ -52,6 +52,10 @@ class ReorderBody(BaseModel):
     panel_ids: list[uuid.UUID]
 
 
+class GeneratePanelsBody(BaseModel):
+    target_panels: int | None = None
+
+
 def panel_to_out(p: object) -> PanelOut:
     """Convert ORM Panel to PanelOut, handling bubbles_json."""
     from panel import Panel  # local import to avoid circular

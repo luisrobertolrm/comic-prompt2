@@ -13,8 +13,11 @@ export class PanelService {
     return this.http.get<PanelOut[]>(`${this.base}/projects/${projectId}/panels`);
   }
 
-  generate(projectId: string): Observable<PanelOut[]> {
-    return this.http.post<PanelOut[]>(`${this.base}/projects/${projectId}/panels/generate`, {});
+  generate(projectId: string, targetPanels?: number | null): Observable<PanelOut[]> {
+    return this.http.post<PanelOut[]>(
+      `${this.base}/projects/${projectId}/panels/generate`,
+      { target_panels: targetPanels ?? null },
+    );
   }
 
   update(panelId: string, patch: PanelPatch): Observable<PanelOut> {

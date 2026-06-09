@@ -1,7 +1,7 @@
 """
-Sinopse trabalhada por IA a partir da ideia do escritor.
-Expande quando o texto é curto, lapida quando é longo.
-Retorna a sinopse em texto puro ou "" em caso de falha (o serviço decide o fallback).
+História trabalhada por IA a partir da ideia do escritor.
+Desenvolve a ideia em uma narrativa criativa com início, meio e fim.
+Retorna o texto puro ou "" em caso de falha (o serviço decide o fallback).
 """
 from __future__ import annotations
 
@@ -12,14 +12,15 @@ from prompt_clinica.ai import Message, TextRequest, ai
 logger = logging.getLogger(__name__)
 
 _SYSTEM = """\
-Você é editor de histórias. Recebe a ideia de um escritor (pode ser curta ou longa) \
-e devolve uma SINOPSE trabalhada: clara, envolvente e fiel à intenção dele.
+Você é roteirista e escritor criativo. Recebe a ideia de um escritor (pode ser curta \
+ou longa) e a desenvolve em uma HISTÓRIA completa e envolvente, fiel à intenção dele.
 
 Regras:
-- Se a ideia for curta, expanda com enredo, conflito e gancho — sem inventar fatos que a contradigam.
-- Se a ideia for longa, lapide e condense mantendo o essencial.
-- 2 a 4 frases, em português, no tom indicado.
-- Texto corrido, sem títulos, sem listas, sem aspas, sem comentários — apenas a sinopse.\
+- Estruture com início, meio e fim: apresente cenário e personagens, desenvolva o conflito e entregue um desfecho.
+- Enriqueça com detalhes criativos — atmosfera, motivações, viradas dramáticas — sem inventar fatos que contradigam a ideia original.
+- Use os personagens informados com naturalidade; se não houver nenhum, crie os que a história precisar.
+- 3 a 6 parágrafos, em português, no gênero e tom indicados.
+- Prosa corrida e imersiva, sem títulos, sem listas, sem aspas, sem comentários — apenas a história.\
 """
 
 
@@ -35,7 +36,7 @@ def generate_synopsis(
         f"Ideia do escritor: {premise}\n"
         f"Gênero: {genre} | Tom: {tone}\n"
         f"Personagens: {chars}\n\n"
-        "Escreva a sinopse trabalhada."
+        "Desenvolva a história."
     )
 
     try:
@@ -45,7 +46,7 @@ def generate_synopsis(
                 Message(role="user", content=user_msg),
             ],
             temperature=0.8,
-            max_tokens=400,
+            max_tokens=3000,
         ))
         text = resp.content.strip()
         if not text:

@@ -6,17 +6,31 @@ import zipfile
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
+from user import User
+from youtube_metadata import VideoMetadata
 
 from prompt_clinica.ai.youtube_metadata import generate_youtube_metadata
 from prompt_clinica.database import get_db
 from prompt_clinica.deps import get_current_user
-from prompt_clinica.schemas.panel import InsertPanelBody, PanelOut, ReorderBody
-from prompt_clinica.schemas.project import CharacterIdsBody, ProjectCreate, ProjectDetailOut, ProjectOut, ProjectPatch
-from prompt_clinica.schemas.youtube_metadata import VideoMetadataOut, VideoMetadataUpdate
+from prompt_clinica.schemas.panel import (
+    GeneratePanelsBody,
+    InsertPanelBody,
+    PanelOut,
+    ReorderBody,
+)
+from prompt_clinica.schemas.project import (
+    CharacterIdsBody,
+    ProjectCreate,
+    ProjectDetailOut,
+    ProjectOut,
+    ProjectPatch,
+)
+from prompt_clinica.schemas.youtube_metadata import (
+    VideoMetadataOut,
+    VideoMetadataUpdate,
+)
 from prompt_clinica.services import panel_service, project_service
 from prompt_clinica.storage import get_storage
-from user import User
-from youtube_metadata import VideoMetadata
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
@@ -88,10 +102,11 @@ def list_panels(
 @router.post("/{project_id}/panels/generate", response_model=list[PanelOut])
 def generate_panels(
     project_id: uuid.UUID,
+    body: GeneratePanelsBody = GeneratePanelsBody(),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> list[PanelOut]:
-    return panel_service.generate(project_id, user, db)
+    return panel_service.generate(project_id, user, db, target_panels=body.target_panels)
 
 
 @router.post("/{project_id}/panels", status_code=201, response_model=PanelOut)
