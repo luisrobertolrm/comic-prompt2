@@ -21,3 +21,9 @@ sumi-api/static/images
 # OS
 .DS_Store
 Thumbs.db
+sumi-api/.vs/slnx.sqlite
+sumi-api/.vs/sumi-api/CopilotIndices/18.6.39603.9996/CodeChunks.db
+sumi-api/.vs/sumi-api/CopilotIndices/18.6.39603.9996/SemanticSymbols.db
+sumi-api/.vs/sumi-api.slnx/FileContentIndex/4be15609-ca0c-4275-b0b4-e4081ca1a968.vsidx
+sumi-api/.vs/sumi-api.slnx/v18/.wsuo
+sumi-api/.vs/sumi-api.slnx/v18/DocumentLayout.json
