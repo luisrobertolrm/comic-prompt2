@@ -19,11 +19,13 @@ export interface ProjectCreate {
   pages: number;
   language: string;
   style: string;
+  narrator_voice_id?: string | null;
 }
 
 export interface ProjectDetailOut extends ProjectOut {
   premise: string | null;
   synopsis: string | null;
+  narrator_voice_id: string | null;
   characters: CharacterOut[];
 }
 
@@ -34,6 +36,7 @@ export interface ProjectUpdate {
   tone?: string;
   pages?: number;
   style?: string;
+  narrator_voice_id?: string | null;
 }
 
 export interface CharacterOut {
@@ -49,6 +52,7 @@ export interface CharacterOut {
   style: string;
   approved: boolean;
   image_url: string | null;
+  narrator_voice_id: string | null;
   project_count: number;
 }
 
@@ -63,6 +67,7 @@ export interface CharacterCreate {
   traits?: string[];
   style?: string;
   image_url?: string;
+  narrator_voice_id?: string | null;
 }
 
 export interface CharacterUpdate {
@@ -75,6 +80,7 @@ export interface CharacterUpdate {
   outfit?: string | null;
   traits?: string[];
   image_url?: string;
+  narrator_voice_id?: string | null;
 }
 
 export interface PortraitCandidate {

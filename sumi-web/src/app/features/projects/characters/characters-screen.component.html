@@ -91,6 +91,9 @@
                 }
               </div>
             }
+            @if (c.narrator_voice_id) {
+              <div class="voice-badge">🔊 {{ voiceName(c.narrator_voice_id) }}</div>
+            }
             @if (!c.approved) {
               <div class="draft-label">RASCUNHO · AGUARDA APROVAÇÃO</div>
             }
@@ -158,6 +161,16 @@
           <p class="field-hint">Separe por vírgula. A IA usa para escrever os balões.</p>
           <input class="input" placeholder="curiosa, sarcástica, leal"
                  [value]="mTraits()" (input)="setField(mTraits, $event)">
+        </div>
+
+        <div class="field">
+          <label class="field-label">Voz do personagem</label>
+          <select class="input" [value]="mNarratorVoiceId() ?? ''" (change)="setVoiceField(mNarratorVoiceId, $event)">
+            <option value="">— Sem voz —</option>
+            @for (v of voices(); track v.id) {
+              <option [value]="v.id">{{ v.name }}{{ v.sex ? ' · ' + v.sex : '' }}</option>
+            }
+          </select>
         </div>
       </div>
 
@@ -450,6 +463,15 @@
               <label class="field-label">Traços de personalidade</label>
               <p class="field-hint">Separe por vírgula.</p>
               <input class="input" [value]="eTraits()" (input)="setField(eTraits, $event)">
+            </div>
+            <div class="field">
+              <label class="field-label">Voz do personagem</label>
+              <select class="input" [value]="eNarratorVoiceId() ?? ''" (change)="setVoiceField(eNarratorVoiceId, $event)">
+                <option value="">— Sem voz —</option>
+                @for (v of voices(); track v.id) {
+                  <option [value]="v.id">{{ v.name }}{{ v.sex ? ' · ' + v.sex : '' }}</option>
+                }
+              </select>
             </div>
           </div>
         </div>

@@ -16,6 +16,7 @@ class ProjectCreate(BaseModel):
     pages: int = Field(default=4, ge=1, le=20)
     language: str = "pt-BR"
     style: StyleId = DEFAULT_STYLE
+    narrator_voice_id: uuid.UUID | None = None
 
 
 class ProjectPatch(BaseModel):
@@ -25,6 +26,7 @@ class ProjectPatch(BaseModel):
     tone: str | None = None
     pages: int | None = Field(default=None, ge=1, le=20)
     style: StyleId | None = None
+    narrator_voice_id: uuid.UUID | None = None
 
 
 class CharacterIdsBody(BaseModel):
@@ -42,6 +44,7 @@ class ProjectOut(BaseModel):
     style: str
     cover_accent: str
     cover_tone: str
+    narrator_voice_id: uuid.UUID | None
     updated_at: datetime
 
     model_config = {"from_attributes": True}
@@ -49,6 +52,10 @@ class ProjectOut(BaseModel):
     @field_serializer("id")
     def serialize_id(self, v: uuid.UUID) -> str:
         return str(v)
+
+    @field_serializer("narrator_voice_id")
+    def serialize_narrator_voice_id(self, v: uuid.UUID | None) -> str | None:
+        return str(v) if v is not None else None
 
 
 class ProjectDetailOut(ProjectOut):

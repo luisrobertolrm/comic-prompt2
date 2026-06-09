@@ -63,6 +63,7 @@ def create(req: ProjectCreate, user: User, db: Session) -> Project:
         language=req.language,
         style=req.style,
         premise=req.premise,
+        narrator_voice_id=req.narrator_voice_id,
         cover_accent=random.choice(_ACCENTS),
         cover_tone=random.choice(_TONES),
     )
@@ -93,6 +94,8 @@ def update(project_id: uuid.UUID, patch: ProjectPatch, user: User, db: Session) 
         project.pages = patch.pages
     if patch.style is not None:
         project.style = patch.style
+    if "narrator_voice_id" in patch.model_fields_set:
+        project.narrator_voice_id = patch.narrator_voice_id
     if patch.genre is not None or patch.pages is not None:
         g = project.genre
         project.subtitle = f"{g.lower()} · {project.pages * 3}–{project.pages * 4} quadros"

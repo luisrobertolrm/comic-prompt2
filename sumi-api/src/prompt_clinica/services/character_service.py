@@ -69,6 +69,7 @@ def create(req: CharacterCreate, user: User, db: Session) -> Character:
         traits=", ".join(req.traits) if req.traits else None,
         style=req.style,
         image_url=req.image_url,
+        narrator_voice_id=req.narrator_voice_id,
         approved=True,
     )
     db.add(char)

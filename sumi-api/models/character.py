@@ -33,6 +33,9 @@ class Character(Base):
     traits: Mapped[str | None] = mapped_column(String(500), nullable=True)  # CSV
     style: Mapped[str] = mapped_column(String(60), nullable=False, server_default="classic-shoujo")
     image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    narrator_voice_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("narration_voices.id", ondelete="SET NULL"), nullable=True
+    )
     approved: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()

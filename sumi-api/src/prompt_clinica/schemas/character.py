@@ -19,6 +19,7 @@ class CharacterCreate(BaseModel):
     traits: list[str] = Field(default_factory=list)
     style: StyleId = DEFAULT_STYLE
     image_url: str | None = None
+    narrator_voice_id: uuid.UUID | None = None
 
 
 class CharacterUpdate(BaseModel):
@@ -31,6 +32,7 @@ class CharacterUpdate(BaseModel):
     outfit: str | None = None
     traits: list[str] | None = None
     image_url: str | None = None
+    narrator_voice_id: uuid.UUID | None = None
 
 
 class PortraitCandidate(BaseModel):
@@ -69,6 +71,7 @@ class CharacterOut(BaseModel):
     style: str
     approved: bool
     image_url: str | None
+    narrator_voice_id: uuid.UUID | None = None
     project_count: int = 0
 
     model_config = {"from_attributes": True}
@@ -85,3 +88,7 @@ class CharacterOut(BaseModel):
     @field_serializer("id")
     def serialize_id(self, v: uuid.UUID) -> str:
         return str(v)
+
+    @field_serializer("narrator_voice_id")
+    def serialize_narrator_voice_id(self, v: uuid.UUID | None) -> str | None:
+        return str(v) if v is not None else None

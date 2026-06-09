@@ -74,6 +74,19 @@
         </div>
       </div>
 
+      <div class="divider"></div>
+
+      <div class="field">
+        <label class="field-label">Voz do narrador</label>
+        <p class="field-hint">Voz usada na narração em off. Cadastre vozes em <strong>Vozes</strong>.</p>
+        <select class="select" [value]="narratorVoiceId() ?? ''" (change)="setNarratorVoice($event)">
+          <option value="">— Sem voz de narração —</option>
+          @for (v of voices(); track v.id) {
+            <option [value]="v.id">{{ v.name }}{{ v.sex ? ' · ' + v.sex : '' }}</option>
+          }
+        </select>
+      </div>
+
     </div>
 
     <!-- Coluna direita: estilo visual + como funciona -->

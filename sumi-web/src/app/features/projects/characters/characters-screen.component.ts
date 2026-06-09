@@ -7,6 +7,7 @@ import type { CharacterCreate, CharacterOut, CharacterUpdate, PortraitJob } from
 import { CharacterService } from '../../../core/services/character.service';
 import { ProjectDraftService } from '../../../core/services/project-draft.service';
 import { ProjectService } from '../../../core/services/project.service';
+import { VoiceService, type SavedVoice } from '../../../core/services/voice.service';
 
 type Tab = 'library' | 'manual' | 'ai';
 type AiMode = 'prompt' | 'attrs';
@@ -30,6 +31,7 @@ export class CharactersScreenComponent implements OnInit {
   private draftService = inject(ProjectDraftService);
   private characterService = inject(CharacterService);
   private projectService = inject(ProjectService);
+  private voiceService = inject(VoiceService);
   private destroyRef = inject(DestroyRef);
 
   tab = signal<Tab>('library');
@@ -38,6 +40,7 @@ export class CharactersScreenComponent implements OnInit {
   selectedIds = signal<Set<string>>(new Set());
   loading = signal(true);
   saving = signal(false);
+  voices = signal<SavedVoice[]>([]);
 
   readonly genders = GENDERS;
 
@@ -50,6 +53,7 @@ export class CharactersScreenComponent implements OnInit {
   mSummary = signal('');
   mOutfit = signal('');
   mTraits = signal('');
+  mNarratorVoiceId = signal<string | null>(null);
   mSaving = signal(false);
   mGenerating = signal(false);
   mError = signal('');
@@ -82,6 +86,7 @@ export class CharactersScreenComponent implements OnInit {
   eSummary = signal('');
   eOutfit = signal('');
   eTraits = signal('');
+  eNarratorVoiceId = signal<string | null>(null);
   eImageUrl = signal<string | null>(null);
   eGenerating = signal(false);
   eError = signal('');
@@ -100,6 +105,8 @@ export class CharactersScreenComponent implements OnInit {
   eRegenWarn = signal(false);
 
   ngOnInit(): void {
+    this.voiceService.list().subscribe({ next: vs => this.voices.set(vs) });
+
     this.characterService.listAll().subscribe({
       next: chars => { this.characters.set(chars); this.loading.set(false); },
       error: () => this.loading.set(false),
@@ -145,6 +152,16 @@ export class CharactersScreenComponent implements OnInit {
     return name.charAt(0).toUpperCase();
   }
 
+  voiceName(voiceId: string | null): string | null {
+    if (!voiceId) return null;
+    return this.voices().find(v => v.id === voiceId)?.name ?? null;
+  }
+
+  setVoiceField(sig: ReturnType<typeof signal<string | null>>, e: Event): void {
+    const v = (e.target as HTMLSelectElement).value;
+    sig.set(v || null);
+  }
+
   // ── Manual form ──
 
   setField(sig: ReturnType<typeof signal<string>>, e: Event): void {
@@ -165,6 +182,7 @@ export class CharactersScreenComponent implements OnInit {
       outfit: this.mOutfit() || undefined,
       traits: this.mTraits().split(',').map(t => t.trim()).filter(Boolean),
       style: this.projectStyle(),
+      narrator_voice_id: this.mNarratorVoiceId(),
     };
     if (picked) req.image_url = picked.imageUrl;
     this.characterService.create(req).subscribe({
@@ -183,6 +201,7 @@ export class CharactersScreenComponent implements OnInit {
     this.mName.set(''); this.mRole.set('Protagonista'); this.mGender.set('');
     this.mAge.set('16'); this.mHeight.set('');
     this.mSummary.set(''); this.mOutfit.set(''); this.mTraits.set('');
+    this.mNarratorVoiceId.set(null);
     this.mCandidates.set([]); this.mPicked.set(null); this.mError.set('');
   }
 
@@ -321,6 +340,7 @@ export class CharactersScreenComponent implements OnInit {
     this.eSummary.set(c.summary ?? '');
     this.eOutfit.set(c.outfit ?? '');
     this.eTraits.set(c.traits.join(', '));
+    this.eNarratorVoiceId.set(c.narrator_voice_id);
     this.eImageUrl.set(c.image_url);
     this.eGenerating.set(false);
     this.eError.set('');
@@ -382,6 +402,7 @@ export class CharactersScreenComponent implements OnInit {
       summary: this.eSummary() || null,
       outfit: this.eOutfit() || null,
       traits: this.eTraits().split(',').map(t => t.trim()).filter(Boolean),
+      narrator_voice_id: this.eNarratorVoiceId(),
     };
     if (picked) req.image_url = picked.imageUrl;
 

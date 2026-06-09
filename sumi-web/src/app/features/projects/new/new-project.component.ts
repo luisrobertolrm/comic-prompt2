@@ -2,6 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { ProjectDraftService } from '../../../core/services/project-draft.service';
 import { ProjectService } from '../../../core/services/project.service';
+import { VoiceService, type SavedVoice } from '../../../core/services/voice.service';
 
 const GENRES = [
   'Shojo', 'Shonen', 'Slice of life', 'Mistério', 'Drama',
@@ -41,6 +42,7 @@ export class NewProjectComponent implements OnInit {
   private router = inject(Router);
   private projectService = inject(ProjectService);
   private draftService = inject(ProjectDraftService);
+  private voiceService = inject(VoiceService);
 
   readonly genres = GENRES;
   readonly tones = TONES;
@@ -54,9 +56,13 @@ export class NewProjectComponent implements OnInit {
   pages = signal(4);
   language = signal('pt-BR');
   style = signal('classic-shoujo');
+  narratorVoiceId = signal<string | null>(null);
+  voices = signal<SavedVoice[]>([]);
   loading = signal(false);
 
   ngOnInit(): void {
+    this.voiceService.list().subscribe({ next: vs => this.voices.set(vs) });
+
     const pid = this.draftService.projectId();
     if (!pid) return;
     this.loading.set(true);
@@ -67,6 +73,7 @@ export class NewProjectComponent implements OnInit {
         this.tone.set(p.tone);
         this.pages.set(p.pages);
         this.style.set(p.style);
+        this.narratorVoiceId.set(p.narrator_voice_id);
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
@@ -84,6 +91,11 @@ export class NewProjectComponent implements OnInit {
 
   setLanguage(e: Event): void {
     this.language.set((e.target as HTMLSelectElement).value);
+  }
+
+  setNarratorVoice(e: Event): void {
+    const v = (e.target as HTMLSelectElement).value;
+    this.narratorVoiceId.set(v || null);
   }
 
   decPages(): void {
@@ -105,6 +117,7 @@ export class NewProjectComponent implements OnInit {
         tone: this.tone(),
         pages: this.pages(),
         style: this.style(),
+        narrator_voice_id: this.narratorVoiceId(),
       }).subscribe({
         next: () => {
           this.loading.set(false);
@@ -120,6 +133,7 @@ export class NewProjectComponent implements OnInit {
         pages: this.pages(),
         language: this.language(),
         style: this.style(),
+        narrator_voice_id: this.narratorVoiceId(),
       }).subscribe({
         next: (project) => {
           this.draftService.projectId.set(project.id);
