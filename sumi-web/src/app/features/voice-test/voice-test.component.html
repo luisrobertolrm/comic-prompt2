@@ -1,11 +1,11 @@
-<div style="max-width:760px">
+<div style="max-width:720px;margin:0 auto;padding:32px 28px 48px">
 
   <p class="eyebrow">TESTE · MINIMAX</p>
-  <h1>Teste de voz</h1>
+  <h1 style="margin:4px 0 8px">Teste de voz</h1>
   <p class="lede">Escolha uma voz, escreva o texto e gere o áudio. Página isolada, fora do fluxo de produção.</p>
 
   <!-- Dropdown pesquisável -->
-  <label class="eyebrow" style="display:block;margin:20px 0 8px">VOZ</label>
+  <label class="eyebrow" style="display:block;margin:24px 0 8px">VOZ</label>
   <input class="input" type="text" placeholder="Pesquisar voz (nome ou id)…"
          [value]="search()" (input)="search.set($any($event.target).value)"
          style="width:100%;margin-bottom:8px">
@@ -14,22 +14,23 @@
     Selecionada: <b style="color:var(--ink)">{{ selectedLabel() }}</b>
   </div>
 
-  <div style="border:1px solid var(--line,#e5e0d8);border-radius:10px;max-height:260px;overflow:auto">
+  <div style="border:1px solid var(--line,#e5e0d8);border-radius:10px;max-height:240px;overflow:auto">
     @for (v of filtered(); track v.id) {
       <button type="button" (click)="selectVoice(v.id)"
-              style="display:flex;justify-content:space-between;gap:12px;width:100%;text-align:left;
-                     padding:8px 12px;border:0;cursor:pointer;font-size:13px;background:transparent"
+              style="display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;
+                     text-align:left;padding:9px 14px;border:0;cursor:pointer;font-size:13px;
+                     border-bottom:1px solid var(--line,#e5e0d8)"
               [style.background]="v.id === selectedId() ? 'var(--peach-soft,#fbeee6)' : 'transparent'">
         <span [style.font-weight]="v.id === selectedId() ? '600' : '400'">{{ v.name }}</span>
-        <span style="color:var(--muted);font-size:11px">{{ v.id }}</span>
+        <span style="color:var(--muted);font-size:11px;white-space:nowrap">{{ v.id }}</span>
       </button>
     } @empty {
-      <div style="padding:12px;font-size:13px;color:var(--muted)">Nenhuma voz encontrada.</div>
+      <div style="padding:14px;font-size:13px;color:var(--muted)">Nenhuma voz encontrada.</div>
     }
   </div>
 
   <!-- Texto -->
-  <label class="eyebrow" style="display:block;margin:20px 0 8px">TEXTO</label>
+  <label class="eyebrow" style="display:block;margin:24px 0 8px">TEXTO</label>
   <textarea class="input" rows="4" [value]="text()"
             (input)="text.set($any($event.target).value)"
             style="width:100%;resize:vertical"></textarea>
@@ -51,21 +52,29 @@
     </div>
   }
 
-  <!-- Salvar voz selecionada no catálogo -->
-  <hr style="margin:32px 0;border:0;border-top:1px solid var(--line,#e5e0d8)">
+  <!-- ── Cadastro ── -->
+  <hr style="margin:36px 0;border:0;border-top:1px solid var(--line,#e5e0d8)">
 
   <p class="eyebrow">CATÁLOGO · NARRAÇÃO</p>
-  <h2 style="margin:4px 0 4px">Salvar voz</h2>
-  <p class="lede" style="margin-bottom:16px">
-    Cadastre a voz selecionada (<b>{{ selectedLabel() }}</b>) para narrar as histórias.
-  </p>
+
+  @if (editingId()) {
+    <h2 style="margin:4px 0 4px">Editar voz</h2>
+    <p class="lede" style="margin-bottom:20px">
+      Atualizando os dados de <b>{{ formName() || selectedLabel() }}</b>.
+    </p>
+  } @else {
+    <h2 style="margin:4px 0 4px">Salvar voz</h2>
+    <p class="lede" style="margin-bottom:20px">
+      Cadastre a voz selecionada (<b>{{ selectedLabel() }}</b>) para narrar as histórias.
+    </p>
+  }
 
   <label class="eyebrow" style="display:block;margin:0 0 8px">NOME DA VOZ</label>
   <input class="input" type="text" placeholder="Ex.: Menina alegre"
          [value]="formName()" (input)="formName.set($any($event.target).value)"
-         style="width:100%;margin-bottom:12px">
+         style="width:100%;margin-bottom:16px">
 
-  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px">
     <div style="flex:1;min-width:120px">
       <label class="eyebrow" style="display:block;margin:0 0 8px">IDADE INICIAL</label>
       <input class="input" type="number" min="0" placeholder="5"
@@ -93,26 +102,39 @@
   <label class="eyebrow" style="display:block;margin:0 0 8px">DETALHES</label>
   <textarea class="input" rows="2" placeholder="Ex.: menina de 5 a 10 anos, tom doce e animado"
             [value]="formDetails()" (input)="formDetails.set($any($event.target).value)"
-            style="width:100%;resize:vertical;margin-bottom:12px"></textarea>
+            style="width:100%;resize:vertical;margin-bottom:16px"></textarea>
 
   <div style="display:flex;align-items:center;gap:12px">
     <button class="btn-primary" (click)="save()" [disabled]="saving() || !formName().trim()">
-      @if (saving()) { ⏳ Salvando… } @else { ＋ Salvar voz }
+      @if (saving()) {
+        ⏳ Salvando…
+      } @else if (editingId()) {
+        ✎ Atualizar voz
+      } @else {
+        ＋ Salvar voz
+      }
     </button>
+    @if (editingId()) {
+      <button type="button" (click)="resetForm()"
+              style="font-size:13px;color:var(--muted);background:transparent;border:0;cursor:pointer;padding:0">
+        Cancelar edição
+      </button>
+    }
     @if (saveError()) {
       <span style="color:var(--danger,#c0392b);font-size:13px">{{ saveError() }}</span>
     }
   </div>
 
   <!-- Vozes salvas -->
-  <h2 style="margin:32px 0 12px">Vozes salvas</h2>
+  <h2 style="margin:36px 0 12px">Vozes salvas</h2>
   @if (saved().length === 0) {
     <p style="font-size:13px;color:var(--muted)">Nenhuma voz salva ainda.</p>
   } @else {
     <div style="border:1px solid var(--line,#e5e0d8);border-radius:10px;overflow:hidden">
       @for (v of saved(); track v.id) {
-        <div style="display:flex;align-items:flex-start;gap:12px;padding:12px;
-                    border-bottom:1px solid var(--line,#e5e0d8)">
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;
+                    border-bottom:1px solid var(--line,#e5e0d8)"
+             [style.background]="editingId() === v.id ? 'var(--peach-soft,#fbeee6)' : 'transparent'">
           <div style="flex:1">
             <div style="font-weight:600;font-size:14px">
               {{ v.name }}
@@ -125,7 +147,8 @@
             }
           </div>
           <button type="button" (click)="remove(v.id)"
-                  style="border:0;background:transparent;cursor:pointer;color:var(--danger,#c0392b);font-size:13px">
+                  style="border:0;background:transparent;cursor:pointer;color:var(--danger,#c0392b);
+                         font-size:13px;white-space:nowrap;flex-shrink:0">
             Excluir
           </button>
         </div>

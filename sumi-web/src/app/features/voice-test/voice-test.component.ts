@@ -17,7 +17,6 @@ export class VoiceTestComponent implements OnInit {
   error = signal('');
   audioUrl = signal<string | null>(null);
 
-  // Formulário de cadastro da voz selecionada
   saved = signal<SavedVoice[]>([]);
   formName = signal('');
   formAgeStart = signal('');
@@ -26,6 +25,7 @@ export class VoiceTestComponent implements OnInit {
   formDetails = signal('');
   saving = signal(false);
   saveError = signal('');
+  editingId = signal<string | null>(null);
 
   private objectUrl: string | null = null;
 
@@ -55,6 +55,27 @@ export class VoiceTestComponent implements OnInit {
 
   selectVoice(id: string): void {
     this.selectedId.set(id);
+
+    const minimaxVoice = MINIMAX_VOICES.find(v => v.id === id);
+    const voiceName = minimaxVoice?.name ?? id;
+
+    const existing = this.saved().find(v => v.voice_id === id);
+    if (existing) {
+      this.editingId.set(existing.id);
+      this.formName.set(existing.name);
+      this.formAgeStart.set(existing.age_start != null ? String(existing.age_start) : '');
+      this.formAgeEnd.set(existing.age_end != null ? String(existing.age_end) : '');
+      this.formSex.set(existing.sex ?? '');
+      this.formDetails.set(existing.details ?? '');
+    } else {
+      this.editingId.set(null);
+      this.formName.set(voiceName);
+      this.formAgeStart.set('');
+      this.formAgeEnd.set('');
+      this.formSex.set('');
+      this.formDetails.set('');
+    }
+    this.saveError.set('');
   }
 
   generate(): void {
@@ -86,16 +107,32 @@ export class VoiceTestComponent implements OnInit {
     this.saveError.set('');
     const ageStart = this.formAgeStart().trim();
     const ageEnd = this.formAgeEnd().trim();
-    this.voiceService
-      .create({
-        name,
-        voice_id: this.selectedId(),
-        age_start: ageStart ? Number(ageStart) : null,
-        age_end: ageEnd ? Number(ageEnd) : null,
-        sex: this.formSex() || null,
-        details: this.formDetails().trim() || null,
-      })
-      .subscribe({
+    const payload = {
+      name,
+      voice_id: this.selectedId(),
+      age_start: ageStart ? Number(ageStart) : null,
+      age_end: ageEnd ? Number(ageEnd) : null,
+      sex: this.formSex() || null,
+      details: this.formDetails().trim() || null,
+    };
+
+    const editingId = this.editingId();
+    if (editingId) {
+      this.voiceService.update(editingId, payload).subscribe({
+        next: updated => {
+          this.saved.update(list =>
+            list.map(v => (v.id === editingId ? updated : v)).sort((a, b) => a.name.localeCompare(b.name)),
+          );
+          this.resetForm();
+          this.saving.set(false);
+        },
+        error: () => {
+          this.saveError.set('Falha ao atualizar a voz.');
+          this.saving.set(false);
+        },
+      });
+    } else {
+      this.voiceService.create(payload).subscribe({
         next: voice => {
           this.saved.update(list => [...list, voice].sort((a, b) => a.name.localeCompare(b.name)));
           this.resetForm();
@@ -106,20 +143,26 @@ export class VoiceTestComponent implements OnInit {
           this.saving.set(false);
         },
       });
+    }
   }
 
   remove(id: string): void {
     this.voiceService.delete(id).subscribe({
-      next: () => this.saved.update(list => list.filter(v => v.id !== id)),
+      next: () => {
+        this.saved.update(list => list.filter(v => v.id !== id));
+        if (this.editingId() === id) this.resetForm();
+      },
     });
   }
 
-  private resetForm(): void {
+  resetForm(): void {
+    this.editingId.set(null);
     this.formName.set('');
     this.formAgeStart.set('');
     this.formAgeEnd.set('');
     this.formSex.set('');
     this.formDetails.set('');
+    this.saveError.set('');
   }
 
   ageLabel(v: SavedVoice): string {

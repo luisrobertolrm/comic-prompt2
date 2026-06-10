@@ -43,6 +43,10 @@ export class VoiceService {
     return this.http.post<SavedVoice>(`${this.base}/voice`, voice);
   }
 
+  update(id: string, voice: SavedVoiceInput): Observable<SavedVoice> {
+    return this.http.patch<SavedVoice>(`${this.base}/voice/${id}`, voice);
+  }
+
   delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.base}/voice/${id}`);
   }

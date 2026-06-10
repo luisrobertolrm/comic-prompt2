@@ -1,15 +1,18 @@
 import prompt_clinica._paths  # noqa: F401 — models/ no sys.path antes de tudo
 
+import logging
 from pathlib import Path
 
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from prompt_clinica.config import settings
 from prompt_clinica.routers import auth, characters, health, panels, projects, storage, voice
+
+logger = logging.getLogger("sumi.api")
 
 app = FastAPI(
     title="Sumi API",
@@ -25,6 +28,20 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    logger.exception("Erro não tratado em %s %s", request.method, request.url.path)
+    detail = f"{type(exc).__name__}: {exc}" if settings.is_development else "Erro interno no servidor."
+    response = JSONResponse(status_code=500, content={"detail": detail})
+    # ServerErrorMiddleware fica fora do CORSMiddleware — adiciona o header na mão
+    # para que a mensagem chegue ao browser em vez de ser bloqueada por CORS.
+    origin = request.headers.get("origin")
+    if origin in settings.cors_origins:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+    return response
+
 
 app.include_router(health.router)
 app.include_router(auth.router)

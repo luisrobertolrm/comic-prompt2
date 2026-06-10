@@ -12,7 +12,8 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(authed).pipe(
     catchError(err => {
-      if (err?.status === 401) auth.handleUnauthorized();
+      // Não invalida a sessão em rotas de auth — 401 aí significa credenciais erradas
+      if (err?.status === 401 && !req.url.includes('/auth/')) auth.handleUnauthorized();
       return throwError(() => err);
     }),
   );

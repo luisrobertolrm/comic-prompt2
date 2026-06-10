@@ -31,6 +31,7 @@ class Project(Base):
     pages: Mapped[int] = mapped_column(Integer, nullable=False, server_default="24")
     language: Mapped[str] = mapped_column(String(30), nullable=False, server_default="pt")
     style: Mapped[str] = mapped_column(String(60), nullable=False, server_default="classic-shoujo")
+    color_mode: Mapped[str] = mapped_column(String(30), nullable=False, server_default="tons-cinza")
     premise: Mapped[str | None] = mapped_column(Text, nullable=True)
     synopsis: Mapped[str | None] = mapped_column(Text, nullable=True)
     narrator_voice_id: Mapped[uuid.UUID | None] = mapped_column(
@@ -38,6 +39,7 @@ class Project(Base):
     )
     cover_accent: Mapped[str] = mapped_column(String(30), nullable=False, server_default="accent")
     cover_tone: Mapped[str] = mapped_column(String(30), nullable=False, server_default="dots")
+    video_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

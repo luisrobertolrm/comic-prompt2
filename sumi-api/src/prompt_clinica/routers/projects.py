@@ -1,22 +1,26 @@
 import io
 import json
+import logging
+import threading
 import uuid
 import zipfile
+from dataclasses import dataclass, field
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from user import User
 from youtube_metadata import VideoMetadata
 
 from prompt_clinica.ai.youtube_metadata import generate_youtube_metadata
-from prompt_clinica.database import get_db
+from prompt_clinica.database import SessionLocal, get_db
 from prompt_clinica.deps import get_current_user
 from prompt_clinica.schemas.panel import (
     GeneratePanelsBody,
     InsertPanelBody,
     PanelOut,
     ReorderBody,
+    VideoJobOut,
 )
 from prompt_clinica.schemas.project import (
     CharacterIdsBody,
@@ -29,8 +33,10 @@ from prompt_clinica.schemas.youtube_metadata import (
     VideoMetadataOut,
     VideoMetadataUpdate,
 )
-from prompt_clinica.services import panel_service, project_service
+from prompt_clinica.services import panel_service, project_service, video_service
 from prompt_clinica.storage import get_storage
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
@@ -164,6 +170,76 @@ def export_panels(
         buf,
         media_type="application/zip",
         headers={"Content-Disposition": f'attachment; filename="sumi-{project_id}.zip"'},
+    )
+
+
+# ── Render de vídeo (motion comic) ───────────────────────────────────
+
+@dataclass
+class _VideoJob:
+    status: str = "pending"
+    progress: int = 0
+    video_url: str | None = None
+    detail: str = ""
+
+
+_video_jobs: dict[str, _VideoJob] = {}
+_video_lock = threading.Lock()
+
+
+def _run_video_job(job_id: str, project_id: uuid.UUID, user_id: uuid.UUID) -> None:
+    def progress(pct: int, label: str) -> None:
+        with _video_lock:
+            _video_jobs[job_id].progress = pct
+            _video_jobs[job_id].detail = label
+
+    with _video_lock:
+        _video_jobs[job_id].status = "running"
+    try:
+        with SessionLocal() as db:
+            url = video_service.render(project_id, user_id, db, progress)
+        with _video_lock:
+            _video_jobs[job_id].status = "done"
+            _video_jobs[job_id].video_url = url
+            _video_jobs[job_id].progress = 100
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("Render de vídeo falhou — projeto %s", project_id)
+        with _video_lock:
+            _video_jobs[job_id].status = "error"
+            _video_jobs[job_id].detail = str(exc)
+
+
+@router.post("/{project_id}/export/video", status_code=202, response_model=VideoJobOut)
+def start_video_export(
+    project_id: uuid.UUID,
+    background_tasks: BackgroundTasks,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> VideoJobOut:
+    _get_project_or_404(project_id, user, db)
+    job_id = str(uuid.uuid4())
+    with _video_lock:
+        _video_jobs[job_id] = _VideoJob()
+    background_tasks.add_task(_run_video_job, job_id, project_id, user.id)
+    return VideoJobOut(job_id=job_id, status="pending")
+
+
+@router.get("/{project_id}/export/video/{job_id}", response_model=VideoJobOut)
+def get_video_export(
+    project_id: uuid.UUID,
+    job_id: str,
+    user: User = Depends(get_current_user),
+) -> VideoJobOut:
+    with _video_lock:
+        job = _video_jobs.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job não encontrado.")
+    return VideoJobOut(
+        job_id=job_id,
+        status=job.status,
+        progress=job.progress,
+        video_url=job.video_url,
+        detail=job.detail,
     )
 
 

@@ -22,6 +22,7 @@ class VisualStyle:
 
 
 DEFAULT_STYLE = "classic-shoujo"
+DEFAULT_COLOR_MODE = "tons-cinza"
 
 STYLES: dict[str, VisualStyle] = {
     "classic-shoujo": VisualStyle(
@@ -52,6 +53,58 @@ STYLES: dict[str, VisualStyle] = {
         ),
     ),
 }
+
+
+@dataclass(frozen=True)
+class ColorMode:
+    id: str
+    label: str
+    color_fragment: str
+
+
+COLOR_MODES: dict[str, ColorMode] = {
+    "p-e-b": ColorMode(
+        id="p-e-b",
+        label="Preto e branco",
+        color_fragment=(
+            "strictly black and white only, no gray tones, no color whatsoever, "
+            "high-contrast ink, monochrome"
+        ),
+    ),
+    "tons-cinza": ColorMode(
+        id="tons-cinza",
+        label="Tons de cinza",
+        color_fragment=(
+            "grayscale only, no color, black white and gray tones, monochrome"
+        ),
+    ),
+    "colorido": ColorMode(
+        id="colorido",
+        label="Colorido",
+        color_fragment=(
+            "full color illustration, vivid colors, colored artwork"
+        ),
+    ),
+}
+
+
+def resolve_color(color_mode_id: str | None) -> ColorMode:
+    return COLOR_MODES.get(color_mode_id or "", COLOR_MODES[DEFAULT_COLOR_MODE])
+
+
+def color_fragment(color_mode_id: str | None) -> str:
+    return resolve_color(color_mode_id).color_fragment
+
+
+def _require_known_color(color_mode_id: str) -> str:
+    if color_mode_id not in COLOR_MODES:
+        raise ValueError(
+            f"Modo de cor inválido: '{color_mode_id}'. Válidos: {', '.join(COLOR_MODES)}."
+        )
+    return color_mode_id
+
+
+ColorModeId = Annotated[str, AfterValidator(_require_known_color)]
 
 
 def resolve(style_id: str | None) -> VisualStyle:

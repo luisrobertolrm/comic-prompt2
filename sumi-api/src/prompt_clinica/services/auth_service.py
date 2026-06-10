@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import sys
 import uuid
 from datetime import UTC, datetime
+from pathlib import Path
 
-import prompt_clinica._paths  # noqa: F401 — coloca models/ no sys.path
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -18,7 +19,12 @@ from prompt_clinica.utils.security import (
     hash_password,
     verify_password,
 )
-from user import User, UserOAuth  # models/user.py
+
+_models_dir = str(Path(__file__).resolve().parents[3] / "models")
+if _models_dir not in sys.path:
+    sys.path.insert(0, _models_dir)
+
+from user import User, UserOAuth  # noqa: E402 — models/user.py
 
 
 def _user_out(user: User) -> UserOut:

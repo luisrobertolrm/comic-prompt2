@@ -56,6 +56,14 @@ class GeneratePanelsBody(BaseModel):
     target_panels: int | None = None
 
 
+class VideoJobOut(BaseModel):
+    job_id: str
+    status: str  # pending | running | done | error
+    progress: int = 0
+    video_url: str | None = None
+    detail: str = ""
+
+
 def panel_to_out(p: object) -> PanelOut:
     """Convert ORM Panel to PanelOut, handling bubbles_json."""
     from panel import Panel  # local import to avoid circular

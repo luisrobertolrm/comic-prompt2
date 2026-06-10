@@ -17,7 +17,7 @@
 
       <div class="field">
         <label class="field-label">Sua ideia</label>
-        <textarea class="textarea serif" rows="5"
+        <textarea class="textarea serif" rows="8"
                   placeholder="Ex: Uma carta dobrada cai do livro emprestado. Quem a colocou ali?"
                   [value]="idea()" (input)="setIdea($event)"></textarea>
         <p class="field-hint">Sugestões para começar:</p>
@@ -79,12 +79,24 @@
       <div class="field">
         <label class="field-label">Voz do narrador</label>
         <p class="field-hint">Voz usada na narração em off. Cadastre vozes em <strong>Vozes</strong>.</p>
-        <select class="select" [value]="narratorVoiceId() ?? ''" (change)="setNarratorVoice($event)">
-          <option value="">— Sem voz de narração —</option>
+        <div class="voice-list">
+          <button class="voice-option" [class.voice-option--active]="!narratorVoiceId()"
+                  (click)="narratorVoiceId.set(null)">
+            <span class="voice-name">— Sem voz de narração —</span>
+          </button>
           @for (v of voices(); track v.id) {
-            <option [value]="v.id">{{ v.name }}{{ v.sex ? ' · ' + v.sex : '' }}</option>
+            <button class="voice-option" [class.voice-option--active]="narratorVoiceId() === v.id"
+                    (click)="narratorVoiceId.set(v.id)">
+              <span class="voice-name">{{ v.name }}</span>
+              @if (voiceMeta(v)) {
+                <span class="voice-meta">{{ voiceMeta(v) }}</span>
+              }
+              @if (v.details) {
+                <span class="voice-detail">{{ v.details }}</span>
+              }
+            </button>
           }
-        </select>
+        </div>
       </div>
 
     </div>
@@ -100,6 +112,17 @@
                     (click)="style.set(s.id)">
               <span class="style-label">{{ s.label }}</span>
               <span class="style-note">{{ s.note }}</span>
+            </button>
+          }
+        </div>
+
+        <p class="eyebrow" style="margin: 20px 0 12px">MODO DE COR</p>
+        <div class="style-list">
+          @for (c of colorModes; track c.id) {
+            <button class="style-option" [class.style-option--active]="colorMode() === c.id"
+                    (click)="colorMode.set(c.id)">
+              <span class="style-label">{{ c.label }}</span>
+              <span class="style-note">{{ c.note }}</span>
             </button>
           }
         </div>

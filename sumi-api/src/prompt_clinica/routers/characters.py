@@ -60,12 +60,14 @@ def _save_portraits_to_db(user_id: str, portraits: list[PortraitCandidate]) -> N
         db.commit()
 
 
-def _run_job(job_id: str, user_id: str, prompt: str, style: str, gender: str | None) -> None:
+def _run_job(
+    job_id: str, user_id: str, prompt: str, style: str, color_mode: str | None, gender: str | None
+) -> None:
     _cleanup_old_portraits(user_id)
     with _lock:
         _jobs[job_id].status = "running"
     try:
-        portraits = character_service.generate_portrait(prompt, style, gender)
+        portraits = character_service.generate_portrait(prompt, style, color_mode, gender)
         _save_portraits_to_db(user_id, portraits)
         with _lock:
             _jobs[job_id].portraits = portraits
@@ -137,7 +139,7 @@ def generate_portrait(
     job_id = str(uuid.uuid4())
     with _lock:
         _jobs[job_id] = _PortraitJob()
-    background_tasks.add_task(_run_job, job_id, str(user.id), req.prompt, req.style, req.gender)
+    background_tasks.add_task(_run_job, job_id, str(user.id), req.prompt, req.style, req.color_mode, req.gender)
     return PortraitJobOut(job_id=job_id, status="pending")
 
 

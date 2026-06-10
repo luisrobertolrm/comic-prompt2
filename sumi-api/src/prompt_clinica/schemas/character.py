@@ -48,6 +48,7 @@ class DeleteUnusedBody(BaseModel):
 class PortraitRequest(BaseModel):
     prompt: str
     style: StyleId = DEFAULT_STYLE
+    color_mode: str | None = None
     gender: str | None = None
 
 

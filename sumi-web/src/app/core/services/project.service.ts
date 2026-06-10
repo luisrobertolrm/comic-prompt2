@@ -14,6 +14,14 @@ export interface YtMeta {
   thumbnail_panel_id: string | null;
 }
 
+export interface VideoJob {
+  job_id: string;
+  status: 'pending' | 'running' | 'done' | 'error';
+  progress: number;
+  video_url: string | null;
+  detail: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ProjectService {
   private http = inject(HttpClient);
@@ -55,5 +63,13 @@ export class ProjectService {
 
   generateYtMeta(projectId: string): Observable<YtMeta> {
     return this.http.post<YtMeta>(`${this.base}/projects/${projectId}/youtube-metadata/generate`, {});
+  }
+
+  startVideoExport(projectId: string): Observable<VideoJob> {
+    return this.http.post<VideoJob>(`${this.base}/projects/${projectId}/export/video`, {});
+  }
+
+  pollVideoJob(projectId: string, jobId: string): Observable<VideoJob> {
+    return this.http.get<VideoJob>(`${this.base}/projects/${projectId}/export/video/${jobId}`);
   }
 }

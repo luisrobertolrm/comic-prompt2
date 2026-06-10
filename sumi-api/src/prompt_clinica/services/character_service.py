@@ -144,12 +144,16 @@ _GENDER_PROMPT = {
 
 
 def generate_portrait(
-    prompt: str, style: str = styles.DEFAULT_STYLE, gender: str | None = None
+    prompt: str,
+    style: str = styles.DEFAULT_STYLE,
+    color_mode: str | None = None,
+    gender: str | None = None,
 ) -> list[PortraitCandidate]:
     gender_phrase = _GENDER_PROMPT.get(gender or "", "")
     subject = f"{gender_phrase}, {prompt}" if gender_phrase else prompt
     base_prompt = (
-        f"{styles.image_fragment(style)}, character portrait, "
+        f"{styles.image_fragment(style)}, {styles.color_fragment(color_mode)}, "
+        "character portrait, "
         "no text, no speech bubbles, no background, detailed face. "
         f"Character: {subject}. "
     )

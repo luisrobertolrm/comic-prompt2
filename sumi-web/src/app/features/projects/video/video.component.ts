@@ -1,10 +1,11 @@
 import { Component, computed, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { DecimalPipe, DatePipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
+import { timer, switchMap, takeWhile } from 'rxjs';
 import type { PanelOut } from '../../../core/models/panel.models';
 import { PanelService } from '../../../core/services/panel.service';
 import { ProjectDraftService } from '../../../core/services/project-draft.service';
-import { ProjectService, YtMeta } from '../../../core/services/project.service';
+import { ProjectService, VideoJob, YtMeta } from '../../../core/services/project.service';
 import { environment } from '../../../../environments/environment';
 
 // ── Tipos ────────────────────────────────────────────────────────────
@@ -111,13 +112,21 @@ export class VideoComponent implements OnInit, OnDestroy {
   readonly baseUrl = environment.apiUrl;
 
   projectId = signal('');
+  projectTitle = signal('');
   panels    = signal<PanelOut[]>([]);
   loading   = signal(true);
 
-  // Export
+  // Export (ZIP)
   exporting       = signal(false);
   exportProgress  = signal(0);
   private exportTimer: ReturnType<typeof setInterval> | null = null;
+
+  // Render de vídeo (.mp4)
+  rendering       = signal(false);
+  renderProgress  = signal(0);
+  renderStage     = signal('');
+  renderError     = signal('');
+  videoUrl        = signal<string | null>(null);
 
   // YouTube modal
   ytModalOpen  = signal(false);
@@ -231,6 +240,12 @@ export class VideoComponent implements OnInit, OnDestroy {
     this.panelService.list(id).subscribe({
       next: ps => { this.panels.set(ps); this.initVoices(ps); this.loading.set(false); },
       error: () => this.loading.set(false),
+    });
+    this.projectService.get(id).subscribe({
+      next: p => {
+        this.projectTitle.set(p.title);
+        if (p.video_url) this.videoUrl.set(`${this.baseUrl}${p.video_url}`);
+      },
     });
   }
 
@@ -375,6 +390,55 @@ export class VideoComponent implements OnInit, OnDestroy {
 
   private clearExportTimer(): void {
     if (this.exportTimer) { clearInterval(this.exportTimer); this.exportTimer = null; }
+  }
+
+  // ── Render de vídeo (.mp4) ────────────────────────────────────────
+
+  generateVideo(): void {
+    if (this.rendering()) return;
+    this.rendering.set(true);
+    this.renderProgress.set(0);
+    this.renderStage.set('Iniciando…');
+    this.renderError.set('');
+    this.videoUrl.set(null);
+
+    this.projectService.startVideoExport(this.projectId()).pipe(
+      switchMap(job =>
+        timer(0, 2500).pipe(
+          switchMap(() => this.projectService.pollVideoJob(this.projectId(), job.job_id)),
+          takeWhile((j: VideoJob) => j.status !== 'done' && j.status !== 'error', true),
+        )
+      ),
+    ).subscribe({
+      next: (j: VideoJob) => {
+        this.renderProgress.set(j.progress);
+        this.renderStage.set(j.detail);
+        if (j.status === 'done') {
+          this.videoUrl.set(j.video_url ? `${this.baseUrl}${j.video_url}` : null);
+          this.rendering.set(false);
+        } else if (j.status === 'error') {
+          this.renderError.set(j.detail || 'Falha ao gerar o vídeo.');
+          this.rendering.set(false);
+        }
+      },
+      error: err => {
+        this.renderError.set(err?.error?.detail ?? err?.message ?? 'Falha ao gerar o vídeo.');
+        this.rendering.set(false);
+      },
+    });
+  }
+
+  downloadVideo(): void {
+    const url = this.videoUrl();
+    if (!url) return;
+    const slug = this.projectTitle().trim().toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+      || `sumi-${this.projectId().slice(0, 8)}`;
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${slug}.mp4`;
+    a.click();
   }
 
   goFinal(): void { void this.router.navigate(['/projects', this.projectId(), 'final']); }

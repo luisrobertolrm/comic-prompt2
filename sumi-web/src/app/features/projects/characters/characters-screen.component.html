@@ -165,12 +165,24 @@
 
         <div class="field">
           <label class="field-label">Voz do personagem</label>
-          <select class="input" [value]="mNarratorVoiceId() ?? ''" (change)="setVoiceField(mNarratorVoiceId, $event)">
-            <option value="">— Sem voz —</option>
+          <div class="voice-list">
+            <button class="voice-option" [class.voice-option--active]="!mNarratorVoiceId()"
+                    (click)="mNarratorVoiceId.set(null)">
+              <span class="voice-name">— Sem voz —</span>
+            </button>
             @for (v of voices(); track v.id) {
-              <option [value]="v.id">{{ v.name }}{{ v.sex ? ' · ' + v.sex : '' }}</option>
+              <button class="voice-option" [class.voice-option--active]="mNarratorVoiceId() === v.id"
+                      (click)="mNarratorVoiceId.set(v.id)">
+                <span class="voice-name">{{ v.name }}</span>
+                @if (voiceMeta(v)) {
+                  <span class="voice-meta">{{ voiceMeta(v) }}</span>
+                }
+                @if (v.details) {
+                  <span class="voice-detail">{{ v.details }}</span>
+                }
+              </button>
             }
-          </select>
+          </div>
         </div>
       </div>
 
@@ -466,12 +478,24 @@
             </div>
             <div class="field">
               <label class="field-label">Voz do personagem</label>
-              <select class="input" [value]="eNarratorVoiceId() ?? ''" (change)="setVoiceField(eNarratorVoiceId, $event)">
-                <option value="">— Sem voz —</option>
+              <div class="voice-list">
+                <button class="voice-option" [class.voice-option--active]="!eNarratorVoiceId()"
+                        (click)="eNarratorVoiceId.set(null)">
+                  <span class="voice-name">— Sem voz —</span>
+                </button>
                 @for (v of voices(); track v.id) {
-                  <option [value]="v.id">{{ v.name }}{{ v.sex ? ' · ' + v.sex : '' }}</option>
+                  <button class="voice-option" [class.voice-option--active]="eNarratorVoiceId() === v.id"
+                          (click)="eNarratorVoiceId.set(v.id)">
+                    <span class="voice-name">{{ v.name }}</span>
+                    @if (voiceMeta(v)) {
+                      <span class="voice-meta">{{ voiceMeta(v) }}</span>
+                    }
+                    @if (v.details) {
+                      <span class="voice-detail">{{ v.details }}</span>
+                    }
+                  </button>
                 }
-              </select>
+              </div>
             </div>
           </div>
         </div>

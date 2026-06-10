@@ -4,6 +4,7 @@ import { ProjectDraftService } from '../../../core/services/project-draft.servic
 import { ProjectService } from '../../../core/services/project.service';
 import { VoiceService, type SavedVoice } from '../../../core/services/voice.service';
 
+
 const GENRES = [
   'Shojo', 'Shonen', 'Slice of life', 'Mistério', 'Drama',
   'Comédia', 'Fantasia', 'Romance', 'Aventura', 'Horror leve',
@@ -17,6 +18,12 @@ const STYLES = [
   { id: 'classic-shoujo', label: 'Shojo clássico (olhos grandes)', note: '70s–80s, traços líricos' },
   { id: 'modern-line', label: 'Linha moderna limpa', note: 'contornos finos, screentones suaves' },
   { id: 'ink-heavy', label: 'Tinta marcada', note: 'sombras profundas, contraste alto' },
+];
+
+const COLOR_MODES = [
+  { id: 'tons-cinza', label: 'Tons de cinza', note: 'manga moderno, gradientes em cinza' },
+  { id: 'p-e-b', label: 'Preto e branco', note: 'tinta pura, sem meios-tons' },
+  { id: 'colorido', label: 'Colorido', note: 'ilustração em cores' },
 ];
 
 const EXAMPLES = [
@@ -47,6 +54,7 @@ export class NewProjectComponent implements OnInit {
   readonly genres = GENRES;
   readonly tones = TONES;
   readonly styles = STYLES;
+  readonly colorModes = COLOR_MODES;
   readonly examples = EXAMPLES;
   readonly languages = LANGUAGES;
 
@@ -56,6 +64,7 @@ export class NewProjectComponent implements OnInit {
   pages = signal(4);
   language = signal('pt-BR');
   style = signal('classic-shoujo');
+  colorMode = signal('tons-cinza');
   narratorVoiceId = signal<string | null>(null);
   voices = signal<SavedVoice[]>([]);
   loading = signal(false);
@@ -73,6 +82,7 @@ export class NewProjectComponent implements OnInit {
         this.tone.set(p.tone);
         this.pages.set(p.pages);
         this.style.set(p.style);
+        this.colorMode.set(p.color_mode ?? 'tons-cinza');
         this.narratorVoiceId.set(p.narrator_voice_id);
         this.loading.set(false);
       },
@@ -93,9 +103,13 @@ export class NewProjectComponent implements OnInit {
     this.language.set((e.target as HTMLSelectElement).value);
   }
 
-  setNarratorVoice(e: Event): void {
-    const v = (e.target as HTMLSelectElement).value;
-    this.narratorVoiceId.set(v || null);
+  voiceMeta(v: SavedVoice): string {
+    const parts: string[] = [];
+    if (v.sex) parts.push(v.sex);
+    if (v.age_start != null || v.age_end != null) {
+      parts.push(`${v.age_start ?? '?'}–${v.age_end ?? '?'} anos`);
+    }
+    return parts.join(' · ');
   }
 
   decPages(): void {
@@ -117,6 +131,7 @@ export class NewProjectComponent implements OnInit {
         tone: this.tone(),
         pages: this.pages(),
         style: this.style(),
+        color_mode: this.colorMode(),
         narrator_voice_id: this.narratorVoiceId(),
       }).subscribe({
         next: () => {
@@ -133,6 +148,7 @@ export class NewProjectComponent implements OnInit {
         pages: this.pages(),
         language: this.language(),
         style: this.style(),
+        color_mode: this.colorMode(),
         narrator_voice_id: this.narratorVoiceId(),
       }).subscribe({
         next: (project) => {

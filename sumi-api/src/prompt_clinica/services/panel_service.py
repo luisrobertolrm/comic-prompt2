@@ -112,9 +112,10 @@ def _get_char_names(project_id: uuid.UUID, db: Session) -> list[str]:
     return [c.name for c in chars]
 
 
-def _img_prompt(style: str, base_prompt: str) -> str:
+def _img_prompt(style: str, color_mode: str, base_prompt: str) -> str:
     return (
-        f"{styles.image_fragment(style)}, no text, no speech bubbles. {base_prompt}"
+        f"{styles.image_fragment(style)}, {styles.color_fragment(color_mode)}, "
+        f"no text, no speech bubbles. {base_prompt}"
     )
 
 
@@ -258,11 +259,15 @@ def generate_image(panel_id: uuid.UUID, user: User, db: Session) -> PanelOut:
     if panel is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quadro não encontrado.")
 
-    project_style: str = (
-        db.query(Project.style).filter(Project.id == panel.project_id).scalar() or styles.DEFAULT_STYLE
+    row = (
+        db.query(Project.style, Project.color_mode)
+        .filter(Project.id == panel.project_id)
+        .first()
     )
+    project_style = (row.style if row else None) or styles.DEFAULT_STYLE
+    project_color_mode = (row.color_mode if row else None) or styles.DEFAULT_COLOR_MODE
     base_prompt = panel.prompt or panel.caption or "manga panel"
-    img_prompt = _img_prompt(project_style, base_prompt)
+    img_prompt = _img_prompt(project_style, project_color_mode, base_prompt)
     subject_ref = _subject_reference(panel.character_name, panel.project_id, db)
 
     try:

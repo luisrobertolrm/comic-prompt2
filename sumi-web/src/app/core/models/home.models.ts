@@ -7,8 +7,10 @@ export interface ProjectOut {
   status: string;
   pages: number;
   style: string;
+  color_mode: string;
   cover_accent: string;
   cover_tone: string;
+  video_url: string | null;
   updated_at: string;
 }
 
@@ -19,6 +21,7 @@ export interface ProjectCreate {
   pages: number;
   language: string;
   style: string;
+  color_mode: string;
   narrator_voice_id?: string | null;
 }
 
@@ -36,6 +39,7 @@ export interface ProjectUpdate {
   tone?: string;
   pages?: number;
   style?: string;
+  color_mode?: string;
   narrator_voice_id?: string | null;
 }
 

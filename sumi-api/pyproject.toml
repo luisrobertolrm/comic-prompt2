@@ -26,6 +26,8 @@ dependencies = [
     "PyJWT>=2.10.0",
     "email-validator>=2.2.0",
     "boto3>=1.35.0",
+    "pillow>=11.0.0",
+    "imageio-ffmpeg>=0.5.1",
 ]
 
 [project.urls]
@@ -80,6 +82,7 @@ exclude = [
 ]
 venv = ".venv"
 venvPath = "."
+extraPaths = ["src", "models"]
 executionEnvironments = [{ root = ".", extraPaths = ["src", "models"] }]
 reportAny = "error"
 reportImplicitStringConcatenation = "error"

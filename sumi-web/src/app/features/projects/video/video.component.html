@@ -9,7 +9,10 @@
     </div>
     <div class="head-actions">
       <button class="btn-ghost" (click)="goFinal()">← Voltar</button>
-      <button class="btn-primary" (click)="startExport()" [disabled]="exporting()">
+      <button class="btn-primary" (click)="generateVideo()" [disabled]="rendering()">
+        @if (rendering()) { ⏳ Gerando vídeo… } @else { 🎬 Gerar vídeo (.mp4) }
+      </button>
+      <button class="btn-ghost" (click)="startExport()" [disabled]="exporting()">
         @if (exporting()) { ⏳ Exportando… } @else { ⬇ Exportar quadros }
       </button>
       <button class="btn-youtube" (click)="openYoutubeModal()" [disabled]="exporting()">
@@ -17,6 +20,36 @@
       </button>
     </div>
   </div>
+
+  @if (rendering() || videoUrl() || renderError()) {
+    <div class="render-card">
+      @if (rendering()) {
+        <p class="eyebrow" style="margin-bottom:10px">RENDERIZANDO O VÍDEO</p>
+        <div class="export-track">
+          <div class="export-fill" [style.width]="renderProgress() + '%'"></div>
+        </div>
+        <p class="export-label">
+          {{ renderStage() || 'Processando…' }}
+          <span class="export-pct">{{ renderProgress() }}%</span>
+        </p>
+        <p class="field-hint" style="margin-top:6px">
+          Sintetizando as vozes e montando as cenas — pode levar alguns minutos.
+        </p>
+      } @else if (videoUrl()) {
+        <p class="eyebrow" style="margin-bottom:10px">VÍDEO PRONTO</p>
+        <video class="render-video" [src]="videoUrl()!" controls preload="metadata"></video>
+        <div class="render-actions">
+          <button class="btn-primary" (click)="downloadVideo()">⬇ Baixar .mp4</button>
+          <button class="btn-ghost" (click)="generateVideo()">↻ Gerar de novo</button>
+          <span class="field-hint">Suba este arquivo no YouTube Studio pelo botão ▶ YouTube.</span>
+        </div>
+      } @else if (renderError()) {
+        <p class="eyebrow" style="margin-bottom:10px;color:var(--error,#c0392b)">FALHA NO RENDER</p>
+        <p class="field-hint" style="color:var(--error,#c0392b)">⚠ {{ renderError() }}</p>
+        <button class="btn-ghost" style="margin-top:10px" (click)="generateVideo()">↻ Tentar de novo</button>
+      }
+    </div>
+  }
 
   @if (exporting()) {
     <div class="export-overlay">

@@ -576,3 +576,29 @@ h1 { font-family: var(--serif); font-size: 30px; line-height: 1.1; margin-bottom
   border-radius: var(--r-sm, 8px);
   padding: 10px 12px;
 }
+
+/* ── Voice picker ── */
+.voice-list { display: flex; flex-direction: column; gap: 5px; }
+
+.voice-option {
+  text-align: left;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-sm);
+  background: var(--paper-3);
+  padding: 8px 10px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  &--active {
+    border: 1.5px solid var(--ink);
+    background: var(--accent-soft);
+  }
+
+  &:hover:not(.voice-option--active) { background: var(--paper-2); }
+}
+
+.voice-name { font-size: 13px; font-weight: 600; color: var(--ink); }
+.voice-meta { font-size: 11px; color: var(--ink-3); }
+.voice-detail { font-size: 12px; color: var(--ink-2); font-style: italic; }

@@ -37,6 +37,7 @@ export class CharactersScreenComponent implements OnInit {
   tab = signal<Tab>('library');
   characters = signal<CharacterOut[]>([]);
   projectStyle = signal('classic-shoujo');
+  projectColorMode = signal('tons-cinza');
   selectedIds = signal<Set<string>>(new Set());
   loading = signal(true);
   saving = signal(false);
@@ -118,6 +119,7 @@ export class CharactersScreenComponent implements OnInit {
         next: p => {
           this.selectedIds.set(new Set(p.characters.map(c => c.id)));
           this.projectStyle.set(p.style);
+          this.projectColorMode.set(p.color_mode ?? 'tons-cinza');
         },
       });
     }
@@ -157,9 +159,13 @@ export class CharactersScreenComponent implements OnInit {
     return this.voices().find(v => v.id === voiceId)?.name ?? null;
   }
 
-  setVoiceField(sig: ReturnType<typeof signal<string | null>>, e: Event): void {
-    const v = (e.target as HTMLSelectElement).value;
-    sig.set(v || null);
+  voiceMeta(v: SavedVoice): string {
+    const parts: string[] = [];
+    if (v.sex) parts.push(v.sex);
+    if (v.age_start != null || v.age_end != null) {
+      parts.push(`${v.age_start ?? '?'}–${v.age_end ?? '?'} anos`);
+    }
+    return parts.join(' · ');
   }
 
   // ── Manual form ──
@@ -253,7 +259,7 @@ export class CharactersScreenComponent implements OnInit {
   }
 
   private portraitStream(prompt: string, gender?: string): Observable<PortraitJob> {
-    return this.characterService.generatePortrait(prompt, this.projectStyle(), gender).pipe(
+    return this.characterService.generatePortrait(prompt, this.projectStyle(), this.projectColorMode(), gender).pipe(
       switchMap(job =>
         timer(0, 3000).pipe(
           switchMap(() => this.characterService.pollPortraitJob(job.job_id)),
