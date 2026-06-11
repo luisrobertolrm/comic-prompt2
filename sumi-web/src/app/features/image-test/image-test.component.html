@@ -1,0 +1,41 @@
+<div style="max-width:860px;margin:0 auto;padding:32px 28px 48px">
+
+  <p class="eyebrow">TESTE · MINIMAX</p>
+  <h1 style="margin:4px 0 8px">Teste de imagem</h1>
+  <p class="lede">
+    Edite o JSON do payload (<a href="https://platform.minimax.io/docs/guides/image-generation"
+    target="_blank" rel="noopener" style="color:inherit">docs da API</a>) e gere.
+    Página isolada, fora do fluxo de produção.
+  </p>
+
+  <label class="eyebrow" style="display:block;margin:24px 0 8px">PAYLOAD (JSON)</label>
+  <textarea class="textarea" rows="14" spellcheck="false"
+            style="width:100%;font-family:ui-monospace,Consolas,monospace;font-size:12.5px;line-height:1.5"
+            [value]="json()" (input)="setJson($event)"></textarea>
+
+  <div style="display:flex;align-items:center;gap:14px;margin-top:14px">
+    <button class="btn-accent" (click)="generate()" [disabled]="loading()">
+      {{ loading() ? 'Gerando…' : '✦ Gerar imagem' }}
+    </button>
+    @if (elapsed() !== null) {
+      <span style="font-size:12px;color:var(--muted)">{{ elapsed() }}s</span>
+    }
+  </div>
+
+  @if (error()) {
+    <div style="margin-top:16px;padding:12px 14px;border:1px solid var(--error,#c0392b);
+                border-radius:10px;color:var(--error,#c0392b);font-size:13px;white-space:pre-wrap">
+      ⚠ {{ error() }}
+    </div>
+  }
+
+  @if (images().length > 0) {
+    <label class="eyebrow" style="display:block;margin:28px 0 10px">RESULTADO</label>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px">
+      @for (src of images(); track $index) {
+        <img [src]="src" alt="Imagem gerada"
+             style="width:100%;border:1px solid var(--line,#e5e0d8);border-radius:10px">
+      }
+    </div>
+  }
+</div>

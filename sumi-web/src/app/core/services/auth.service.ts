@@ -91,6 +91,11 @@ export class AuthService {
   }
 
   private handleError(err: HttpErrorResponse): Observable<never> {
+    if (err.status === 0) {
+      return throwError(
+        () => new Error('Servidor indisponível. Verifique se a API está rodando e tente novamente.'),
+      );
+    }
     const message: string =
       (err.error as { detail?: string })?.detail ?? 'Erro inesperado. Tente novamente.';
     return throwError(() => new Error(message));

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import threading
 import uuid
 from dataclasses import dataclass, field
@@ -22,6 +23,8 @@ from prompt_clinica.schemas.character import (
 )
 from prompt_clinica.services import character_service
 from prompt_clinica.storage import get_storage
+
+logger = logging.getLogger("sumi.api")
 
 router = APIRouter(prefix="/characters", tags=["characters"])
 
@@ -61,13 +64,22 @@ def _save_portraits_to_db(user_id: str, portraits: list[PortraitCandidate]) -> N
 
 
 def _run_job(
-    job_id: str, user_id: str, prompt: str, style: str, color_mode: str | None, gender: str | None
+    job_id: str,
+    user_id: str,
+    prompt: str,
+    style: str,
+    color_mode: str | None,
+    gender: str | None,
+    body_type: str | None,
+    skin_tone: str | None,
 ) -> None:
     _cleanup_old_portraits(user_id)
     with _lock:
         _jobs[job_id].status = "running"
     try:
-        portraits = character_service.generate_portrait(prompt, style, color_mode, gender)
+        portraits = character_service.generate_portrait(
+            prompt, style, color_mode, gender, body_type, skin_tone
+        )
         _save_portraits_to_db(user_id, portraits)
         with _lock:
             _jobs[job_id].portraits = portraits
@@ -136,10 +148,24 @@ def generate_portrait(
     background_tasks: BackgroundTasks,
     user: User = Depends(get_current_user),
 ) -> PortraitJobOut:
+    logger.info(
+        "generate-portrait recebido: style=%r color_mode=%r gender=%r body=%r skin=%r",
+        req.style, req.color_mode, req.gender, req.body_type, req.skin_tone,
+    )
     job_id = str(uuid.uuid4())
     with _lock:
         _jobs[job_id] = _PortraitJob()
-    background_tasks.add_task(_run_job, job_id, str(user.id), req.prompt, req.style, req.color_mode, req.gender)
+    background_tasks.add_task(
+        _run_job,
+        job_id,
+        str(user.id),
+        req.prompt,
+        req.style,
+        req.color_mode,
+        req.gender,
+        req.body_type,
+        req.skin_tone,
+    )
     return PortraitJobOut(job_id=job_id, status="pending")
 
 

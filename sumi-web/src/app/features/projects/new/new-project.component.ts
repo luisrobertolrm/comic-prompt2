@@ -2,6 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { ProjectDraftService } from '../../../core/services/project-draft.service';
 import { ProjectService } from '../../../core/services/project.service';
+import { StyleService, type StyleOption } from '../../../core/services/style.service';
 import { VoiceService, type SavedVoice } from '../../../core/services/voice.service';
 
 
@@ -12,18 +13,6 @@ const GENRES = [
 
 const TONES = [
   'Doce e melancólico', 'Tenso', 'Cômico', 'Mistério leve', 'Reflexivo', 'Heróico',
-];
-
-const STYLES = [
-  { id: 'classic-shoujo', label: 'Shojo clássico (olhos grandes)', note: '70s–80s, traços líricos' },
-  { id: 'modern-line', label: 'Linha moderna limpa', note: 'contornos finos, screentones suaves' },
-  { id: 'ink-heavy', label: 'Tinta marcada', note: 'sombras profundas, contraste alto' },
-];
-
-const COLOR_MODES = [
-  { id: 'tons-cinza', label: 'Tons de cinza', note: 'manga moderno, gradientes em cinza' },
-  { id: 'p-e-b', label: 'Preto e branco', note: 'tinta pura, sem meios-tons' },
-  { id: 'colorido', label: 'Colorido', note: 'ilustração em cores' },
 ];
 
 const EXAMPLES = [
@@ -49,27 +38,37 @@ export class NewProjectComponent implements OnInit {
   private router = inject(Router);
   private projectService = inject(ProjectService);
   private draftService = inject(ProjectDraftService);
+  private styleService = inject(StyleService);
   private voiceService = inject(VoiceService);
 
   readonly genres = GENRES;
   readonly tones = TONES;
-  readonly styles = STYLES;
-  readonly colorModes = COLOR_MODES;
   readonly examples = EXAMPLES;
   readonly languages = LANGUAGES;
+
+  styles = signal<StyleOption[]>([]);
+  colorModes = signal<StyleOption[]>([]);
 
   idea = signal('');
   genre = signal('Shojo');
   tone = signal('Doce e melancólico');
   pages = signal(4);
   language = signal('pt-BR');
-  style = signal('classic-shoujo');
-  colorMode = signal('tons-cinza');
+  style = signal('');
+  colorMode = signal('');
   narratorVoiceId = signal<string | null>(null);
   voices = signal<SavedVoice[]>([]);
   loading = signal(false);
 
   ngOnInit(): void {
+    this.styleService.catalog().subscribe({
+      next: c => {
+        this.styles.set(c.styles);
+        this.colorModes.set(c.color_modes);
+        if (!this.style()) this.style.set(c.default_style);
+        if (!this.colorMode()) this.colorMode.set(c.default_color_mode);
+      },
+    });
     this.voiceService.list().subscribe({ next: vs => this.voices.set(vs) });
 
     const pid = this.draftService.projectId();
@@ -82,7 +81,7 @@ export class NewProjectComponent implements OnInit {
         this.tone.set(p.tone);
         this.pages.set(p.pages);
         this.style.set(p.style);
-        this.colorMode.set(p.color_mode ?? 'tons-cinza');
+        if (p.color_mode) this.colorMode.set(p.color_mode);
         this.narratorVoiceId.set(p.narrator_voice_id);
         this.loading.set(false);
       },

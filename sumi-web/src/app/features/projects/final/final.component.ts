@@ -5,13 +5,8 @@ import type { PanelOut } from '../../../core/models/panel.models';
 import { PanelService } from '../../../core/services/panel.service';
 import { ProjectDraftService } from '../../../core/services/project-draft.service';
 import { ProjectService } from '../../../core/services/project.service';
+import { StyleService, type StyleOption } from '../../../core/services/style.service';
 import { MangaPanelComponent } from '../manga-panel/manga-panel.component';
-
-const STYLES: Record<string, string> = {
-  'classic-shoujo': 'Shojo clássico',
-  'modern-line': 'Linha moderna limpa',
-  'ink-heavy': 'Tinta marcada',
-};
 
 @Component({
   selector: 'app-final',
@@ -26,10 +21,12 @@ export class FinalComponent implements OnInit {
   private draft = inject(ProjectDraftService);
   private projectService = inject(ProjectService);
   private panelService = inject(PanelService);
+  private styleService = inject(StyleService);
 
   projectId = signal('');
   project = signal<ProjectDetailOut | null>(null);
   panels = signal<PanelOut[]>([]);
+  styleOptions = signal<StyleOption[]>([]);
   loading = signal(true);
 
   pages = computed<PanelOut[][]>(() => {
@@ -40,11 +37,13 @@ export class FinalComponent implements OnInit {
   });
 
   approvedCount = computed(() => this.panels().filter(p => p.status === 'approved').length);
-  styleLabel = computed(() => STYLES[this.project()?.style ?? ''] ?? '—');
+  styleLabel = computed(() =>
+    this.styleOptions().find(s => s.id === this.project()?.style)?.label ?? '—');
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id') ?? '';
     this.projectId.set(id);
+    this.styleService.catalog().subscribe({ next: c => this.styleOptions.set(c.styles) });
     this.projectService.get(id).subscribe({ next: p => { this.project.set(p); this.draft.currentProjectTitle.set(p.title); } });
     this.panelService.list(id).subscribe({
       next: ps => { this.panels.set(ps); this.loading.set(false); },

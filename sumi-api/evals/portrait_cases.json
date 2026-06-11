@@ -1,0 +1,59 @@
+{
+  "cases": [
+    {
+      "id": "webtoon-gordo-negra-colorido",
+      "style": "webtoon",
+      "color_mode": "colorido",
+      "gender": "Feminino",
+      "body_type": "Gordo",
+      "skin_tone": "Negra",
+      "prompt": "protagonista, 16 anos, cabelo preto com franja reta, uniforme escolar",
+      "expect": {
+        "estilo": "webtoon/manhwa moderno: traço limpo, gradientes suaves de cor, cabelo detalhado com brilho, luz cinematográfica",
+        "corpo": "corpo gordo/plus-size: rosto cheio e redondo com papada, pescoço e ombros largos — NÃO magra",
+        "pele": "pessoa negra de pele bem escura (marrom escuro) — NÃO pele branca/clara"
+      }
+    },
+    {
+      "id": "anime90s-magra-clara-cinza",
+      "style": "anime-90s",
+      "color_mode": "tons-cinza",
+      "gender": "Feminino",
+      "body_type": "Magro",
+      "skin_tone": "Clara",
+      "prompt": "protagonista, 16 anos, cabelo longo, uniforme escolar",
+      "expect": {
+        "estilo": "anime retrô anos 90: olhos grandes e redondos com reflexos, boca pequena estilizada, cel-shading com contornos sólidos, tons de cinza",
+        "corpo": "corpo magro, rosto fino",
+        "pele": "pele clara"
+      }
+    },
+    {
+      "id": "darkfantasy-forte-morena-cinza",
+      "style": "dark-fantasy",
+      "color_mode": "tons-cinza",
+      "gender": "Masculino",
+      "body_type": "Forte",
+      "skin_tone": "Morena",
+      "prompt": "guerreiro veterano, 40 anos, cicatriz no rosto",
+      "expect": {
+        "estilo": "pintura digital dark fantasy semi-realista: proporções faciais realistas, pinceladas texturizadas, luz chiaroscuro dramática, sem lineart visível — NÃO fofo, NÃO olhos grandes de anime",
+        "corpo": "homem musculoso e forte, ombros largos",
+        "pele": "pele morena, tom médio claramente mais escuro que pele branca"
+      }
+    },
+    {
+      "id": "webtoon-negra-cinza",
+      "style": "webtoon",
+      "color_mode": "tons-cinza",
+      "gender": "Feminino",
+      "body_type": "Médio",
+      "skin_tone": "Negra",
+      "prompt": "estudante, 16 anos, cabelo preto curto",
+      "expect": {
+        "estilo": "webtoon/manhwa moderno em tons de cinza: traço limpo, luz cinematográfica",
+        "pele": "pessoa negra: pele renderizada em cinza claramente mais escuro que o fundo branco — NÃO rosto branco de papel"
+      }
+    }
+  ]
+}

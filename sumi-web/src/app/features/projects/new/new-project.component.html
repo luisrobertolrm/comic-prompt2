@@ -107,7 +107,7 @@
       <div class="card">
         <p class="eyebrow" style="margin-bottom: 12px">ESTILO VISUAL</p>
         <div class="style-list">
-          @for (s of styles; track s.id) {
+          @for (s of styles(); track s.id) {
             <button class="style-option" [class.style-option--active]="style() === s.id"
                     (click)="style.set(s.id)">
               <span class="style-label">{{ s.label }}</span>
@@ -118,7 +118,7 @@
 
         <p class="eyebrow" style="margin: 20px 0 12px">MODO DE COR</p>
         <div class="style-list">
-          @for (c of colorModes; track c.id) {
+          @for (c of colorModes(); track c.id) {
             <button class="style-option" [class.style-option--active]="colorMode() === c.id"
                     (click)="colorMode.set(c.id)">
               <span class="style-label">{{ c.label }}</span>

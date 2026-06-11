@@ -27,7 +27,12 @@ class JudgeConfig:
     vision_model: str
 
 
-def make_config(mode: str, openai_api_key: str = "") -> JudgeConfig:
+def make_config(
+    mode: str,
+    openai_api_key: str = "",
+    minimax_api_key: str = "",
+    minimax_base_url: str = "https://api.minimax.io",
+) -> JudgeConfig:
     if mode == "local":
         return JudgeConfig(
             mode="local",
@@ -47,7 +52,21 @@ def make_config(mode: str, openai_api_key: str = "") -> JudgeConfig:
             text_model="gpt-4o",
             vision_model="gpt-4o",
         )
-    msg = f"Modo de juiz desconhecido: '{mode}' (use 'local' ou 'remote')."
+    if mode == "minimax":
+        if not minimax_api_key:
+            msg = "Modo minimax exige MINIMAX_API_KEY."
+            raise ValueError(msg)
+        # MiniMax-M3 é multimodal e o endpoint /v1/chat/completions é
+        # OpenAI-compatible. Atenção: julga imagens geradas pelo próprio
+        # MiniMax — menos imparcial que um juiz de outro provider.
+        return JudgeConfig(
+            mode="minimax",
+            base_url=minimax_base_url.rstrip("/") + "/v1",
+            api_key=minimax_api_key,
+            text_model="MiniMax-M3",
+            vision_model="MiniMax-M3",
+        )
+    msg = f"Modo de juiz desconhecido: '{mode}' (use 'local', 'remote' ou 'minimax')."
     raise ValueError(msg)
 
 
@@ -87,6 +106,28 @@ Regras importantes:
 """
 
 
+_PORTRAIT_SYSTEM = """\
+Você é um avaliador rigoroso de RETRATOS de personagem de mangá gerados por IA.
+Recebe um BRIEFING (estilo visual, corpo e pele esperados) e UMA IMAGEM gerada.
+Avalie cada eixo de forma independente e objetiva.
+
+Retorne APENAS um objeto JSON (sem markdown, sem texto extra) com:
+- "estilo_score": int 0-5 — fidelidade ao estilo visual esperado (traço, tamanho dos olhos, sombreamento)
+- "corpo_score": int 0-5 — fidelidade ao tipo físico esperado (3 se o briefing não especificar)
+- "pele_score": int 0-5 — fidelidade ao tom de pele esperado (3 se o briefing não especificar)
+- "violacoes": string[] — desvios CLARAMENTE visíveis em relação ao briefing (vazio se nenhum)
+- "justificativa": string — 1-2 frases concretas em português
+
+Regras importantes:
+- O retrato pode ser só busto/rosto: avalie o corpo pelo que é visível (rosto cheio,
+  papada e pescoço/ombros largos indicam corpo gordo; rosto fino indica corpo magro).
+- Em imagem P&B/tons de cinza, "pele escura" aparece como tom de cinza claramente mais
+  escuro que o fundo branco — não exija cor para reconhecer pele escura.
+- Em "violacoes" liste SOMENTE o que você REALMENTE vê na imagem. Não repita o briefing.
+- IGNORE qualidade artística geral; avalie apenas a aderência ao briefing.\
+"""
+
+
 def _client(cfg: JudgeConfig) -> OpenAI:
     return OpenAI(base_url=cfg.base_url, api_key=cfg.api_key)
 
@@ -116,6 +157,8 @@ def _panels_view(roteiro: dict[str, Any]) -> str:
 
 
 def _parse_json(content: str) -> dict[str, Any]:
+    # MiniMax-M3 (reasoning) antepõe <think>...</think> à resposta.
+    content = re.sub(r"<think>.*?</think>", "", content, flags=re.DOTALL).strip()
     try:
         return json.loads(content)
     except json.JSONDecodeError:
@@ -181,6 +224,61 @@ def _verdict_from(data: dict[str, Any], *, chars_expected: bool) -> dict[str, An
         "anacronismos": anac,
         "justificativa": str(data.get("justificativa", "")),
         "passed": amb >= 3 and pers_ok and not anac,
+    }
+
+
+def judge_portrait(
+    case: dict[str, Any],
+    image_bytes: bytes,
+    cfg: JudgeConfig,
+) -> dict[str, Any]:
+    """Avalia um retrato de personagem nos eixos estilo/corpo/pele (juiz de visão)."""
+    expect = case.get("expect", {})
+    b64 = base64.b64encode(image_bytes).decode("ascii")
+    media = _mediatype(image_bytes)
+    user_text = (
+        "BRIEFING ESPERADO\n"
+        f"- Estilo visual: {expect.get('estilo', '?')}\n"
+        f"- Corpo: {expect.get('corpo', '(não especificado)')}\n"
+        f"- Pele: {expect.get('pele', '(não especificado)')}\n\n"
+        "Avalie a IMAGEM e retorne APENAS o JSON."
+    )
+
+    resp = _client(cfg).chat.completions.create(
+        model=cfg.vision_model,
+        temperature=0,
+        messages=[
+            {"role": "system", "content": _PORTRAIT_SYSTEM},
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": user_text},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:{media};base64,{b64}"},
+                    },
+                ],
+            },
+        ],
+    )
+    data = _parse_json(resp.choices[0].message.content or "")
+    estilo = int(data.get("estilo_score", 0))
+    corpo = int(data.get("corpo_score", 0))
+    pele = int(data.get("pele_score", 0))
+    violacoes = [str(v) for v in (data.get("violacoes") or []) if v]
+    # Cada eixo só conta quando o caso o especifica.
+    ok = (
+        estilo >= 3
+        and (corpo >= 3 or "corpo" not in expect)
+        and (pele >= 3 or "pele" not in expect)
+    )
+    return {
+        "estilo_score": estilo,
+        "corpo_score": corpo,
+        "pele_score": pele,
+        "violacoes": violacoes,
+        "justificativa": str(data.get("justificativa", "")),
+        "passed": ok and not violacoes,
     }
 
 

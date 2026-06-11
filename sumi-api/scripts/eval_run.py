@@ -3,6 +3,7 @@ Harness de evals — disparado manualmente pelo dev (nunca no pytest/CI).
 
     uv run python scripts/eval_run.py                      # estágio roteiro, juiz local
     uv run python scripts/eval_run.py --stage image        # gera N imagens + juiz de visão
+    uv run python scripts/eval_run.py --stage portrait     # retratos: estilo/corpo/pele
     uv run python scripts/eval_run.py --stage calib        # calibra o juiz com PNGs fixos
     uv run python scripts/eval_run.py --judge remote       # juiz gpt-4o (ground truth)
     uv run python scripts/eval_run.py --stage image --samples 2
@@ -31,16 +32,22 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
+sys.path.insert(0, str(ROOT / "models"))
 sys.path.insert(0, str(ROOT / "evals"))
 
-from judge import judge_image, judge_roteiro, make_config  # noqa: E402
+from judge import judge_image, judge_portrait, judge_roteiro, make_config  # noqa: E402
 
 SEP = "─" * 64
 
-_IMG_PREFIX = (
-    "Manga shojo style, black and white screentone, clean ink line art, "
-    "no text, no speech bubbles, expressive eyes, high contrast. "
-)
+
+def _img_prefix() -> str:
+    # Usa a fonte única de estilos do produto (antes era uma cópia hardcoded).
+    from prompt_clinica import styles  # noqa: PLC0415
+
+    return (
+        f"{styles.prompt_fragment(styles.DEFAULT_STYLE)}, "
+        "no text, no speech bubbles. "
+    )
 
 
 def _load_cases(path: Path) -> list[dict]:
@@ -49,12 +56,33 @@ def _load_cases(path: Path) -> list[dict]:
 
 
 def _make_cfg(judge_mode: str):  # noqa: ANN202
-    key = ""
+    if judge_mode == "local":
+        import httpx  # noqa: PLC0415
+
+        try:
+            httpx.get("http://localhost:11434/api/tags", timeout=3.0)
+        except httpx.HTTPError as e:
+            msg = (
+                "Ollama não está rodando em localhost:11434 — inicie o app Ollama "
+                "(ou rode 'ollama serve') antes do eval com juiz local."
+            )
+            raise SystemExit(msg) from e
     if judge_mode == "remote":
         from prompt_clinica.config import settings  # noqa: PLC0415
 
-        key = settings.openai_api_key
-    return make_config(judge_mode, openai_api_key=key)
+        return make_config(judge_mode, openai_api_key=settings.openai_api_key)
+    if judge_mode == "minimax":
+        import os  # noqa: PLC0415
+
+        from dotenv import load_dotenv  # noqa: PLC0415
+
+        load_dotenv(ROOT / ".env")
+        return make_config(
+            judge_mode,
+            minimax_api_key=os.environ.get("MINIMAX_API_KEY", ""),
+            minimax_base_url=os.environ.get("MINIMAX_BASE_URL", "https://api.minimax.io"),
+        )
+    return make_config(judge_mode)
 
 
 def _gen_roteiro(case: dict) -> dict:
@@ -163,7 +191,7 @@ def _run_image_stage(cases: list[dict], judge_mode: str, samples: int) -> list[d
         sample_verdicts: list[dict] = []
         for k in range(1, samples + 1):
             resp = ai.image(
-                ImageRequest(prompt=_IMG_PREFIX + base, size="1024x1024", quality="medium")
+                ImageRequest(prompt=_img_prefix() + base, size="1024x1024", quality="medium")
             )
             if not resp.b64_json:
                 print(f"    [{k}] ✗ provider não retornou imagem.")
@@ -191,6 +219,83 @@ def _run_image_stage(cases: list[dict], judge_mode: str, samples: int) -> list[d
         print(f"  {mark} taxa {rec['rate']}  (amb≈{rec['ambientacao_score']} pers≈{rec['personagens_score']})")
         if rec["anacronismos"]:
             print(f"    anacronismos: {', '.join(rec['anacronismos'])}")
+
+    return results
+
+
+def _aggregate_portrait_samples(cid: str, samples: list[dict]) -> dict:
+    n = len(samples)
+    passed_n = sum(1 for s in samples if s["passed"])
+    return {
+        "id": cid,
+        "passed": 2 * passed_n > n,  # maioria estrita
+        "rate": f"{passed_n}/{n}",
+        "estilo_score": round(sum(s["estilo_score"] for s in samples) / n),
+        "corpo_score": round(sum(s["corpo_score"] for s in samples) / n),
+        "pele_score": round(sum(s["pele_score"] for s in samples) / n),
+        "violacoes": sorted({v for s in samples for v in s["violacoes"]}),
+        "justificativa": next((s for s in samples if not s["passed"]), samples[0])["justificativa"],
+        "images": [s["image"] for s in samples],
+    }
+
+
+def _run_portrait_stage(cases: list[dict], judge_mode: str, samples: int) -> list[dict]:
+    from prompt_clinica.ai import ImageRequest, ai  # noqa: PLC0415
+    from prompt_clinica.services.character_service import build_portrait_prompts  # noqa: PLC0415
+
+    cfg = _make_cfg(judge_mode)
+    img_dir = ROOT / "evals" / "reports" / "portraits"
+    img_dir.mkdir(parents=True, exist_ok=True)
+    print(f"Gerador: {ai.name} | Juiz de visão: {cfg.mode} ({cfg.vision_model}) | amostras/caso: {samples}")
+
+    results: list[dict] = []
+    for case in cases:
+        cid = case["id"]
+        print(f"\n{SEP}\n▶ {cid}\n{SEP}")
+
+        prompt, negative = build_portrait_prompts(
+            case["prompt"],
+            case["style"],
+            case.get("color_mode"),
+            case.get("gender"),
+            case.get("body_type"),
+            case.get("skin_tone"),
+        )
+
+        sample_verdicts: list[dict] = []
+        for k in range(1, samples + 1):
+            resp = ai.image(ImageRequest(
+                prompt=prompt, size="1024x1024", quality="medium", negative_prompt=negative,
+            ))
+            if not resp.b64_json:
+                print(f"    [{k}] ✗ provider não retornou imagem.")
+                continue
+            img_bytes = base64.b64decode(resp.b64_json)
+            name = f"{cid}_{k}.png"
+            (img_dir / name).write_bytes(img_bytes)
+
+            v = judge_portrait(case, img_bytes, cfg)
+            v["image"] = name
+            sample_verdicts.append(v)
+            mark = "✓" if v["passed"] else "✗"
+            print(
+                f"    [{k}] {mark} estilo={v['estilo_score']}/5 "
+                f"corpo={v['corpo_score']}/5 pele={v['pele_score']}/5 → {name}"
+            )
+            if v["violacoes"]:
+                print(f"        violações: {', '.join(v['violacoes'])}")
+
+        if not sample_verdicts:
+            results.append({"id": cid, "passed": False, "reason": "sem imagem"})
+            continue
+
+        rec = _aggregate_portrait_samples(cid, sample_verdicts)
+        results.append(rec)
+        mark = "✓" if rec["passed"] else "✗"
+        print(
+            f"  {mark} taxa {rec['rate']}  (estilo≈{rec['estilo_score']} "
+            f"corpo≈{rec['corpo_score']} pele≈{rec['pele_score']})"
+        )
 
     return results
 
@@ -229,6 +334,11 @@ def _run_calib_stage(_cases: list[dict], judge_mode: str, _samples: int) -> list
 # ── Relatório ───────────────────────────────────────────────────────
 
 def _header_for(stage: str) -> tuple[str, str]:
+    if stage == "portrait":
+        return (
+            "| Caso | Result | Taxa | Estilo | Corpo | Pele | Violações | Justificativa |",
+            "|---|---|---|---|---|---|---|---|",
+        )
     if stage == "image":
         return (
             "| Caso | Result | Taxa | Fonte | Ambientação | Personagens | Anacronismos | Justificativa |",
@@ -249,6 +359,13 @@ def _row_for(stage: str, r: dict) -> str:
     amb = r.get("ambientacao_score", "—")
     pers = r.get("personagens_score", "—")
     just = str(r.get("justificativa", r.get("reason", ""))).replace("|", "/")
+    if stage == "portrait":
+        mark = "✅" if r.get("passed") else "❌"
+        viol = ", ".join(r.get("violacoes", [])) or "—"
+        return (
+            f"| {r['id']} | {mark} | {r.get('rate', '—')} | {r.get('estilo_score', '—')} "
+            f"| {r.get('corpo_score', '—')} | {r.get('pele_score', '—')} | {viol} | {just} |"
+        )
     if stage == "image":
         mark = "✅" if r.get("passed") else "❌"
         anac = ", ".join(r.get("anacronismos", [])) or "—"
@@ -292,6 +409,7 @@ def _write_report(results: list[dict], judge_mode: str, out_dir: Path, stage: st
 _STAGES = {
     "roteiro": _run_roteiro_stage,
     "image": _run_image_stage,
+    "portrait": _run_portrait_stage,
     "calib": _run_calib_stage,
 }
 
@@ -299,11 +417,15 @@ _STAGES = {
 def main() -> int:
     parser = argparse.ArgumentParser(description="Harness de evals do roteiro/imagem.")
     parser.add_argument("--stage", choices=list(_STAGES), default="roteiro")
-    parser.add_argument("--judge", choices=["local", "remote"], default="local")
-    parser.add_argument("--samples", type=int, default=3, help="imagens por caso (estágio image)")
-    parser.add_argument("--cases", default=str(ROOT / "evals" / "cases.json"))
+    parser.add_argument("--judge", choices=["local", "remote", "minimax"], default="local")
+    parser.add_argument("--samples", type=int, default=3, help="imagens por caso (estágios image/portrait)")
+    parser.add_argument("--cases", default=None)
     parser.add_argument("--out", default=str(ROOT / "evals" / "reports"))
     args = parser.parse_args()
+
+    if args.cases is None:
+        default_file = "portrait_cases.json" if args.stage == "portrait" else "cases.json"
+        args.cases = str(ROOT / "evals" / default_file)
 
     cases = _load_cases(Path(args.cases))
     results = _STAGES[args.stage](cases, args.judge, args.samples)

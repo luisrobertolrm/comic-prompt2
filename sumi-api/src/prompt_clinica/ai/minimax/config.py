@@ -26,6 +26,10 @@ class MinimaxImageConfig:
     model: str = field(default_factory=lambda: _env("MINIMAX_IMAGE_MODEL", "image-01"))
     aspect_ratio: str = "1:1"
     response_format: str = "url"  # "url" | "base64"
+    # image-01 tem prompt_optimizer=true por padrão, o que reescreve o prompt e
+    # descarta atributos específicos (estilo, corpo, pele). Desligado para o modelo
+    # aderir ao prompt literal.
+    prompt_optimizer: bool = False
 
 
 @dataclass(frozen=True)

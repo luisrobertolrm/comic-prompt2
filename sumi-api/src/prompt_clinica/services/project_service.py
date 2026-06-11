@@ -94,6 +94,8 @@ def update(project_id: uuid.UUID, patch: ProjectPatch, user: User, db: Session) 
         project.pages = patch.pages
     if patch.style is not None:
         project.style = patch.style
+    if patch.color_mode is not None:
+        project.color_mode = patch.color_mode
     if "narrator_voice_id" in patch.model_fields_set:
         project.narrator_voice_id = patch.narrator_voice_id
     if patch.genre is not None or patch.pages is not None:

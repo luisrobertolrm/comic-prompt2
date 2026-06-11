@@ -13,7 +13,7 @@ from user import User
 
 import prompt_clinica._paths  # noqa: F401
 from prompt_clinica import styles
-from prompt_clinica.ai import ImageRequest, ai
+from prompt_clinica.ai import ImageRequest, Message, TextRequest, ai
 from prompt_clinica.schemas.character import (
     CharacterCreate,
     CharacterUpdate,
@@ -24,6 +24,11 @@ from prompt_clinica.storage import get_storage
 _PORTRAIT_VARIANTS = [
     ("frontal", "Frontal portrait, neutral expression, looking directly at viewer"),
     ("perfil", "Three-quarter view, gentle smile, soft lighting from the side"),
+]
+
+_SD_PORTRAIT_VARIANTS = [
+    ("frontal", "portrait, upper body, looking at viewer, neutral expression"),
+    ("perfil", "portrait, upper body, three-quarter view, light smile"),
 ]
 
 
@@ -62,6 +67,8 @@ def create(req: CharacterCreate, user: User, db: Session) -> Character:
         name=req.name.strip(),
         role=req.role,
         gender=req.gender,
+        body_type=req.body_type,
+        skin_tone=req.skin_tone,
         age=req.age,
         height=req.height,
         summary=req.summary,
@@ -142,25 +149,192 @@ _GENDER_PROMPT = {
     "Não especificado": "",
 }
 
+_BODY_PROMPT = {
+    "Magro": "slim thin build",
+    "Médio": "average build",
+    "Atlético": "athletic toned build",
+    "Forte": "muscular heavy-set build, broad shoulders",
+    "Gordo": "fat plus-size body, round chubby face",
+}
+
+_SKIN_PROMPT = {
+    "Clara": "light fair skin",
+    "Morena": "medium brown skin",
+    "Negra": "Black person, very dark brown skin",
+}
+
+
+# Tags danbooru para Stable Diffusion (ComfyUI). A negação não vai no prompt
+# positivo (SD não entende "NOT x" — só adiciona os tokens de x); vai no
+# negative_prompt real, construído em build_portrait_prompts.
+# "male focus" contrabalança tags com viés feminino forte (ex.: "shoujo").
+_SD_GENDER = {
+    "Feminino": "1girl",
+    "Masculino": "1boy, male focus",
+    "Outro": "androgynous",
+    "Não especificado": "",
+}
+
+_SD_BODY = {
+    "Magro": "slim, skinny",
+    "Médio": "",
+    "Atlético": "athletic, toned",
+    "Forte": "muscular",
+    "Gordo": "plump, fat, chubby cheeks, double chin",
+}
+
+_SD_SKIN = {
+    "Clara": "pale skin",
+    "Morena": "tan, brown skin",
+    "Negra": "very dark skin, dark-skinned female",
+}
+
+_SD_BODY_NEGATIVE = {
+    "Magro": "fat, plump",
+    "Gordo": "slim, skinny, thin",
+}
+
+_SD_SKIN_NEGATIVE = {
+    "Clara": "dark skin",
+    "Morena": "pale skin",
+    "Negra": "pale skin, white skin, light skin",
+}
+
+_SD_QUALITY = "masterpiece, best quality, newest, absurdres, highres"
+# NoobAI é treinado em danbooru + e621 (furry): sem estes negativos, tags de
+# corpo ("plump, fat") puxam para arte furry/cartoon do e621. "multiple views"
+# evita folhas de expressões em grade.
+_SD_NEGATIVE_BASE = (
+    "worst quality, low quality, blurry, jpeg artifacts, text, watermark, signature, "
+    "furry, anthro, feral, animal ears, animal nose, mammal, "
+    "multiple views, expression chart, reference sheet, 3d, photorealistic"
+)
+
+
+_TAGS_SYSTEM = (
+    "Converta a descrição de personagem para tags danbooru em inglês, curtas e "
+    "separadas por vírgula (ex.: 'black hair, blunt bangs, school uniform, shy'). "
+    "Traduza TODOS os atributos visuais — cabelo, olhos, roupa, corpo, acessórios — "
+    "sem omitir nenhum. Descarte só o que não for visual (nome, papel narrativo). "
+    "Responda APENAS as tags."
+)
+
+
+def _attrs_to_tags(text: str) -> str:
+    """Traduz atributos livres (PT) para tags danbooru — tokens em português
+    degradam muito a geração em modelos treinados em danbooru/e621."""
+    cleaned = ", ".join(p.strip() for p in text.split(",") if p.strip())
+    if not cleaned:
+        return cleaned
+    try:
+        # max_tokens alto: o M3 gasta o orçamento no <think> antes da resposta.
+        resp = ai.text(TextRequest(
+            messages=[Message("system", _TAGS_SYSTEM), Message("user", cleaned)],
+            temperature=0.0,
+            max_tokens=2000,
+        ))
+        tags = resp.content.strip().strip(".")
+        return tags or cleaned
+    except Exception:
+        return cleaned
+
+
+def build_portrait_prompts(
+    prompt: str,
+    style: str = styles.DEFAULT_STYLE,
+    color_mode: str | None = None,
+    gender: str | None = None,
+    body_type: str | None = None,
+    skin_tone: str | None = None,
+) -> tuple[str, str]:
+    """Retorna (prompt, negative_prompt) no formato do provider ativo."""
+    if ai.name != "comfyui":
+        return build_portrait_prompt(prompt, style, color_mode, gender, body_type, skin_tone), ""
+
+    skin = _SD_SKIN.get(skin_tone or "", "")
+    if skin and gender == "Masculino":
+        skin = skin.replace("dark-skinned female", "dark-skinned male")
+    vs = styles.resolve(style)
+    cm = styles.resolve_color(color_mode)
+    positive_parts = [
+        _SD_QUALITY,
+        _SD_GENDER.get(gender or "", ""),
+        "solo",
+        _SD_BODY.get(body_type or "", ""),
+        skin,
+        _attrs_to_tags(prompt),
+        vs.sd_fragment,
+        cm.sd_fragment,
+        "simple background",
+    ]
+    negative_parts = [
+        _SD_NEGATIVE_BASE,
+        vs.sd_negative,
+        cm.sd_negative,
+        _SD_BODY_NEGATIVE.get(body_type or "", ""),
+        _SD_SKIN_NEGATIVE.get(skin_tone or "", ""),
+    ]
+    positive = ", ".join(p for p in positive_parts if p)
+    negative = ", ".join(p for p in negative_parts if p)
+    return positive, negative
+
+
+def build_portrait_prompt(
+    prompt: str,
+    style: str = styles.DEFAULT_STYLE,
+    color_mode: str | None = None,
+    gender: str | None = None,
+    body_type: str | None = None,
+    skin_tone: str | None = None,
+) -> str:
+    # Formato validado nos testes (ver styles.py): sujeito curto, estilo entre
+    # aspas simples com a cor embutida, atributos no final.
+    subject = _GENDER_PROMPT.get(gender or "", "") or "character"
+    attrs = ", ".join(d for d in (
+        _BODY_PROMPT.get(body_type or "", ""),
+        _SKIN_PROMPT.get(skin_tone or "", ""),
+        prompt,
+    ) if d)
+    base_prompt = f"{subject}, {styles.prompt_fragment(style, color_mode)}"
+    if attrs:
+        base_prompt += f", {attrs}"
+    return base_prompt + ", character portrait, no text, no speech bubbles. "
+
 
 def generate_portrait(
     prompt: str,
     style: str = styles.DEFAULT_STYLE,
     color_mode: str | None = None,
     gender: str | None = None,
+    body_type: str | None = None,
+    skin_tone: str | None = None,
 ) -> list[PortraitCandidate]:
-    gender_phrase = _GENDER_PROMPT.get(gender or "", "")
-    subject = f"{gender_phrase}, {prompt}" if gender_phrase else prompt
-    base_prompt = (
-        f"{styles.image_fragment(style)}, {styles.color_fragment(color_mode)}, "
-        "character portrait, "
-        "no text, no speech bubbles, no background, detailed face. "
-        f"Character: {subject}. "
+    base_prompt, negative = build_portrait_prompts(
+        prompt, style, color_mode, gender, body_type, skin_tone
     )
+    variants = _SD_PORTRAIT_VARIANTS if ai.name == "comfyui" else _PORTRAIT_VARIANTS
+
+    # Debug temporário: prompt final no console e em portrait_debug.log.
+    print(
+        f"\n[generate_portrait] provider={ai.name} style={style!r} color_mode={color_mode!r} "
+        f"body_type={body_type!r} skin_tone={skin_tone!r}\n{base_prompt}\nNEG: {negative}\n",
+        flush=True,
+    )
+    try:
+        from pathlib import Path as _Path
+        _Path(__file__).resolve().parents[3].joinpath("portrait_debug.log").write_text(
+            f"provider={ai.name}\nstyle={style!r}\ncolor_mode={color_mode!r}\n"
+            f"skin_tone={skin_tone!r}\n\n{base_prompt}\nNEG: {negative}\n",
+            encoding="utf-8",
+        )
+    except Exception:
+        pass
 
     def _generate_one(variant_id: str, variant_suffix: str) -> PortraitCandidate:
-        full_prompt = base_prompt + variant_suffix
-        resp = ai.image(ImageRequest(prompt=full_prompt, size="1024x1024", quality="medium"))
+        full_prompt = f"{base_prompt}, {variant_suffix}" if ai.name == "comfyui" else base_prompt + variant_suffix
+        resp = ai.image(ImageRequest(
+            prompt=full_prompt, size="1024x1024", quality="medium", negative_prompt=negative,
+        ))
         if not resp.b64_json:
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
@@ -179,10 +353,10 @@ def generate_portrait(
     with ThreadPoolExecutor(max_workers=4) as pool:
         futures = {
             pool.submit(_generate_one, vid, vsuffix): vid
-            for vid, vsuffix in _PORTRAIT_VARIANTS
+            for vid, vsuffix in variants
         }
         for future in as_completed(futures):
             results.append(future.result())
 
-    results.sort(key=lambda c: [v[0] for v in _PORTRAIT_VARIANTS].index(c.notes))
+    results.sort(key=lambda c: [v[0] for v in variants].index(c.notes))
     return results

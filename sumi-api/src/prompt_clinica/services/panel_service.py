@@ -114,7 +114,7 @@ def _get_char_names(project_id: uuid.UUID, db: Session) -> list[str]:
 
 def _img_prompt(style: str, color_mode: str, base_prompt: str) -> str:
     return (
-        f"{styles.image_fragment(style)}, {styles.color_fragment(color_mode)}, "
+        f"{styles.prompt_fragment(style, color_mode)}, "
         f"no text, no speech bubbles. {base_prompt}"
     )
 

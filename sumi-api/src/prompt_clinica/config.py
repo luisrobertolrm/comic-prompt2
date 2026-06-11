@@ -47,6 +47,9 @@ class Settings:
     jwt_expire_minutes: int = field(
         default_factory=lambda: int(_optional("JWT_EXPIRE_MINUTES", "60"))
     )
+    jwt_remember_expire_minutes: int = field(
+        default_factory=lambda: int(_optional("JWT_REMEMBER_EXPIRE_MINUTES", "43200"))
+    )
     cors_origins: list[str] = field(
         default_factory=lambda: [
             o.strip() for o in _optional("CORS_ORIGINS", "http://localhost:4200").split(",")

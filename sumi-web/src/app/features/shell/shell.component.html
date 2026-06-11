@@ -44,6 +44,15 @@
       Teste de voz
     </button>
 
+    <button class="nav-item" [class.active]="isActive('image-test')" (click)="navigateTo('/image-test')">
+      <span class="glyph">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path [attr.d]="iconPath('eye')"></path>
+        </svg>
+      </span>
+      Teste de imagem
+    </button>
+
     <!-- Em produção -->
     @if (inCreation()) {
       <div class="nav-section-label" style="margin-top:8px">Em produção</div>

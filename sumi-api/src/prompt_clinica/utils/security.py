@@ -17,10 +17,11 @@ def verify_password(password: str, hashed: str) -> bool:
     return bcrypt.checkpw(password.encode("utf-8"), hashed.encode("utf-8"))
 
 
-def create_access_token(subject: str) -> str:
+def create_access_token(subject: str, expires_minutes: int | None = None) -> str:
+    minutes = expires_minutes if expires_minutes is not None else settings.jwt_expire_minutes
     payload: dict[str, object] = {
         "sub": subject,
-        "exp": datetime.now(UTC) + timedelta(minutes=settings.jwt_expire_minutes),
+        "exp": datetime.now(UTC) + timedelta(minutes=minutes),
         "iat": datetime.now(UTC),
     }
     return jwt.encode(payload, settings.jwt_secret_key, algorithm="HS256")

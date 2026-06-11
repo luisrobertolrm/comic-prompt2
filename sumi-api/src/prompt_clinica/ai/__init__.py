@@ -41,6 +41,10 @@ def _build_default() -> AIProvider:
             from prompt_clinica.ai.providers.minimax_provider import MinimaxProvider
 
             return MinimaxProvider()
+        case "comfyui":
+            from prompt_clinica.ai.providers.comfyui_provider import ComfyUIProvider
+
+            return ComfyUIProvider()
         case _:
             raise ValueError(f"Provider desconhecido: '{provider}'. Implemente em ai/providers/ e registre aqui.")
 

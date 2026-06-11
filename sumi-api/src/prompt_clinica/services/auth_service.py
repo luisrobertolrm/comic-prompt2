@@ -8,6 +8,7 @@ from pathlib import Path
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from prompt_clinica.config import settings
 from prompt_clinica.schemas.auth import (
     LoginRequest,
     RegisterRequest,
@@ -79,8 +80,9 @@ def login(req: LoginRequest, db: Session) -> TokenResponse:
             detail="Conta desativada.",
         )
 
+    expires = settings.jwt_remember_expire_minutes if req.remember else None
     return TokenResponse(
-        access_token=create_access_token(str(user.id)),
+        access_token=create_access_token(str(user.id), expires),
         user=_user_out(user),
     )
 

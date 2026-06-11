@@ -13,6 +13,8 @@ type Tab = 'library' | 'manual' | 'ai';
 type AiMode = 'prompt' | 'attrs';
 
 const GENDERS = ['Feminino', 'Masculino', 'Outro', 'Não especificado'];
+const BODY_TYPES = ['Magro', 'Médio', 'Atlético', 'Forte', 'Gordo'];
+const SKIN_TONES = ['Clara', 'Morena', 'Negra'];
 
 interface AiCandidate {
   id: string;
@@ -36,7 +38,7 @@ export class CharactersScreenComponent implements OnInit {
 
   tab = signal<Tab>('library');
   characters = signal<CharacterOut[]>([]);
-  projectStyle = signal('classic-shoujo');
+  projectStyle = signal('webtoon');
   projectColorMode = signal('tons-cinza');
   selectedIds = signal<Set<string>>(new Set());
   loading = signal(true);
@@ -44,6 +46,8 @@ export class CharactersScreenComponent implements OnInit {
   voices = signal<SavedVoice[]>([]);
 
   readonly genders = GENDERS;
+  readonly bodyTypes = BODY_TYPES;
+  readonly skinTones = SKIN_TONES;
 
   // Form manual
   mName = signal('');
@@ -68,6 +72,9 @@ export class CharactersScreenComponent implements OnInit {
 
   // IA
   aiMode = signal<AiMode>('prompt');
+  aiGender = signal('');
+  aiBodyType = signal('');
+  aiSkinTone = signal('');
   aiPrompt = signal('Uma garota tímida de 16 anos, olhos grandes castanho-âmbar com brilho, franja reta, sempre carrega um caderno. Veste uniforme escolar.');
   aiAttrs = signal({ archetype: 'protagonista', age: '16', hair: 'preto, franja reta', eyes: 'âmbar, grandes', outfit: 'uniforme escolar', personality: 'tímida, curiosa', quirk: 'anota tudo em um caderno' });
   aiGenerating = signal(false);
@@ -258,8 +265,8 @@ export class CharactersScreenComponent implements OnInit {
     this.aiAttrs.update(a => ({ ...a, [key]: value }));
   }
 
-  private portraitStream(prompt: string, gender?: string): Observable<PortraitJob> {
-    return this.characterService.generatePortrait(prompt, this.projectStyle(), this.projectColorMode(), gender).pipe(
+  private portraitStream(prompt: string, gender?: string, bodyType?: string, skinTone?: string): Observable<PortraitJob> {
+    return this.characterService.generatePortrait(prompt, this.projectStyle(), this.projectColorMode(), gender, bodyType, skinTone).pipe(
       switchMap(job =>
         timer(0, 3000).pipe(
           switchMap(() => this.characterService.pollPortraitJob(job.job_id)),
@@ -284,11 +291,18 @@ export class CharactersScreenComponent implements OnInit {
     this.aiCandidates.set([]);
     this.aiPicked.set(null);
 
-    const prompt = this.aiMode() === 'prompt'
-      ? this.aiPrompt()
-      : Object.values(this.aiAttrs()).join(', ');
+    const isAttrs = this.aiMode() === 'attrs';
+    const prompt = isAttrs ? Object.values(this.aiAttrs()).filter(v => v.trim()).join(', ') : this.aiPrompt();
+    const stream = isAttrs
+      ? this.portraitStream(
+          prompt,
+          this.aiGender() || undefined,
+          this.aiBodyType() || undefined,
+          this.aiSkinTone() || undefined,
+        )
+      : this.portraitStream(prompt);
 
-    this.portraitStream(prompt).subscribe({
+    stream.subscribe({
       next: job => {
         if (job.status === 'done') {
           this.aiCandidates.set(this.toCandidates(job));
@@ -317,7 +331,10 @@ export class CharactersScreenComponent implements OnInit {
     const req: CharacterCreate = {
       name: this.aiName(),
       role: this.aiMode() === 'attrs' ? this.aiAttrs().archetype : 'Personagem',
-      summary: this.aiMode() === 'prompt' ? this.aiPrompt() : Object.values(this.aiAttrs()).join(', '),
+      gender: this.aiGender() || undefined,
+      body_type: this.aiBodyType() || undefined,
+      skin_tone: this.aiSkinTone() || undefined,
+      summary: this.aiMode() === 'prompt' ? this.aiPrompt() : Object.values(this.aiAttrs()).filter(v => v.trim()).join(', '),
       traits: ['gerado por IA'],
       style: this.projectStyle(),
       image_url: picked?.imageUrl,

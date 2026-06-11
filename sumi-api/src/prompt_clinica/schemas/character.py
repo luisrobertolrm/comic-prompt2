@@ -12,6 +12,8 @@ class CharacterCreate(BaseModel):
     name: str
     role: str = "Personagem"
     gender: str | None = None
+    body_type: str | None = None
+    skin_tone: str | None = None
     age: int | None = None
     height: str | None = None
     summary: str | None = None
@@ -26,6 +28,8 @@ class CharacterUpdate(BaseModel):
     name: str | None = None
     role: str | None = None
     gender: str | None = None
+    body_type: str | None = None
+    skin_tone: str | None = None
     age: int | None = None
     height: str | None = None
     summary: str | None = None
@@ -50,6 +54,8 @@ class PortraitRequest(BaseModel):
     style: StyleId = DEFAULT_STYLE
     color_mode: str | None = None
     gender: str | None = None
+    body_type: str | None = None
+    skin_tone: str | None = None
 
 
 class PortraitJobOut(BaseModel):
@@ -64,6 +70,8 @@ class CharacterOut(BaseModel):
     name: str
     role: str
     gender: str | None
+    body_type: str | None = None
+    skin_tone: str | None = None
     age: int | None
     height: str | None
     summary: str | None

@@ -31,6 +31,7 @@ class MinimaxImageClient(MinimaxHTTPBase):
             "aspect_ratio": aspect_ratio or cfg.aspect_ratio,
             "n": n,
             "response_format": response_format or cfg.response_format,
+            "prompt_optimizer": cfg.prompt_optimizer,
         }
         if subject_reference:
             payload["subject_reference"] = [

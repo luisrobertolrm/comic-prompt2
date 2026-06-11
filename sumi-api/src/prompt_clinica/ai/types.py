@@ -34,6 +34,8 @@ class ImageRequest:
     n: int = 1
     # Referências de personagem (URL pública ou data-URI base64). Só o MiniMax usa.
     subject_reference: list[str] | None = None
+    # Prompt negativo (o que NÃO deve aparecer). Só providers Stable Diffusion usam.
+    negative_prompt: str = ""
 
 
 @dataclass

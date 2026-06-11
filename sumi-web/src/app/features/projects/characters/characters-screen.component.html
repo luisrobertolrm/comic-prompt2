@@ -250,6 +250,11 @@
 
       <!-- Input -->
       <div class="card">
+        <div class="field">
+          <label class="field-label">Nome do personagem</label>
+          <input class="input serif" placeholder="Ex: Aiko Tanaka"
+                 [value]="aiName()" (input)="setField(aiName, $event)">
+        </div>
         <div class="mode-toggle">
           <button class="mode-btn" [class.mode-btn--active]="aiMode() === 'prompt'" (click)="aiMode.set('prompt')">Prompt livre</button>
           <button class="mode-btn" [class.mode-btn--active]="aiMode() === 'attrs'" (click)="aiMode.set('attrs')">Por atributos</button>
@@ -259,12 +264,44 @@
           <div class="field">
             <label class="field-label">Descreva o personagem em linguagem natural</label>
             <p class="field-hint">Quanto mais detalhe visual, melhor a IA mantém coerência.</p>
+            <p class="field-hint" style="color:var(--accent,#b8860b)">
+              ⚠ Escreva de preferência em <strong>inglês</strong> — o modelo de imagem adere melhor a prompts em inglês, e atributos como gênero e tipo físico são respeitados com mais consistência.
+            </p>
             <textarea class="textarea" rows="7"
                       [value]="aiPrompt()" (input)="setField(aiPrompt, $event)"></textarea>
           </div>
         }
 
         @if (aiMode() === 'attrs') {
+          <div class="field-row-3">
+            <div class="field">
+              <label class="field-label">Gênero</label>
+              <select class="input" [value]="aiGender()" (change)="setField(aiGender, $event)">
+                <option value="">Não especificado</option>
+                @for (g of genders; track g) {
+                  <option [value]="g" [selected]="aiGender() === g">{{ g }}</option>
+                }
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label">Tipo físico</label>
+              <select class="input" [value]="aiBodyType()" (change)="setField(aiBodyType, $event)">
+                <option value="">Não especificado</option>
+                @for (b of bodyTypes; track b) {
+                  <option [value]="b" [selected]="aiBodyType() === b">{{ b }}</option>
+                }
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label">Cor da pele</label>
+              <select class="input" [value]="aiSkinTone()" (change)="setField(aiSkinTone, $event)">
+                <option value="">Não especificado</option>
+                @for (s of skinTones; track s) {
+                  <option [value]="s" [selected]="aiSkinTone() === s">{{ s }}</option>
+                }
+              </select>
+            </div>
+          </div>
           <div class="field-row-2">
             <div class="field">
               <label class="field-label">Arquétipo</label>
@@ -350,11 +387,11 @@
           @if (aiPicked()) {
             <div class="card" style="margin-top:18px">
               <p class="eyebrow" style="margin-bottom:10px">CONFIRMAR PERSONAGEM</p>
-              <div class="field">
-                <label class="field-label">Nome</label>
-                <input class="input serif" placeholder="Ex: Aiko Tanaka"
-                       [value]="aiName()" (input)="setField(aiName, $event)">
-              </div>
+              @if (!aiName().trim()) {
+                <p class="field-hint" style="color:var(--accent,#b8860b)">
+                  ⚠ Informe o <strong>nome do personagem</strong> no topo para adicionar ao elenco.
+                </p>
+              }
               <div style="display:flex;justify-content:flex-end;margin-top:14px">
                 <button class="btn-primary" (click)="confirmAi()"
                         [disabled]="!aiName().trim() || aiSaving()">

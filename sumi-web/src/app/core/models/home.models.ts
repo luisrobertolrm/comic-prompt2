@@ -48,6 +48,8 @@ export interface CharacterOut {
   name: string;
   role: string;
   gender: string | null;
+  body_type: string | null;
+  skin_tone: string | null;
   age: number | null;
   height: string | null;
   summary: string | null;
@@ -64,6 +66,8 @@ export interface CharacterCreate {
   name: string;
   role?: string;
   gender?: string;
+  body_type?: string;
+  skin_tone?: string;
   age?: number;
   height?: string;
   summary?: string;
@@ -78,6 +82,8 @@ export interface CharacterUpdate {
   name?: string;
   role?: string;
   gender?: string | null;
+  body_type?: string | null;
+  skin_tone?: string | null;
   age?: number | null;
   height?: string | null;
   summary?: string | null;

@@ -14,6 +14,12 @@ briefing — é a ferramenta que comprova, com número, se a ambientação melho
   `gpt-image-1` e o juiz de visão (`qwen2.5vl:7b`) avalia cada uma. O caso passa por **maioria
   estrita** das amostras; o relatório mostra a **taxa** (ex.: 2/3). PNGs em
   `evals/reports/images/` (`<caso>_<k>.png`).
+- **`portrait`** (visão, caro) — testa a aderência do retrato de personagem aos atributos
+  dos dropdowns (estilo visual, tipo físico, cor da pele). Usa o **`build_portrait_prompt`
+  real do produto** (mesmo prompt que a tela "Gerar com IA" monta) e o provider de imagem
+  real. O juiz de visão dá nota por eixo (estilo/corpo/pele); o caso passa por **maioria
+  estrita** das amostras, exigindo cada eixo especificado ≥ 3 e nenhuma violação visível.
+  Casos em `portrait_cases.json`; PNGs em `evals/reports/portraits/`.
 - **`calib`** (visão, barato) — roda o juiz de visão sobre PNGs versionados em
   `evals/fixtures/`, cada um com veredito esperado, e mede a **taxa de acerto do juiz**. Não
   chama `gpt-image-1` e **não precisa de `.env`** no modo local. É o "teste do teste".
@@ -35,6 +41,7 @@ cd sumi-api
 uv run python scripts/eval_run.py                      # estágio roteiro, juiz local
 uv run python scripts/eval_run.py --stage image        # gera N imagens + juiz de visão
 uv run python scripts/eval_run.py --stage image --samples 2
+uv run python scripts/eval_run.py --stage portrait     # aderência estilo/corpo/pele do retrato
 uv run python scripts/eval_run.py --stage calib        # calibra o juiz (sem .env)
 uv run python scripts/eval_run.py --judge remote       # juiz gpt-4o
 ```
@@ -49,6 +56,8 @@ Pré-requisitos:
 
 - `cases.json` — casos (premissa + atributos esperados + anacronismos proibidos +
   `image_prompt` opcional para isolar o gerador de imagem).
+- `portrait_cases.json` — casos do estágio `portrait`: valores dos dropdowns (style,
+  gender, body_type, skin_tone, color_mode) + expectativas por eixo (estilo/corpo/pele).
 - `judge.py` — juiz desacoplado (só importa `openai`; testável contra o Ollama sem subir o app).
 - `fixtures/` — imagens versionadas + `fixtures.json` (veredito esperado) para o estágio
   `calib`. Positivo: `ukiyo-e-samurai.jpg` (The Met Open Access, CC0 — objeto 843990, gravura

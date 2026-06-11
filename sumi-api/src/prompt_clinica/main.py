@@ -10,7 +10,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from prompt_clinica.config import settings
-from prompt_clinica.routers import auth, characters, health, panels, projects, storage, voice
+from prompt_clinica.routers import auth, characters, health, image_test, panels, projects, storage, styles, voice
 
 logger = logging.getLogger("sumi.api")
 
@@ -50,6 +50,8 @@ app.include_router(characters.router)
 app.include_router(panels.router)
 app.include_router(storage.router)
 app.include_router(voice.router)
+app.include_router(image_test.router)
+app.include_router(styles.router)
 
 _static_root = Path("static")
 _static_root.mkdir(parents=True, exist_ok=True)
