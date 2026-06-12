@@ -26,15 +26,28 @@
 h1 { font-family: var(--serif); font-size: 30px; line-height: 1.1; margin-bottom: 8px; }
 .lede { color: var(--ink-3); font-size: 14px; }
 
-.selected-badge {
+.head-badges {
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.style-badge,
+.selected-badge {
   font-size: 13px;
   color: var(--ink-3);
   padding: 6px 14px;
   border: 1px solid var(--rule);
   border-radius: 999px;
   background: var(--paper-2);
-  margin-top: 6px;
+}
+
+.field-optional {
+  font-weight: 400;
+  color: var(--ink-3);
 }
 
 /* ── Abas ── */

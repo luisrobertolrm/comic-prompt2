@@ -3,10 +3,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { Observable, timer, switchMap, takeWhile } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import type { CharacterCreate, CharacterOut, CharacterUpdate, PortraitJob } from '../../../core/models/home.models';
+import type { AttrOption, CharacterCreate, CharacterOut, CharacterUpdate, PortraitJob } from '../../../core/models/home.models';
 import { CharacterService } from '../../../core/services/character.service';
 import { ProjectDraftService } from '../../../core/services/project-draft.service';
 import { ProjectService } from '../../../core/services/project.service';
+import { StyleService, type StyleOption } from '../../../core/services/style.service';
 import { VoiceService, type SavedVoice } from '../../../core/services/voice.service';
 
 type Tab = 'library' | 'manual' | 'ai';
@@ -33,6 +34,7 @@ export class CharactersScreenComponent implements OnInit {
   private draftService = inject(ProjectDraftService);
   private characterService = inject(CharacterService);
   private projectService = inject(ProjectService);
+  private styleService = inject(StyleService);
   private voiceService = inject(VoiceService);
   private destroyRef = inject(DestroyRef);
 
@@ -48,6 +50,12 @@ export class CharactersScreenComponent implements OnInit {
   readonly genders = GENDERS;
   readonly bodyTypes = BODY_TYPES;
   readonly skinTones = SKIN_TONES;
+
+  ethnicities = signal<AttrOption[]>([]);
+  private styleCatalog = signal<StyleOption[]>([]);
+  styleLabel = computed(() =>
+    this.styleCatalog().find(s => s.id === this.projectStyle())?.label ?? this.projectStyle()
+  );
 
   // Form manual
   mName = signal('');
@@ -75,6 +83,7 @@ export class CharactersScreenComponent implements OnInit {
   aiGender = signal('');
   aiBodyType = signal('');
   aiSkinTone = signal('');
+  aiEthnicity = signal('');
   aiPrompt = signal('Uma garota tímida de 16 anos, olhos grandes castanho-âmbar com brilho, franja reta, sempre carrega um caderno. Veste uniforme escolar.');
   aiAttrs = signal({ archetype: 'protagonista', age: '16', hair: 'preto, franja reta', eyes: 'âmbar, grandes', outfit: 'uniforme escolar', personality: 'tímida, curiosa', quirk: 'anota tudo em um caderno' });
   aiGenerating = signal(false);
@@ -114,6 +123,12 @@ export class CharactersScreenComponent implements OnInit {
 
   ngOnInit(): void {
     this.voiceService.list().subscribe({ next: vs => this.voices.set(vs) });
+
+    this.styleService.catalog().subscribe({ next: c => this.styleCatalog.set(c.styles) });
+
+    this.characterService.options().subscribe({
+      next: groups => this.ethnicities.set(groups.find(g => g.id === 'ethnicity')?.options ?? []),
+    });
 
     this.characterService.listAll().subscribe({
       next: chars => { this.characters.set(chars); this.loading.set(false); },
@@ -265,8 +280,8 @@ export class CharactersScreenComponent implements OnInit {
     this.aiAttrs.update(a => ({ ...a, [key]: value }));
   }
 
-  private portraitStream(prompt: string, gender?: string, bodyType?: string, skinTone?: string): Observable<PortraitJob> {
-    return this.characterService.generatePortrait(prompt, this.projectStyle(), this.projectColorMode(), gender, bodyType, skinTone).pipe(
+  private portraitStream(prompt: string, gender?: string, bodyType?: string, skinTone?: string, ethnicity?: string): Observable<PortraitJob> {
+    return this.characterService.generatePortrait(prompt, this.projectStyle(), this.projectColorMode(), gender, bodyType, skinTone, ethnicity).pipe(
       switchMap(job =>
         timer(0, 3000).pipe(
           switchMap(() => this.characterService.pollPortraitJob(job.job_id)),
@@ -299,6 +314,7 @@ export class CharactersScreenComponent implements OnInit {
           this.aiGender() || undefined,
           this.aiBodyType() || undefined,
           this.aiSkinTone() || undefined,
+          this.aiEthnicity() || undefined,
         )
       : this.portraitStream(prompt);
 
@@ -334,6 +350,7 @@ export class CharactersScreenComponent implements OnInit {
       gender: this.aiGender() || undefined,
       body_type: this.aiBodyType() || undefined,
       skin_tone: this.aiSkinTone() || undefined,
+      ethnicity: this.aiEthnicity() || undefined,
       summary: this.aiMode() === 'prompt' ? this.aiPrompt() : Object.values(this.aiAttrs()).filter(v => v.trim()).join(', '),
       traits: ['gerado por IA'],
       style: this.projectStyle(),

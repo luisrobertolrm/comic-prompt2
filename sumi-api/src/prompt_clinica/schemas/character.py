@@ -14,6 +14,7 @@ class CharacterCreate(BaseModel):
     gender: str | None = None
     body_type: str | None = None
     skin_tone: str | None = None
+    ethnicity: str | None = None
     age: int | None = None
     height: str | None = None
     summary: str | None = None
@@ -30,6 +31,7 @@ class CharacterUpdate(BaseModel):
     gender: str | None = None
     body_type: str | None = None
     skin_tone: str | None = None
+    ethnicity: str | None = None
     age: int | None = None
     height: str | None = None
     summary: str | None = None
@@ -56,6 +58,7 @@ class PortraitRequest(BaseModel):
     gender: str | None = None
     body_type: str | None = None
     skin_tone: str | None = None
+    ethnicity: str | None = None
 
 
 class PortraitJobOut(BaseModel):
@@ -72,6 +75,7 @@ class CharacterOut(BaseModel):
     gender: str | None
     body_type: str | None = None
     skin_tone: str | None = None
+    ethnicity: str | None = None
     age: int | None
     height: str | None
     summary: str | None

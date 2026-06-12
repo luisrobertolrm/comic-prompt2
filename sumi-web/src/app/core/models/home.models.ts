@@ -50,6 +50,7 @@ export interface CharacterOut {
   gender: string | null;
   body_type: string | null;
   skin_tone: string | null;
+  ethnicity: string | null;
   age: number | null;
   height: string | null;
   summary: string | null;
@@ -68,6 +69,7 @@ export interface CharacterCreate {
   gender?: string;
   body_type?: string;
   skin_tone?: string;
+  ethnicity?: string;
   age?: number;
   height?: string;
   summary?: string;
@@ -84,6 +86,7 @@ export interface CharacterUpdate {
   gender?: string | null;
   body_type?: string | null;
   skin_tone?: string | null;
+  ethnicity?: string | null;
   age?: number | null;
   height?: string | null;
   summary?: string | null;
@@ -91,6 +94,18 @@ export interface CharacterUpdate {
   traits?: string[];
   image_url?: string;
   narrator_voice_id?: string | null;
+}
+
+export interface AttrOption {
+  id: string;
+  label: string;
+}
+
+export interface AttrGroup {
+  id: string;
+  label: string;
+  multi: boolean;
+  options: AttrOption[];
 }
 
 export interface PortraitCandidate {

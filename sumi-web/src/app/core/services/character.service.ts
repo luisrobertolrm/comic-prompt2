@@ -1,16 +1,24 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, shareReplay } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import type { CharacterCreate, CharacterOut, CharacterUpdate, PortraitJob } from '../models/home.models';
+import type { AttrGroup, CharacterCreate, CharacterOut, CharacterUpdate, PortraitJob } from '../models/home.models';
 
 @Injectable({ providedIn: 'root' })
 export class CharacterService {
   private http = inject(HttpClient);
   private base = environment.apiUrl;
+  private options$: Observable<AttrGroup[]> | null = null;
 
   listAll(): Observable<CharacterOut[]> {
     return this.http.get<CharacterOut[]>(`${this.base}/characters`);
+  }
+
+  options(): Observable<AttrGroup[]> {
+    this.options$ ??= this.http
+      .get<AttrGroup[]>(`${this.base}/character-options`)
+      .pipe(shareReplay(1));
+    return this.options$;
   }
 
   create(req: CharacterCreate): Observable<CharacterOut> {
@@ -32,6 +40,7 @@ export class CharacterService {
     gender?: string,
     bodyType?: string,
     skinTone?: string,
+    ethnicity?: string,
   ): Observable<PortraitJob> {
     return this.http.post<PortraitJob>(`${this.base}/characters/generate-portrait`, {
       prompt,
@@ -40,6 +49,7 @@ export class CharacterService {
       gender,
       body_type: bodyType,
       skin_tone: skinTone,
+      ethnicity,
     });
   }
 

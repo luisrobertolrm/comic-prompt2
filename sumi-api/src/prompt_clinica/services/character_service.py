@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from user import User
 
 import prompt_clinica._paths  # noqa: F401
-from prompt_clinica import styles
+from prompt_clinica import character_options, styles
 from prompt_clinica.ai import ImageRequest, Message, TextRequest, ai
 from prompt_clinica.schemas.character import (
     CharacterCreate,
@@ -69,6 +69,7 @@ def create(req: CharacterCreate, user: User, db: Session) -> Character:
         gender=req.gender,
         body_type=req.body_type,
         skin_tone=req.skin_tone,
+        ethnicity=req.ethnicity,
         age=req.age,
         height=req.height,
         summary=req.summary,
@@ -246,10 +247,11 @@ def build_portrait_prompts(
     gender: str | None = None,
     body_type: str | None = None,
     skin_tone: str | None = None,
+    ethnicity: str | None = None,
 ) -> tuple[str, str]:
     """Retorna (prompt, negative_prompt) no formato do provider ativo."""
     if ai.name != "comfyui":
-        return build_portrait_prompt(prompt, style, color_mode, gender, body_type, skin_tone), ""
+        return build_portrait_prompt(prompt, style, color_mode, gender, body_type, skin_tone, ethnicity), ""
 
     skin = _SD_SKIN.get(skin_tone or "", "")
     if skin and gender == "Masculino":
@@ -262,6 +264,7 @@ def build_portrait_prompts(
         "solo",
         _SD_BODY.get(body_type or "", ""),
         skin,
+        character_options.prompt_for("ethnicity", ethnicity),
         _attrs_to_tags(prompt),
         vs.sd_fragment,
         cm.sd_fragment,
@@ -286,6 +289,7 @@ def build_portrait_prompt(
     gender: str | None = None,
     body_type: str | None = None,
     skin_tone: str | None = None,
+    ethnicity: str | None = None,
 ) -> str:
     # Formato validado nos testes (ver styles.py): sujeito curto, estilo entre
     # aspas simples com a cor embutida, atributos no final.
@@ -293,6 +297,7 @@ def build_portrait_prompt(
     attrs = ", ".join(d for d in (
         _BODY_PROMPT.get(body_type or "", ""),
         _SKIN_PROMPT.get(skin_tone or "", ""),
+        character_options.prompt_for("ethnicity", ethnicity),
         prompt,
     ) if d)
     base_prompt = f"{subject}, {styles.prompt_fragment(style, color_mode)}"
@@ -308,9 +313,10 @@ def generate_portrait(
     gender: str | None = None,
     body_type: str | None = None,
     skin_tone: str | None = None,
+    ethnicity: str | None = None,
 ) -> list[PortraitCandidate]:
     base_prompt, negative = build_portrait_prompts(
-        prompt, style, color_mode, gender, body_type, skin_tone
+        prompt, style, color_mode, gender, body_type, skin_tone, ethnicity
     )
     variants = _SD_PORTRAIT_VARIANTS if ai.name == "comfyui" else _PORTRAIT_VARIANTS
 

@@ -28,6 +28,7 @@ class Character(Base):
     gender: Mapped[str | None] = mapped_column(String(30), nullable=True)
     body_type: Mapped[str | None] = mapped_column(String(30), nullable=True)
     skin_tone: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    ethnicity: Mapped[str | None] = mapped_column(String(30), nullable=True)
     age: Mapped[int | None] = mapped_column(Integer, nullable=True)
     height: Mapped[str | None] = mapped_column(String(30), nullable=True)
     summary: Mapped[str | None] = mapped_column(Text, nullable=True)

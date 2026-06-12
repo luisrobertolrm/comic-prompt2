@@ -7,8 +7,11 @@
       <h1>Quem habita essa história?</h1>
       <p class="lede">Escolha da biblioteca, crie manualmente, ou peça à IA para gerar um novo personagem.</p>
     </div>
-    <div class="selected-badge">
-      {{ selectedCount() }} {{ selectedCount() === 1 ? 'personagem' : 'personagens' }} no elenco
+    <div class="head-badges">
+      <div class="style-badge">🎨 Estilo visual · {{ styleLabel() }}</div>
+      <div class="selected-badge">
+        {{ selectedCount() }} {{ selectedCount() === 1 ? 'personagem' : 'personagens' }} no elenco
+      </div>
     </div>
   </div>
 
@@ -302,7 +305,16 @@
               </select>
             </div>
           </div>
-          <div class="field-row-2">
+          <div class="field-row-3">
+            <div class="field">
+              <label class="field-label">Etnia <span class="field-optional">(opcional)</span></label>
+              <select class="input" [value]="aiEthnicity()" (change)="setField(aiEthnicity, $event)">
+                <option value="">Não especificado</option>
+                @for (e of ethnicities(); track e.id) {
+                  <option [value]="e.id" [selected]="aiEthnicity() === e.id">{{ e.label }}</option>
+                }
+              </select>
+            </div>
             <div class="field">
               <label class="field-label">Arquétipo</label>
               <input class="input" [value]="aiAttrs().archetype" (input)="setAiAttr('archetype', $event)">
