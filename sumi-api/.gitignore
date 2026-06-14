@@ -41,3 +41,7 @@ htmlcov/
 
 # Evals — relatórios gerados
 evals/reports/
+
+# Logs de debug gerados em runtime
+minimax_payload.log
+portrait_debug.log

@@ -14,6 +14,13 @@ def _env(key: str, default: str = "") -> str:
     return os.getenv(key, default)
 
 
+def _env_bool(key: str, default: bool) -> bool:
+    raw = os.getenv(key)
+    if raw is None:
+        return default
+    return raw.strip().lower() in ("1", "true", "yes", "on")
+
+
 @dataclass(frozen=True)
 class MinimaxTextConfig:
     model: str = field(default_factory=lambda: _env("MINIMAX_TEXT_MODEL", "MiniMax-M3"))
@@ -30,6 +37,8 @@ class MinimaxImageConfig:
     # descarta atributos específicos (estilo, corpo, pele). Desligado para o modelo
     # aderir ao prompt literal.
     prompt_optimizer: bool = False
+    # Grava o payload de cada geração em sumi-api/minimax_payload.log.
+    payload_log: bool = field(default_factory=lambda: _env_bool("MINIMAX_PAYLOAD_LOG", True))
 
 
 @dataclass(frozen=True)

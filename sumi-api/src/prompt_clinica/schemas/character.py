@@ -52,13 +52,17 @@ class DeleteUnusedBody(BaseModel):
 
 
 class PortraitRequest(BaseModel):
-    prompt: str
     style: StyleId = DEFAULT_STYLE
     color_mode: str | None = None
     gender: str | None = None
-    body_type: str | None = None
-    skin_tone: str | None = None
+    age_range: str | None = None
     ethnicity: str | None = None
+    hair: str | None = None
+    # Texto livre anexado após o template do estilo.
+    extra: str | None = None
+    # Modo "prompt livre": envia o texto literal à IA, sem montagem por template.
+    prompt: str = ""
+    raw: bool = False
 
 
 class PortraitJobOut(BaseModel):

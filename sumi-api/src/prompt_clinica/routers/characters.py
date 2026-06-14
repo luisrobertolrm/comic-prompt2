@@ -66,20 +66,22 @@ def _save_portraits_to_db(user_id: str, portraits: list[PortraitCandidate]) -> N
 def _run_job(
     job_id: str,
     user_id: str,
-    prompt: str,
     style: str,
     color_mode: str | None,
     gender: str | None,
-    body_type: str | None,
-    skin_tone: str | None,
+    age_range: str | None,
     ethnicity: str | None,
+    hair: str | None,
+    extra: str | None,
+    prompt: str,
+    raw: bool,
 ) -> None:
     _cleanup_old_portraits(user_id)
     with _lock:
         _jobs[job_id].status = "running"
     try:
         portraits = character_service.generate_portrait(
-            prompt, style, color_mode, gender, body_type, skin_tone, ethnicity
+            style, color_mode, gender, age_range, ethnicity, hair, extra, prompt, raw
         )
         _save_portraits_to_db(user_id, portraits)
         with _lock:
@@ -150,8 +152,8 @@ def generate_portrait(
     user: User = Depends(get_current_user),
 ) -> PortraitJobOut:
     logger.info(
-        "generate-portrait recebido: style=%r color_mode=%r gender=%r body=%r skin=%r ethnicity=%r",
-        req.style, req.color_mode, req.gender, req.body_type, req.skin_tone, req.ethnicity,
+        "generate-portrait recebido: style=%r color_mode=%r gender=%r age=%r ethnicity=%r hair=%r raw=%s",
+        req.style, req.color_mode, req.gender, req.age_range, req.ethnicity, req.hair, req.raw,
     )
     job_id = str(uuid.uuid4())
     with _lock:
@@ -160,13 +162,15 @@ def generate_portrait(
         _run_job,
         job_id,
         str(user.id),
-        req.prompt,
         req.style,
         req.color_mode,
         req.gender,
-        req.body_type,
-        req.skin_tone,
+        req.age_range,
         req.ethnicity,
+        req.hair,
+        req.extra,
+        req.prompt,
+        req.raw,
     )
     return PortraitJobOut(job_id=job_id, status="pending")
 

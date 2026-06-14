@@ -6,6 +6,7 @@ from project import Project
 from project_character import ProjectCharacter
 from temp_portrait import TempPortrait
 from user import PasswordResetToken, User, UserOAuth, UserSession
+from visual_style import VisualStyle
 from youtube_metadata import VideoMetadata
 
-__all__ = ["User", "UserOAuth", "PasswordResetToken", "UserSession", "Project", "Character", "ProjectCharacter", "VideoMetadata", "TempPortrait", "NarrationVoice"]
+__all__ = ["User", "UserOAuth", "PasswordResetToken", "UserSession", "Project", "Character", "ProjectCharacter", "VideoMetadata", "TempPortrait", "NarrationVoice", "VisualStyle"]

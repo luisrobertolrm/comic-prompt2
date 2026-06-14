@@ -23,6 +23,7 @@ from prompt_clinica.routers import (
     voice,
 )
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("sumi.api")
 
 app = FastAPI(

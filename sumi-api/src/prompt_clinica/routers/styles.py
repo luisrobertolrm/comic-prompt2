@@ -11,7 +11,7 @@ def list_styles() -> dict[str, object]:
     return {
         "styles": [
             {"id": s.id, "label": s.label, "note": s.note}
-            for s in styles.STYLES.values()
+            for s in styles.all_styles().values()
         ],
         "color_modes": [
             {"id": c.id, "label": c.label, "note": c.note}

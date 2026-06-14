@@ -33,23 +33,27 @@ export class CharacterService {
     return this.http.post<{ deleted: number }>(`${this.base}/characters/delete-unused`, { ids });
   }
 
-  generatePortrait(
-    prompt: string,
-    style: string,
-    colorMode: string,
-    gender?: string,
-    bodyType?: string,
-    skinTone?: string,
-    ethnicity?: string,
-  ): Observable<PortraitJob> {
+  generatePortrait(req: {
+    style: string;
+    colorMode: string;
+    gender?: string;
+    ageRange?: string;
+    ethnicity?: string;
+    hair?: string;
+    extra?: string;
+    prompt?: string;
+    raw?: boolean;
+  }): Observable<PortraitJob> {
     return this.http.post<PortraitJob>(`${this.base}/characters/generate-portrait`, {
-      prompt,
-      style,
-      color_mode: colorMode,
-      gender,
-      body_type: bodyType,
-      skin_tone: skinTone,
-      ethnicity,
+      style: req.style,
+      color_mode: req.colorMode,
+      gender: req.gender,
+      age_range: req.ageRange,
+      ethnicity: req.ethnicity,
+      hair: req.hair,
+      extra: req.extra,
+      prompt: req.prompt,
+      raw: req.raw ?? false,
     });
   }
 

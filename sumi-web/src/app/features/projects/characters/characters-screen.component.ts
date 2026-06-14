@@ -14,8 +14,6 @@ type Tab = 'library' | 'manual' | 'ai';
 type AiMode = 'prompt' | 'attrs';
 
 const GENDERS = ['Feminino', 'Masculino', 'Outro', 'Não especificado'];
-const BODY_TYPES = ['Magro', 'Médio', 'Atlético', 'Forte', 'Gordo'];
-const SKIN_TONES = ['Clara', 'Morena', 'Negra'];
 
 interface AiCandidate {
   id: string;
@@ -40,7 +38,7 @@ export class CharactersScreenComponent implements OnInit {
 
   tab = signal<Tab>('library');
   characters = signal<CharacterOut[]>([]);
-  projectStyle = signal('webtoon');
+  projectStyle = signal('anime-90s');
   projectColorMode = signal('tons-cinza');
   selectedIds = signal<Set<string>>(new Set());
   loading = signal(true);
@@ -48,10 +46,9 @@ export class CharactersScreenComponent implements OnInit {
   voices = signal<SavedVoice[]>([]);
 
   readonly genders = GENDERS;
-  readonly bodyTypes = BODY_TYPES;
-  readonly skinTones = SKIN_TONES;
 
   ethnicities = signal<AttrOption[]>([]);
+  ageRanges = signal<AttrOption[]>([]);
   private styleCatalog = signal<StyleOption[]>([]);
   styleLabel = computed(() =>
     this.styleCatalog().find(s => s.id === this.projectStyle())?.label ?? this.projectStyle()
@@ -81,11 +78,11 @@ export class CharactersScreenComponent implements OnInit {
   // IA
   aiMode = signal<AiMode>('prompt');
   aiGender = signal('');
-  aiBodyType = signal('');
-  aiSkinTone = signal('');
+  aiAgeRange = signal('');
   aiEthnicity = signal('');
+  aiHair = signal('preto, longo');
+  aiExtra = signal('');
   aiPrompt = signal('Uma garota tímida de 16 anos, olhos grandes castanho-âmbar com brilho, franja reta, sempre carrega um caderno. Veste uniforme escolar.');
-  aiAttrs = signal({ archetype: 'protagonista', age: '16', hair: 'preto, franja reta', eyes: 'âmbar, grandes', outfit: 'uniforme escolar', personality: 'tímida, curiosa', quirk: 'anota tudo em um caderno' });
   aiGenerating = signal(false);
   aiError = signal('');
   aiCandidates = signal<AiCandidate[]>([]);
@@ -127,7 +124,10 @@ export class CharactersScreenComponent implements OnInit {
     this.styleService.catalog().subscribe({ next: c => this.styleCatalog.set(c.styles) });
 
     this.characterService.options().subscribe({
-      next: groups => this.ethnicities.set(groups.find(g => g.id === 'ethnicity')?.options ?? []),
+      next: groups => {
+        this.ethnicities.set(groups.find(g => g.id === 'ethnicity')?.options ?? []);
+        this.ageRanges.set(groups.find(g => g.id === 'age_range')?.options ?? []);
+      },
     });
 
     this.characterService.listAll().subscribe({
@@ -252,7 +252,7 @@ export class CharactersScreenComponent implements OnInit {
     this.mError.set('');
     this.mCandidates.set([]);
     this.mPicked.set(null);
-    this.portraitStream(this.buildManualPrompt(), this.mGender()).subscribe({
+    this.portraitStream({ gender: this.mGender(), extra: this.buildManualPrompt() }).subscribe({
       next: job => {
         if (job.status === 'done') {
           this.mCandidates.set(this.toCandidates(job));
@@ -275,13 +275,20 @@ export class CharactersScreenComponent implements OnInit {
 
   // ── IA ──
 
-  setAiAttr(key: string, e: Event): void {
-    const value = (e.target as HTMLInputElement).value;
-    this.aiAttrs.update(a => ({ ...a, [key]: value }));
-  }
-
-  private portraitStream(prompt: string, gender?: string, bodyType?: string, skinTone?: string, ethnicity?: string): Observable<PortraitJob> {
-    return this.characterService.generatePortrait(prompt, this.projectStyle(), this.projectColorMode(), gender, bodyType, skinTone, ethnicity).pipe(
+  private portraitStream(opts: {
+    gender?: string;
+    ageRange?: string;
+    ethnicity?: string;
+    hair?: string;
+    extra?: string;
+    prompt?: string;
+    raw?: boolean;
+  }): Observable<PortraitJob> {
+    return this.characterService.generatePortrait({
+      style: this.projectStyle(),
+      colorMode: this.projectColorMode(),
+      ...opts,
+    }).pipe(
       switchMap(job =>
         timer(0, 3000).pipe(
           switchMap(() => this.characterService.pollPortraitJob(job.job_id)),
@@ -307,16 +314,15 @@ export class CharactersScreenComponent implements OnInit {
     this.aiPicked.set(null);
 
     const isAttrs = this.aiMode() === 'attrs';
-    const prompt = isAttrs ? Object.values(this.aiAttrs()).filter(v => v.trim()).join(', ') : this.aiPrompt();
     const stream = isAttrs
-      ? this.portraitStream(
-          prompt,
-          this.aiGender() || undefined,
-          this.aiBodyType() || undefined,
-          this.aiSkinTone() || undefined,
-          this.aiEthnicity() || undefined,
-        )
-      : this.portraitStream(prompt);
+      ? this.portraitStream({
+          gender: this.aiGender() || undefined,
+          ageRange: this.aiAgeRange() || undefined,
+          ethnicity: this.aiEthnicity() || undefined,
+          hair: this.aiHair() || undefined,
+          extra: this.aiExtra() || undefined,
+        })
+      : this.portraitStream({ prompt: this.aiPrompt(), raw: true });
 
     stream.subscribe({
       next: job => {
@@ -346,12 +352,12 @@ export class CharactersScreenComponent implements OnInit {
     this.aiSaving.set(true);
     const req: CharacterCreate = {
       name: this.aiName(),
-      role: this.aiMode() === 'attrs' ? this.aiAttrs().archetype : 'Personagem',
+      role: 'Personagem',
       gender: this.aiGender() || undefined,
-      body_type: this.aiBodyType() || undefined,
-      skin_tone: this.aiSkinTone() || undefined,
       ethnicity: this.aiEthnicity() || undefined,
-      summary: this.aiMode() === 'prompt' ? this.aiPrompt() : Object.values(this.aiAttrs()).filter(v => v.trim()).join(', '),
+      summary: this.aiMode() === 'prompt'
+        ? this.aiPrompt()
+        : [this.aiHair(), this.aiExtra()].filter(v => v.trim()).join(', '),
       traits: ['gerado por IA'],
       style: this.projectStyle(),
       image_url: picked?.imageUrl,
@@ -406,7 +412,7 @@ export class CharactersScreenComponent implements OnInit {
     this.eCandidates.set([]);
     this.ePicked.set(null);
 
-    this.portraitStream(this.eSummary(), this.eGender()).subscribe({
+    this.portraitStream({ gender: this.eGender(), extra: this.eSummary() }).subscribe({
       next: job => {
         if (job.status === 'done') {
           this.eCandidates.set(this.toCandidates(job));

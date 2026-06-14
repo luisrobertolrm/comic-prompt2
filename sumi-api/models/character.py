@@ -34,7 +34,7 @@ class Character(Base):
     summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     outfit: Mapped[str | None] = mapped_column(Text, nullable=True)
     traits: Mapped[str | None] = mapped_column(String(500), nullable=True)  # CSV
-    style: Mapped[str] = mapped_column(String(60), nullable=False, server_default="classic-shoujo")
+    style: Mapped[str] = mapped_column(String(60), nullable=False, server_default="anime-90s")
     image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     narrator_voice_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("narration_voices.id", ondelete="SET NULL"), nullable=True

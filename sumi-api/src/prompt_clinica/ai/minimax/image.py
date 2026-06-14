@@ -1,9 +1,18 @@
 """Geração de imagem via MiniMax (image-01, síncrono)."""
 from __future__ import annotations
 
+import json
+import logging
+from datetime import datetime
+from pathlib import Path
 from dataclasses import dataclass, field
 
 from .client import MinimaxHTTPBase
+
+logger = logging.getLogger("sumi.api")
+
+# sumi-api/minimax_payload.log — registra cada payload enviado ao image-01.
+_PAYLOAD_LOG = Path(__file__).resolve().parents[4] / "minimax_payload.log"
 
 
 @dataclass
@@ -37,6 +46,16 @@ class MinimaxImageClient(MinimaxHTTPBase):
             payload["subject_reference"] = [
                 {"type": "character", "image_file": ref} for ref in subject_reference
             ]
+        raw_json = json.dumps(payload, ensure_ascii=False)
+        logger.info("minimax image_generation payload: %s", raw_json)
+        if cfg.payload_log:
+            try:
+                with _PAYLOAD_LOG.open("a", encoding="utf-8") as fh:
+                    fh.write(f"\n=== {datetime.now().isoformat(timespec='seconds')} ===\n")
+                    fh.write(raw_json)
+                    fh.write("\n")
+            except Exception:
+                pass
         body = self._post("/v1/image_generation", payload)
 
         data = body.get("data") or {}

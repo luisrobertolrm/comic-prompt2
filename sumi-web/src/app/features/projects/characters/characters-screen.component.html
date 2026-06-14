@@ -20,9 +20,6 @@
     <button class="tab-btn" [class.tab-btn--active]="tab() === 'library'" (click)="tab.set('library')">
       Biblioteca
     </button>
-    <button class="tab-btn" [class.tab-btn--active]="tab() === 'manual'" (click)="tab.set('manual')">
-      Criar manualmente
-    </button>
     <button class="tab-btn" [class.tab-btn--active]="tab() === 'ai'" (click)="tab.set('ai')">
       ✦ Gerar com IA
     </button>
@@ -287,25 +284,14 @@
               </select>
             </div>
             <div class="field">
-              <label class="field-label">Tipo físico</label>
-              <select class="input" [value]="aiBodyType()" (change)="setField(aiBodyType, $event)">
+              <label class="field-label">Faixa etária</label>
+              <select class="input" [value]="aiAgeRange()" (change)="setField(aiAgeRange, $event)">
                 <option value="">Não especificado</option>
-                @for (b of bodyTypes; track b) {
-                  <option [value]="b" [selected]="aiBodyType() === b">{{ b }}</option>
+                @for (a of ageRanges(); track a.id) {
+                  <option [value]="a.id" [selected]="aiAgeRange() === a.id">{{ a.label }}</option>
                 }
               </select>
             </div>
-            <div class="field">
-              <label class="field-label">Cor da pele</label>
-              <select class="input" [value]="aiSkinTone()" (change)="setField(aiSkinTone, $event)">
-                <option value="">Não especificado</option>
-                @for (s of skinTones; track s) {
-                  <option [value]="s" [selected]="aiSkinTone() === s">{{ s }}</option>
-                }
-              </select>
-            </div>
-          </div>
-          <div class="field-row-3">
             <div class="field">
               <label class="field-label">Etnia <span class="field-optional">(opcional)</span></label>
               <select class="input" [value]="aiEthnicity()" (change)="setField(aiEthnicity, $event)">
@@ -315,34 +301,17 @@
                 }
               </select>
             </div>
-            <div class="field">
-              <label class="field-label">Arquétipo</label>
-              <input class="input" [value]="aiAttrs().archetype" (input)="setAiAttr('archetype', $event)">
-            </div>
-            <div class="field">
-              <label class="field-label">Idade</label>
-              <input class="input" type="number" [value]="aiAttrs().age" (input)="setAiAttr('age', $event)">
-            </div>
           </div>
           <div class="field">
             <label class="field-label">Cabelo</label>
-            <input class="input" [value]="aiAttrs().hair" (input)="setAiAttr('hair', $event)">
+            <input class="input" placeholder="Ex: cabelo preto longo preso em coque, mechas soltas onduladas"
+                   [value]="aiHair()" (input)="setField(aiHair, $event)">
           </div>
           <div class="field">
-            <label class="field-label">Olhos</label>
-            <input class="input" [value]="aiAttrs().eyes" (input)="setAiAttr('eyes', $event)">
-          </div>
-          <div class="field">
-            <label class="field-label">Figurino</label>
-            <input class="input" [value]="aiAttrs().outfit" (input)="setAiAttr('outfit', $event)">
-          </div>
-          <div class="field">
-            <label class="field-label">Personalidade (vírgulas)</label>
-            <input class="input" [value]="aiAttrs().personality" (input)="setAiAttr('personality', $event)">
-          </div>
-          <div class="field">
-            <label class="field-label">Marca / quirk</label>
-            <input class="input" [value]="aiAttrs().quirk" (input)="setAiAttr('quirk', $event)">
+            <label class="field-label">Detalhes adicionais <span class="field-optional">(opcional)</span></label>
+            <p class="field-hint">Texto livre anexado ao final do prompt do estilo (olhos, acessórios, expressão…). De preferência em inglês.</p>
+            <textarea class="textarea" rows="3"
+                      [value]="aiExtra()" (input)="setField(aiExtra, $event)"></textarea>
           </div>
         }
 

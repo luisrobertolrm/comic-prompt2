@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import logging
 import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -21,15 +22,11 @@ from prompt_clinica.schemas.character import (
 )
 from prompt_clinica.storage import get_storage
 
-_PORTRAIT_VARIANTS = [
-    ("frontal", "Frontal portrait, neutral expression, looking directly at viewer"),
-    ("perfil", "Three-quarter view, gentle smile, soft lighting from the side"),
-]
+logger = logging.getLogger("sumi.api")
 
-_SD_PORTRAIT_VARIANTS = [
-    ("frontal", "portrait, upper body, looking at viewer, neutral expression"),
-    ("perfil", "portrait, upper body, three-quarter view, light smile"),
-]
+# Cada estilo já fixa o enquadramento e a expressão no próprio template, então
+# as duas variantes são apenas duas amostras (seeds diferentes) do mesmo prompt.
+_PORTRAIT_VARIANTS = [("1", ""), ("2", "")]
 
 
 def _count_projects(char_id: uuid.UUID, db: Session) -> int:
@@ -143,62 +140,41 @@ def delete_unused(ids: list[uuid.UUID], user: User, db: Session) -> int:
     return len(unused)
 
 
-_GENDER_PROMPT = {
-    "Feminino": "female character",
-    "Masculino": "male character",
-    "Outro": "androgynous character",
-    "Não especificado": "",
+# Wording dos slots do template (em inglês), por id de atributo.
+_SEXO = {
+    "Feminino": "woman",
+    "Masculino": "man",
+    "Outro": "androgynous person",
+    "Não especificado": "person",
 }
 
-_BODY_PROMPT = {
-    "Magro": "slim thin build",
-    "Médio": "average build",
-    "Atlético": "athletic toned build",
-    "Forte": "muscular heavy-set build, broad shoulders",
-    "Gordo": "fat plus-size body, round chubby face",
+_FAIXA = {
+    "crianca": "young child",
+    "adolescente": "teenage",
+    "jovem-adulto": "young adult",
+    "adulto": "adult",
+    "meia-idade": "middle-aged",
+    "idoso": "elderly",
 }
 
-_SKIN_PROMPT = {
-    "Clara": "light fair skin",
-    "Morena": "medium brown skin",
-    "Negra": "Black person, very dark brown skin",
+_ETNIA = {
+    "asiatica": "East Asian",
+    "sul-asiatica": "South Asian",
+    "negra": "African",
+    "branca": "European",
+    "latina": "Latin American",
+    "indigena": "Indigenous",
+    "arabe": "Middle Eastern",
 }
 
 
-# Tags danbooru para Stable Diffusion (ComfyUI). A negação não vai no prompt
-# positivo (SD não entende "NOT x" — só adiciona os tokens de x); vai no
-# negative_prompt real, construído em build_portrait_prompts.
-# "male focus" contrabalança tags com viés feminino forte (ex.: "shoujo").
+# Tags danbooru para Stable Diffusion (ComfyUI). "male focus" contrabalança tags
+# com viés feminino forte (ex.: "shoujo").
 _SD_GENDER = {
     "Feminino": "1girl",
     "Masculino": "1boy, male focus",
     "Outro": "androgynous",
     "Não especificado": "",
-}
-
-_SD_BODY = {
-    "Magro": "slim, skinny",
-    "Médio": "",
-    "Atlético": "athletic, toned",
-    "Forte": "muscular",
-    "Gordo": "plump, fat, chubby cheeks, double chin",
-}
-
-_SD_SKIN = {
-    "Clara": "pale skin",
-    "Morena": "tan, brown skin",
-    "Negra": "very dark skin, dark-skinned female",
-}
-
-_SD_BODY_NEGATIVE = {
-    "Magro": "fat, plump",
-    "Gordo": "slim, skinny, thin",
-}
-
-_SD_SKIN_NEGATIVE = {
-    "Clara": "dark skin",
-    "Morena": "pale skin",
-    "Negra": "pale skin, white skin, light skin",
 }
 
 _SD_QUALITY = "masterpiece, best quality, newest, absurdres, highres"
@@ -240,104 +216,88 @@ def _attrs_to_tags(text: str) -> str:
         return cleaned
 
 
+def _slots(
+    gender: str | None,
+    age_range: str | None,
+    ethnicity: str | None,
+    hair: str | None,
+) -> dict[str, str]:
+    return {
+        "sexo": _SEXO.get(gender or "", ""),
+        "faixa_etaria": _FAIXA.get(age_range or "", ""),
+        "etinia": _ETNIA.get(ethnicity or "", ""),
+        "cabelo": (hair or "").strip(),
+    }
+
+
 def build_portrait_prompts(
-    prompt: str,
     style: str = styles.DEFAULT_STYLE,
     color_mode: str | None = None,
     gender: str | None = None,
-    body_type: str | None = None,
-    skin_tone: str | None = None,
+    age_range: str | None = None,
     ethnicity: str | None = None,
+    hair: str | None = None,
+    extra: str | None = None,
 ) -> tuple[str, str]:
     """Retorna (prompt, negative_prompt) no formato do provider ativo."""
     if ai.name != "comfyui":
-        return build_portrait_prompt(prompt, style, color_mode, gender, body_type, skin_tone, ethnicity), ""
+        return build_portrait_prompt(style, color_mode, gender, age_range, ethnicity, hair, extra), ""
 
-    skin = _SD_SKIN.get(skin_tone or "", "")
-    if skin and gender == "Masculino":
-        skin = skin.replace("dark-skinned female", "dark-skinned male")
-    vs = styles.resolve(style)
-    cm = styles.resolve_color(color_mode)
+    free = ", ".join(p for p in ((hair or "").strip(), (extra or "").strip()) if p)
     positive_parts = [
         _SD_QUALITY,
         _SD_GENDER.get(gender or "", ""),
         "solo",
-        _SD_BODY.get(body_type or "", ""),
-        skin,
         character_options.prompt_for("ethnicity", ethnicity),
-        _attrs_to_tags(prompt),
-        vs.sd_fragment,
-        cm.sd_fragment,
+        _attrs_to_tags(free),
         "simple background",
     ]
-    negative_parts = [
-        _SD_NEGATIVE_BASE,
-        vs.sd_negative,
-        cm.sd_negative,
-        _SD_BODY_NEGATIVE.get(body_type or "", ""),
-        _SD_SKIN_NEGATIVE.get(skin_tone or "", ""),
-    ]
     positive = ", ".join(p for p in positive_parts if p)
-    negative = ", ".join(p for p in negative_parts if p)
-    return positive, negative
+    return positive, _SD_NEGATIVE_BASE
 
 
 def build_portrait_prompt(
-    prompt: str,
     style: str = styles.DEFAULT_STYLE,
     color_mode: str | None = None,
     gender: str | None = None,
-    body_type: str | None = None,
-    skin_tone: str | None = None,
+    age_range: str | None = None,
     ethnicity: str | None = None,
+    hair: str | None = None,
+    extra: str | None = None,
 ) -> str:
-    # Formato validado nos testes (ver styles.py): sujeito curto, estilo entre
-    # aspas simples com a cor embutida, atributos no final.
-    subject = _GENDER_PROMPT.get(gender or "", "") or "character"
-    attrs = ", ".join(d for d in (
-        _BODY_PROMPT.get(body_type or "", ""),
-        _SKIN_PROMPT.get(skin_tone or "", ""),
-        character_options.prompt_for("ethnicity", ethnicity),
-        prompt,
-    ) if d)
-    base_prompt = f"{subject}, {styles.prompt_fragment(style, color_mode)}"
-    if attrs:
-        base_prompt += f", {attrs}"
-    return base_prompt + ", character portrait, no text, no speech bubbles. "
+    # Cada estilo é um prompt próprio (tabela visual_styles); aqui só preenchemos
+    # os slots com os atributos e anexamos o texto livre ao final.
+    base = styles.render_prompt(style, _slots(gender, age_range, ethnicity, hair), color_mode)
+    detail = (extra or "").strip()
+    if detail:
+        base = f"{base}, {detail}"
+    return base + ". No text, no speech bubbles."
 
 
 def generate_portrait(
-    prompt: str,
     style: str = styles.DEFAULT_STYLE,
     color_mode: str | None = None,
     gender: str | None = None,
-    body_type: str | None = None,
-    skin_tone: str | None = None,
+    age_range: str | None = None,
     ethnicity: str | None = None,
+    hair: str | None = None,
+    extra: str | None = None,
+    prompt: str = "",
+    raw: bool = False,
 ) -> list[PortraitCandidate]:
-    base_prompt, negative = build_portrait_prompts(
-        prompt, style, color_mode, gender, body_type, skin_tone, ethnicity
-    )
-    variants = _SD_PORTRAIT_VARIANTS if ai.name == "comfyui" else _PORTRAIT_VARIANTS
-
-    # Debug temporário: prompt final no console e em portrait_debug.log.
-    print(
-        f"\n[generate_portrait] provider={ai.name} style={style!r} color_mode={color_mode!r} "
-        f"body_type={body_type!r} skin_tone={skin_tone!r}\n{base_prompt}\nNEG: {negative}\n",
-        flush=True,
-    )
-    try:
-        from pathlib import Path as _Path
-        _Path(__file__).resolve().parents[3].joinpath("portrait_debug.log").write_text(
-            f"provider={ai.name}\nstyle={style!r}\ncolor_mode={color_mode!r}\n"
-            f"skin_tone={skin_tone!r}\n\n{base_prompt}\nNEG: {negative}\n",
-            encoding="utf-8",
+    if raw:
+        # Prompt livre: o texto vai literal à IA, sem montagem por template.
+        base_prompt, negative = prompt, ""
+    else:
+        base_prompt, negative = build_portrait_prompts(
+            style, color_mode, gender, age_range, ethnicity, hair, extra
         )
-    except Exception:
-        pass
+    variants = _PORTRAIT_VARIANTS
+
+    logger.info("generate_portrait provider=%s style=%r -> %s", ai.name, style, base_prompt)
 
     def _generate_one(variant_id: str, variant_suffix: str) -> PortraitCandidate:
-        full_prompt = f"{base_prompt}, {variant_suffix}" if ai.name == "comfyui" else base_prompt + variant_suffix
+        full_prompt = f"{base_prompt}, {variant_suffix}" if variant_suffix else base_prompt
         resp = ai.image(ImageRequest(
             prompt=full_prompt, size="1024x1024", quality="medium", negative_prompt=negative,
         ))
