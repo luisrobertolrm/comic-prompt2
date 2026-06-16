@@ -35,6 +35,8 @@ export class ReviewComponent implements OnInit {
   generatingImage     = signal(false);
   generatingAllImages = signal(false);
   generatingBubbles   = signal(false);
+  saving    = signal(false);
+  justSaved = signal(false);
 
   private patchSubject = new Subject<{ id: string; patch: PanelPatch }>();
 
@@ -86,6 +88,27 @@ export class ReviewComponent implements OnInit {
     } else {
       void this.router.navigate(['/projects', this.projectId(), 'editor']);
     }
+  }
+
+  save(): void {
+    const cur = this.cur;
+    if (!cur || this.saving()) return;
+    this.saving.set(true);
+    this.justSaved.set(false);
+    const patch: PanelPatch = {
+      caption: cur.caption,
+      framing: cur.framing,
+      prompt: cur.prompt,
+      bubbles: cur.bubbles,
+    };
+    this.panelService.update(cur.id, patch).subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.justSaved.set(true);
+        setTimeout(() => this.justSaved.set(false), 2000);
+      },
+      error: () => this.saving.set(false),
+    });
   }
 
   regen(): void {

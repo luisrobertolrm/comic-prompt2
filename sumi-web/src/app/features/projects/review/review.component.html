@@ -88,6 +88,11 @@
               @else { ✦ Imagem IA (opcional) }
             </button>
           </div>
+          <button class="btn-secondary" style="justify-content:center" (click)="save()" [disabled]="saving()">
+            @if (saving()) { ⏳ Salvando… }
+            @else if (justSaved()) { ✓ Salvo }
+            @else { 💾 Salvar (sem aprovar) }
+          </button>
         </div>
 
         <!-- Direção da cena -->
@@ -95,7 +100,7 @@
           <div class="side-card-head">
             <span class="eyebrow">DIREÇÃO DA CENA</span>
             <button class="framing-btn" (click)="showFramingPicker.update(v => !v)">
-              {{ cur.framing }}
+              Enquadramento: {{ cur.framing }}
             </button>
           </div>
           <textarea class="textarea" rows="3" [value]="cur.caption" (input)="setCaption($event)"></textarea>
