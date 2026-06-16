@@ -4,6 +4,7 @@ import { ProjectDraftService } from '../../../core/services/project-draft.servic
 import { ProjectService } from '../../../core/services/project.service';
 import { StyleService, type StyleOption } from '../../../core/services/style.service';
 import { VoiceService, type SavedVoice } from '../../../core/services/voice.service';
+import { TextReaderComponent } from '../../../shared/text-reader/text-reader.component';
 
 
 const GENRES = [
@@ -31,6 +32,7 @@ const LANGUAGES = [
 @Component({
   selector: 'app-new-project',
   standalone: true,
+  imports: [TextReaderComponent],
   templateUrl: './new-project.component.html',
   styleUrl: './new-project.component.scss',
 })
@@ -48,6 +50,7 @@ export class NewProjectComponent implements OnInit {
 
   styles = signal<StyleOption[]>([]);
   colorModes = signal<StyleOption[]>([]);
+  showIdeaReader = signal(false);
 
   title = signal('');
   idea = signal('');

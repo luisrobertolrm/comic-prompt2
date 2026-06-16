@@ -9,11 +9,12 @@ import { ProjectService } from '../../../core/services/project.service';
 import { ProjectDraftService } from '../../../core/services/project-draft.service';
 import { StyleService, StyleOption } from '../../../core/services/style.service';
 import { MangaPanelComponent } from '../manga-panel/manga-panel.component';
+import { TextReaderComponent } from '../../../shared/text-reader/text-reader.component';
 
 @Component({
   selector: 'app-script',
   standalone: true,
-  imports: [MangaPanelComponent],
+  imports: [MangaPanelComponent, TextReaderComponent],
   templateUrl: './script.component.html',
   styleUrl: './script.component.scss',
 })
@@ -42,6 +43,12 @@ export class ScriptComponent implements OnInit {
   editingSynopsis = signal(false);
   synopsisEdit = signal('');
   generatingSynopsis = signal(false);
+  showSynopsisReader = signal(false);
+
+  synopsisText(): string {
+    const p = this.project();
+    return p ? (p.synopsis || p.premise || p.title || '') : '';
+  }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id') ?? '';
