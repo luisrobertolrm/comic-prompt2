@@ -7,6 +7,7 @@ import type { PanelOut } from '../../../core/models/panel.models';
 import { PanelService } from '../../../core/services/panel.service';
 import { ProjectService } from '../../../core/services/project.service';
 import { ProjectDraftService } from '../../../core/services/project-draft.service';
+import { StyleService, StyleOption } from '../../../core/services/style.service';
 import { MangaPanelComponent } from '../manga-panel/manga-panel.component';
 
 @Component({
@@ -22,6 +23,10 @@ export class ScriptComponent implements OnInit {
   private projectService = inject(ProjectService);
   private panelService = inject(PanelService);
   private draft = inject(ProjectDraftService);
+  private styleService = inject(StyleService);
+
+  styles = signal<StyleOption[]>([]);
+  colorModes = signal<StyleOption[]>([]);
 
   projectId = signal('');
   project = signal<ProjectDetailOut | null>(null);
@@ -42,7 +47,18 @@ export class ScriptComponent implements OnInit {
     const id = this.route.snapshot.paramMap.get('id') ?? '';
     this.projectId.set(id);
     this.projectService.get(id).subscribe({ next: p => { this.project.set(p); this.draft.currentProjectTitle.set(p.title); } });
+    this.styleService.catalog().subscribe({
+      next: c => { this.styles.set(c.styles); this.colorModes.set(c.color_modes); },
+    });
     this.loadPanels(id);
+  }
+
+  styleLabel(): string {
+    const p = this.project();
+    if (!p) return '';
+    const style = this.styles().find(s => s.id === p.style)?.label ?? p.style;
+    const color = this.colorModes().find(c => c.id === p.color_mode)?.label ?? p.color_mode;
+    return color ? `${style} · ${color}` : style;
   }
 
   private loadPanels(id: string): void {

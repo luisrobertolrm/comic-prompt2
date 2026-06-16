@@ -223,6 +223,8 @@ def generate(
         pages=project.pages,
         character_names=char_names,
         target_panels=target_panels,
+        style=project.style,
+        color_mode=project.color_mode,
     )
 
     templates: list[dict[str, Any]] = ai_data.get("panels") or []  # type: ignore[assignment]

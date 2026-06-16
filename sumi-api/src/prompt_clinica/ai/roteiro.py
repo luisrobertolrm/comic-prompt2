@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 import logging
 
+from prompt_clinica import styles
 from prompt_clinica.ai import Message, TextRequest, ai
 
 logger = logging.getLogger(__name__)
@@ -25,7 +26,7 @@ Cada quadro deve ter:
 - "character_name": str | null — nome do personagem principal em cena (null se sem personagem)
 - "caption": str — direção de cena em português, 1-2 frases concretas e visuais
 - "framing": um de: Plano geral | Plano americano | Plano médio | Close-up | Extreme close | Inserto | Detalhe | Plongée | Contra-plongée
-- "prompt": str — prompt em inglês para gerador de imagem (manga style, sem texto, sem balões, 1-2 frases)
+- "prompt": str — prompt em inglês descrevendo a CENA (composição, ação, cenário, atmosfera), sem texto, sem balões, 1-2 frases. NÃO inclua o estilo de arte: ele é aplicado depois.
 - "bubbles": array de {"text": str, "kind": "say"|"thought"|"shout", "side": "left"|"right", "x": int, "y": int}
 
 Varie enquadramentos e aspectos. Inclua balões só onde fizerem sentido narrativo.\
@@ -47,13 +48,19 @@ def generate_roteiro(
     pages: int,
     character_names: list[str],
     target_panels: int | None = None,
+    style: str | None = None,
+    color_mode: str | None = None,
 ) -> dict[str, object]:
     """
     Chama a IA e retorna {"title": str, "panels": list[dict]}.
     `target_panels` define quantos quadros gerar; se None, a IA decide pela história.
+    `style`/`color_mode` são os ids do ESTILO VISUAL do projeto (servidor) — entram
+    no contexto para que cenário, atmosfera e direção de cena fiquem coerentes.
     Retorna {} se a chamada falhar — o serviço aplica fallback mock.
     """
     chars = ", ".join(character_names) if character_names else "nenhum definido ainda"
+    vs = styles.resolve(style)
+    style_line = f"{vs.label} ({vs.note}), {styles.resolve_color(color_mode).label}"
 
     if target_panels is not None:
         n = max(MIN_PANELS, min(MAX_PANELS, target_panels))
@@ -70,6 +77,8 @@ def generate_roteiro(
     user_msg = (
         f"Premissa: {premise}\n"
         f"Gênero: {genre} | Tom: {tone}\n"
+        f"Estilo visual da HQ: {style_line}. "
+        "Mantenha cenário, atmosfera e direção de cena coerentes com esse estilo.\n"
         f"{count_line}\n"
         f"Personagens disponíveis: {chars}\n\n"
         "Distribua os personagens de forma coerente com a história. "

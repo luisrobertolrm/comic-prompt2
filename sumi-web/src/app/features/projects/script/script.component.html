@@ -64,7 +64,7 @@
              (click)="startEditSynopsis()">{{ project()!.synopsis || project()!.premise || project()!.title }}</p>
         }
         <div class="chips">
-          <span class="chip">{{ project()!.genre }}</span>
+          <span class="chip">{{ styleLabel() }}</span>
           <span class="chip">{{ project()!.tone }}</span>
           <span class="chip">{{ project()!.pages }} páginas</span>
           <span class="chip">{{ panels().length || '…' }} quadros</span>
