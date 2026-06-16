@@ -134,8 +134,13 @@
               </span>
             </div>
           </div>
-          <button class="insert-after-btn" (click)="insertAfter(i)"
-                  title="Inserir um quadro depois deste">+ inserir aqui</button>
+          <div class="card-actions">
+            <button class="card-action-btn" (click)="insertAfter(i)"
+                    title="Inserir um quadro depois deste">+ inserir aqui</button>
+            <button class="card-action-btn card-action-btn--danger" (click)="removePanel(i)"
+                    [disabled]="panels().length <= 1"
+                    title="Remover este quadro">🗑 remover</button>
+          </div>
         </div>
       } @empty {
         <div style="grid-column:1/-1;text-align:center;padding:48px 16px">

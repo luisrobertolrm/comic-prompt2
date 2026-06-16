@@ -116,12 +116,19 @@ h1 { font-family: var(--serif); font-size: 30px; line-height: 1.1; margin-bottom
 
   &:hover app-manga-panel { opacity: .85; }
 
-  &:hover .insert-after-btn { opacity: 1; }
+  &:hover .card-actions { opacity: 1; }
 }
 
-.insert-after-btn {
-  align-self: center;
+.card-actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
   margin-top: 2px;
+  opacity: 0;
+  transition: opacity .15s ease;
+}
+
+.card-action-btn {
   padding: 4px 14px;
   font-size: 12px;
   border: 1px dashed var(--ink-4, #d8cdba);
@@ -129,13 +136,22 @@ h1 { font-family: var(--serif); font-size: 30px; line-height: 1.1; margin-bottom
   background: var(--paper, #fdfaf4);
   color: var(--muted, #8a7d6b);
   cursor: pointer;
-  opacity: 0;
-  transition: opacity .15s ease, background .15s ease, color .15s ease;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
 
   &:hover {
     background: var(--ink, #2a241c);
     color: var(--paper, #fdfaf4);
     border-style: solid;
+  }
+
+  &:disabled {
+    opacity: .4;
+    cursor: not-allowed;
+  }
+
+  &--danger:hover {
+    background: #b3261e;
+    border-color: #b3261e;
   }
 }
 

@@ -109,6 +109,20 @@ export class ScriptComponent implements OnInit {
     });
   }
 
+  removePanel(i: number): void {
+    if (this.panels().length <= 1) return;
+    const panel = this.panels()[i];
+    this.panelService.delete(panel.id).subscribe({
+      next: () => {
+        const ps = this.panels()
+          .filter(p => p.id !== panel.id)
+          .map((p, idx) => ({ ...p, index_order: idx + 1 }));
+        this.panels.set(ps);
+        this.targetPanels.set(ps.length);
+      },
+    });
+  }
+
   openReview(panelIndex = 0): void {
     void this.router.navigate(['/projects', this.projectId(), 'review'], {
       queryParams: { panel: panelIndex },
