@@ -95,9 +95,15 @@
   }
 
   <!-- ── Storyboard ── -->
-  <p class="eyebrow" style="margin-bottom:12px">
-    STORYBOARD · {{ generating() ? '…' : panels().length }} QUADROS
-  </p>
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px">
+    <p class="eyebrow" style="margin:0">
+      STORYBOARD · {{ generating() ? '…' : panels().length }} QUADROS
+    </p>
+    @if (!generating() && panels().length > 0) {
+      <button class="btn-ghost" style="padding:3px 12px;font-size:12px"
+              (click)="insertAtStart()">+ Inserir no início</button>
+    }
+  </div>
 
   <div class="storyboard-grid">
     @if (generating()) {
@@ -110,22 +116,26 @@
     }
     @if (!generating()) {
       @for (p of panels(); track p.id; let i = $index) {
-        <div class="storyboard-item" (click)="openReview(i)">
-          <app-manga-panel
-            [index]="p.index_order"
-            [label]="p.label"
-            [aspect]="p.aspect"
-            [tone]="p.tone"
-            [characterName]="p.character_name"
-            [bubbles]="p.bubbles"
-            [imageUrl]="p.image_url"
-            [isLoading]="generatingPanelIds().has(p.id)" />
-          <div class="storyboard-meta">
-            <span class="storyboard-caption">{{ p.caption }}</span>
-            <span class="status-badge" [style.background]="statusColor(p.status)">
-              {{ statusLabel(p.status) }}
-            </span>
+        <div class="storyboard-item">
+          <div (click)="openReview(i)" style="display:flex;flex-direction:column;gap:8px;cursor:pointer">
+            <app-manga-panel
+              [index]="p.index_order"
+              [label]="p.label"
+              [aspect]="p.aspect"
+              [tone]="p.tone"
+              [characterName]="p.character_name"
+              [bubbles]="p.bubbles"
+              [imageUrl]="p.image_url"
+              [isLoading]="generatingPanelIds().has(p.id)" />
+            <div class="storyboard-meta">
+              <span class="storyboard-caption">{{ p.caption }}</span>
+              <span class="status-badge" [style.background]="statusColor(p.status)">
+                {{ statusLabel(p.status) }}
+              </span>
+            </div>
           </div>
+          <button class="insert-after-btn" (click)="insertAfter(i)"
+                  title="Inserir um quadro depois deste">+ inserir aqui</button>
         </div>
       } @empty {
         <div style="grid-column:1/-1;text-align:center;padding:48px 16px">

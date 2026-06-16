@@ -112,9 +112,31 @@ h1 { font-family: var(--serif); font-size: 30px; line-height: 1.1; margin-bottom
   display: flex;
   flex-direction: column;
   gap: 8px;
-  cursor: pointer;
+  position: relative;
 
   &:hover app-manga-panel { opacity: .85; }
+
+  &:hover .insert-after-btn { opacity: 1; }
+}
+
+.insert-after-btn {
+  align-self: center;
+  margin-top: 2px;
+  padding: 4px 14px;
+  font-size: 12px;
+  border: 1px dashed var(--ink-4, #d8cdba);
+  border-radius: 999px;
+  background: var(--paper, #fdfaf4);
+  color: var(--muted, #8a7d6b);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .15s ease, background .15s ease, color .15s ease;
+
+  &:hover {
+    background: var(--ink, #2a241c);
+    color: var(--paper, #fdfaf4);
+    border-style: solid;
+  }
 }
 
 .storyboard-meta {

@@ -87,6 +87,28 @@ export class ScriptComponent implements OnInit {
     });
   }
 
+  insertAfter(i: number): void {
+    const after = this.panels()[i].index_order;
+    this.panelService.insert(this.projectId(), after).subscribe({
+      next: newPanel => {
+        const ps = [...this.panels().slice(0, i + 1), newPanel, ...this.panels().slice(i + 1)]
+          .map((p, idx) => ({ ...p, index_order: idx + 1 }));
+        this.panels.set(ps);
+        this.targetPanels.set(ps.length);
+      },
+    });
+  }
+
+  insertAtStart(): void {
+    this.panelService.insert(this.projectId(), 0).subscribe({
+      next: newPanel => {
+        const ps = [newPanel, ...this.panels()].map((p, idx) => ({ ...p, index_order: idx + 1 }));
+        this.panels.set(ps);
+        this.targetPanels.set(ps.length);
+      },
+    });
+  }
+
   openReview(panelIndex = 0): void {
     void this.router.navigate(['/projects', this.projectId(), 'review'], {
       queryParams: { panel: panelIndex },
