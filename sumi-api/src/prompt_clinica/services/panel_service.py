@@ -289,7 +289,8 @@ def generate_image(panel_id: uuid.UUID, user: User, db: Session) -> PanelOut:
             detail="Nenhuma imagem retornada pelo provider.",
         )
 
-    panel.image_url = get_storage().save(f"{panel.id}.png", img_bytes)
+    saved_url = get_storage().save(f"{panel.id}.png", img_bytes)
+    panel.image_url = f"{saved_url}?v={uuid.uuid4().hex[:8]}"
     db.commit()
     db.refresh(panel)
     logger.info("Imagem gerada: %s (%d KB)", panel.image_url, len(img_bytes) // 1024)
@@ -433,6 +434,9 @@ def generate_all_images(project_id: uuid.UUID, user: User, db: Session) -> list[
         .all()
     )
 
+    project_style = project.style or styles.DEFAULT_STYLE
+    project_color_mode = project.color_mode or styles.DEFAULT_COLOR_MODE
+
     # Resolve as referências no thread principal — a Session não é thread-safe.
     refs: dict[uuid.UUID, list[str] | None] = {
         p.id: _subject_reference(p.character_name, project_id, db) for p in panels
@@ -440,7 +444,7 @@ def generate_all_images(project_id: uuid.UUID, user: User, db: Session) -> list[
 
     def _gen_one(panel: Panel) -> None:
         base_prompt = panel.prompt or panel.caption or "manga panel"
-        img_prompt = _img_prompt(project.style, base_prompt)
+        img_prompt = _img_prompt(project_style, project_color_mode, base_prompt)
         try:
             resp = ai.image(ImageRequest(
                 prompt=img_prompt, size="1024x1024", quality="medium",
@@ -448,7 +452,8 @@ def generate_all_images(project_id: uuid.UUID, user: User, db: Session) -> list[
             ))
             if resp.b64_json:
                 img_bytes = base64.b64decode(resp.b64_json)
-                panel.image_url = get_storage().save(f"{panel.id}.png", img_bytes)
+                saved_url = get_storage().save(f"{panel.id}.png", img_bytes)
+                panel.image_url = f"{saved_url}?v={uuid.uuid4().hex[:8]}"
                 logger.info("Imagem gerada: quadro %s", panel.id)
         except Exception as exc:
             logger.warning("Falha ao gerar imagem — quadro %s: %s", panel.id, exc)
