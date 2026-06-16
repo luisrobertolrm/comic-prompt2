@@ -49,6 +49,7 @@ export class NewProjectComponent implements OnInit {
   styles = signal<StyleOption[]>([]);
   colorModes = signal<StyleOption[]>([]);
 
+  title = signal('');
   idea = signal('');
   genre = signal('Shojo');
   tone = signal('Doce e melancólico');
@@ -76,6 +77,7 @@ export class NewProjectComponent implements OnInit {
     this.loading.set(true);
     this.projectService.get(pid).subscribe({
       next: p => {
+        this.title.set(p.title ?? '');
         this.idea.set(p.premise ?? '');
         this.genre.set(p.genre);
         this.tone.set(p.tone);
@@ -92,6 +94,10 @@ export class NewProjectComponent implements OnInit {
   get panelCount(): string {
     const p = this.pages();
     return `≈ ${p * 3}–${p * 4} quadros`;
+  }
+
+  setTitle(e: Event): void {
+    this.title.set((e.target as HTMLInputElement).value);
   }
 
   setIdea(e: Event): void {
@@ -120,11 +126,12 @@ export class NewProjectComponent implements OnInit {
   }
 
   advance(): void {
-    if (!this.idea().trim() || this.loading()) return;
+    if (!this.title().trim() || !this.idea().trim() || this.loading()) return;
     const pid = this.draftService.projectId();
     this.loading.set(true);
     if (pid) {
       this.projectService.update(pid, {
+        title: this.title(),
         premise: this.idea(),
         genre: this.genre(),
         tone: this.tone(),
@@ -141,6 +148,7 @@ export class NewProjectComponent implements OnInit {
       });
     } else {
       this.projectService.create({
+        title: this.title(),
         premise: this.idea(),
         genre: this.genre(),
         tone: this.tone(),

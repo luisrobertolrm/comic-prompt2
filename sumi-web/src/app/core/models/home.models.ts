@@ -15,6 +15,7 @@ export interface ProjectOut {
 }
 
 export interface ProjectCreate {
+  title: string;
   premise: string;
   genre: string;
   tone: string;
@@ -33,6 +34,7 @@ export interface ProjectDetailOut extends ProjectOut {
 }
 
 export interface ProjectUpdate {
+  title?: string;
   premise?: string;
   synopsis?: string;
   genre?: string;

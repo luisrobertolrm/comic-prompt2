@@ -10,6 +10,7 @@ from prompt_clinica.styles import DEFAULT_COLOR_MODE, DEFAULT_STYLE, ColorModeId
 
 
 class ProjectCreate(BaseModel):
+    title: str
     premise: str
     genre: str
     tone: str
@@ -21,6 +22,7 @@ class ProjectCreate(BaseModel):
 
 
 class ProjectPatch(BaseModel):
+    title: str | None = None
     premise: str | None = None
     synopsis: str | None = None
     genre: str | None = None

@@ -16,6 +16,15 @@
     <div class="card">
 
       <div class="field">
+        <label class="field-label">Título</label>
+        <input class="input" type="text" maxlength="200"
+               placeholder="Ex: A carta no livro emprestado"
+               [value]="title()" (input)="setTitle($event)" />
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="field">
         <label class="field-label">Sua ideia</label>
         <textarea class="textarea serif" rows="8"
                   placeholder="Ex: Uma carta dobrada cai do livro emprestado. Quem a colocou ali?"
@@ -145,7 +154,7 @@
   <!-- ── Footer ── -->
   <div class="footer-row">
     <button class="btn-ghost" (click)="cancel()">← Cancelar</button>
-    <button class="btn-primary" (click)="advance()" [disabled]="!idea().trim() || loading()">
+    <button class="btn-primary" (click)="advance()" [disabled]="!title().trim() || !idea().trim() || loading()">
       {{ loading() ? 'Salvando…' : 'Avançar — personagens →' }}
     </button>
   </div>

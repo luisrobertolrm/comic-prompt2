@@ -51,7 +51,7 @@ def get_by_id(project_id: uuid.UUID, user: User, db: Session) -> ProjectDetailOu
 
 
 def create(req: ProjectCreate, user: User, db: Session) -> Project:
-    title = req.premise[:60].strip() or "Novo projeto"
+    title = req.title.strip() or "Novo projeto"
     subtitle = f"{req.genre.lower()} · {req.pages * 3}–{req.pages * 4} quadros"
     project = Project(
         user_id=user.id,
@@ -81,9 +81,10 @@ def update(project_id: uuid.UUID, patch: ProjectPatch, user: User, db: Session) 
     )
     if project is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Projeto não encontrado.")
+    if patch.title is not None:
+        project.title = patch.title.strip() or project.title
     if patch.premise is not None:
         project.premise = patch.premise
-        project.title = patch.premise[:60].strip() or project.title
     if patch.synopsis is not None:
         project.synopsis = patch.synopsis
     if patch.genre is not None:
