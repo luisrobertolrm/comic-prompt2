@@ -35,6 +35,15 @@
       Biblioteca
     </button>
 
+    <button class="nav-item" [class.active]="isActive('series')" (click)="navigateTo('/series')">
+      <span class="glyph">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path [attr.d]="iconPath('layout')"></path>
+        </svg>
+      </span>
+      Séries
+    </button>
+
     <button class="nav-item" [class.active]="isActive('voice-test')" (click)="navigateTo('/voice-test')">
       <span class="glyph">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">

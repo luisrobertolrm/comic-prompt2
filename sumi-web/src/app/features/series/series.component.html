@@ -1,0 +1,90 @@
+<div class="series">
+
+  <!-- ── Cabeçalho ── -->
+  <div class="page-head">
+    <div>
+      <p class="eyebrow">SUAS SÉRIES</p>
+      <h1>Agrupe seus projetos em séries.</h1>
+      <p class="lede">Uma série reúne HQs relacionadas — uma temporada, uma saga ou uma coleção.</p>
+    </div>
+    @if (editingId() === null) {
+      <button class="btn-accent" (click)="startNew()">+ Nova série</button>
+    }
+  </div>
+
+  <!-- ── Formulário (criar/editar) ── -->
+  @if (editingId() !== null) {
+    <div class="card form-card">
+      <div class="field">
+        <label class="field-label">Nome</label>
+        <input class="input" type="text" maxlength="200"
+               placeholder="Ex: Crônicas de Outono"
+               [value]="name()" (input)="setName($event)" />
+      </div>
+
+      <div class="field">
+        <label class="field-label">Descrição</label>
+        <textarea class="textarea" rows="3"
+                  placeholder="Do que se trata esta série?"
+                  [value]="description()" (input)="setDescription($event)"></textarea>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Projetos da série</label>
+        @if (projects().length === 0) {
+          <p class="field-hint">Nenhum projeto disponível.</p>
+        } @else {
+          <div class="project-pick">
+            @for (p of projects(); track p.id) {
+              <button class="pick-item" [class.pick-item--active]="isSelected(p.id)"
+                      (click)="toggleProject(p.id)">
+                <span class="pick-check">@if (isSelected(p.id)) { ✓ }</span>
+                <span class="pick-title">{{ p.title }}</span>
+                <span class="pick-genre">{{ p.genre }}</span>
+              </button>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="form-actions">
+        <button class="btn-ghost" (click)="cancel()">Cancelar</button>
+        <button class="btn-accent" (click)="save()" [disabled]="!name().trim() || saving()">
+          {{ saving() ? 'Salvando…' : 'Salvar série' }}
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- ── Lista ── -->
+  @if (loading()) {
+    <p class="muted">Carregando…</p>
+  } @else if (seriesList().length === 0 && editingId() === null) {
+    <div class="empty">Nenhuma série ainda. Crie a primeira.</div>
+  } @else {
+    <div class="series-list">
+      @for (s of seriesList(); track s.id) {
+        <div class="series-card">
+          <div class="series-info">
+            <h3 class="series-name">{{ s.name }}</h3>
+            @if (s.description) { <p class="series-desc">{{ s.description }}</p> }
+            <div class="series-projects">
+              @if (s.project_ids.length === 0) {
+                <span class="muted">Sem projetos vinculados</span>
+              } @else {
+                @for (pid of s.project_ids; track pid) {
+                  <span class="proj-tag">{{ projectTitle(pid) }}</span>
+                }
+              }
+            </div>
+          </div>
+          <div class="series-actions">
+            <button class="btn-ghost" (click)="edit(s)">Editar</button>
+            <button class="btn-ghost btn-ghost--danger" (click)="remove(s)">Excluir</button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+</div>

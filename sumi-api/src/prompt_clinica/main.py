@@ -18,6 +18,7 @@ from prompt_clinica.routers import (
     image_test,
     panels,
     projects,
+    series,
     storage,
     styles,
     voice,
@@ -58,6 +59,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(projects.router)
+app.include_router(series.router)
 app.include_router(characters.router)
 app.include_router(character_options.router)
 app.include_router(panels.router)

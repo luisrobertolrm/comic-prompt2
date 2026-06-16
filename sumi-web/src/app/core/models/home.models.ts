@@ -43,6 +43,24 @@ export interface ProjectUpdate {
   narrator_voice_id?: string | null;
 }
 
+export interface SeriesOut {
+  id: string;
+  name: string;
+  description: string | null;
+  project_ids: string[];
+  updated_at: string;
+}
+
+export interface SeriesCreate {
+  name: string;
+  description?: string | null;
+}
+
+export interface SeriesUpdate {
+  name?: string;
+  description?: string | null;
+}
+
 export interface CharacterOut {
   id: string;
   name: string;
