@@ -1,0 +1,21 @@
+<div class="open-area" (click)="open.emit()">
+  <app-manga-panel
+    [index]="panel.index_order"
+    [label]="panel.label"
+    [aspect]="panel.aspect"
+    [tone]="panel.tone"
+    [characterName]="panel.character_name"
+    [bubbles]="panel.bubbles"
+    [imageUrl]="panel.image_url"
+    [isLoading]="loading" />
+  <div class="storyboard-meta">
+    <span class="storyboard-caption">{{ panel.caption }}</span>
+    <span class="status-badge" [style.background]="statusColor()">{{ statusLabel() }}</span>
+  </div>
+</div>
+<div class="card-actions">
+  <button class="card-action-btn" (click)="insertAfter.emit()"
+          title="Inserir um quadro depois deste">+ inserir aqui</button>
+  <button class="card-action-btn card-action-btn--danger" (click)="remove.emit()"
+          [disabled]="!canRemove" title="Remover este quadro">🗑 remover</button>
+</div>

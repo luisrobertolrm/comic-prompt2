@@ -95,32 +95,13 @@
     }
     @if (!generating()) {
       @for (p of panels(); track p.id; let i = $index) {
-        <div class="storyboard-item">
-          <div (click)="openReview(i)" style="display:flex;flex-direction:column;gap:8px;cursor:pointer">
-            <app-manga-panel
-              [index]="p.index_order"
-              [label]="p.label"
-              [aspect]="p.aspect"
-              [tone]="p.tone"
-              [characterName]="p.character_name"
-              [bubbles]="p.bubbles"
-              [imageUrl]="p.image_url"
-              [isLoading]="generatingPanelIds().has(p.id)" />
-            <div class="storyboard-meta">
-              <span class="storyboard-caption">{{ p.caption }}</span>
-              <span class="status-badge" [style.background]="statusColor(p.status)">
-                {{ statusLabel(p.status) }}
-              </span>
-            </div>
-          </div>
-          <div class="card-actions">
-            <button class="card-action-btn" (click)="insertAfter(i)"
-                    title="Inserir um quadro depois deste">+ inserir aqui</button>
-            <button class="card-action-btn card-action-btn--danger" (click)="removePanel(i)"
-                    [disabled]="panels().length <= 1"
-                    title="Remover este quadro">🗑 remover</button>
-          </div>
-        </div>
+        <app-script-panel-card
+          [panel]="p"
+          [loading]="generatingPanelIds().has(p.id)"
+          [canRemove]="panels().length > 1"
+          (open)="openReview(i)"
+          (insertAfter)="insertAfter(i)"
+          (remove)="removePanel(i)" />
       } @empty {
         <div style="grid-column:1/-1;text-align:center;padding:48px 16px">
           <p class="muted-sm" style="margin-bottom:16px">Nenhum quadro ainda. Gere o storyboard a partir da sua premissa{{ project()?.synopsis ? ' e sinopse' : '' }}.</p>

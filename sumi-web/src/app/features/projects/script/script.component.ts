@@ -10,11 +10,12 @@ import { ProjectDraftService } from '../../../core/services/project-draft.servic
 import { StyleService, StyleOption } from '../../../core/services/style.service';
 import { MangaPanelComponent } from '../manga-panel/manga-panel.component';
 import { SynopsisPanelComponent, SynopsisSelection, SynopsisRange } from './synopsis-panel/synopsis-panel.component';
+import { PanelCardComponent } from './panel-card/panel-card.component';
 
 @Component({
   selector: 'app-script',
   standalone: true,
-  imports: [MangaPanelComponent, SynopsisPanelComponent],
+  imports: [MangaPanelComponent, SynopsisPanelComponent, PanelCardComponent],
   templateUrl: './script.component.html',
   styleUrl: './script.component.scss',
 })
@@ -126,14 +127,6 @@ export class ScriptComponent implements OnInit {
     void this.router.navigate(['/projects', this.projectId(), 'review'], {
       queryParams: { panel: panelIndex },
     });
-  }
-
-  statusColor(status: string): string {
-    return status === 'approved' ? 'var(--mint)' : 'var(--peach-soft)';
-  }
-
-  statusLabel(status: string): string {
-    return status === 'approved' ? 'OK' : 'REVISAR';
   }
 
   generateAllImages(): void {
