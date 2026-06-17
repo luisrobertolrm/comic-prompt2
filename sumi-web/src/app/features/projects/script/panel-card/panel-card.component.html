@@ -10,10 +10,19 @@
     [isLoading]="loading" />
   <div class="storyboard-meta">
     <span class="storyboard-caption">{{ panel.caption }}</span>
-    <span class="status-badge" [style.background]="statusColor()">{{ statusLabel() }}</span>
+    <div class="meta-tags">
+      @if (hasLink()) {
+        <span class="link-badge" title="Vinculado a um trecho da sinopse">⚓</span>
+      }
+      <span class="status-badge" [style.background]="statusColor()">{{ statusLabel() }}</span>
+    </div>
   </div>
 </div>
 <div class="card-actions">
+  @if (canLink) {
+    <button class="card-action-btn card-action-btn--link" (click)="link.emit()"
+            title="Vincular o trecho selecionado da sinopse a este quadro">⚓ vincular trecho</button>
+  }
   <button class="card-action-btn" (click)="insertAfter.emit()"
           title="Inserir um quadro depois deste">+ inserir aqui</button>
   <button class="card-action-btn card-action-btn--danger" (click)="remove.emit()"

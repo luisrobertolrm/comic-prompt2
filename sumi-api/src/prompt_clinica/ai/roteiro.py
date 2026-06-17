@@ -27,8 +27,10 @@ Cada quadro deve ter:
 - "caption": str — direção de cena em português, 1-2 frases concretas e visuais
 - "framing": um de: Plano geral | Plano americano | Plano médio | Close-up | Extreme close | Inserto | Detalhe | Plongée | Contra-plongée
 - "prompt": str — prompt em inglês descrevendo a CENA (composição, ação, cenário, atmosfera), sem texto, sem balões, 1-2 frases. NÃO inclua o estilo de arte: ele é aplicado depois.
+- "excerpt": str — trecho EXATO da sinopse fornecida (cópia literal, contínua, sem alterar palavras) que este quadro representa. É a âncora do quadro ao roteiro; copie do texto da Premissa.
 - "bubbles": array de {"text": str, "kind": "say"|"thought"|"shout", "side": "left"|"right", "x": int, "y": int}
 
+Os quadros devem cobrir a sinopse em ordem; cada "excerpt" deve ser uma fatia literal e sequencial da Premissa.
 Varie enquadramentos e aspectos. Inclua balões só onde fizerem sentido narrativo.\
 """
 

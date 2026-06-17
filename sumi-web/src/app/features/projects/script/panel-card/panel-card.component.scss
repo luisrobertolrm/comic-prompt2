@@ -30,6 +30,14 @@
   min-width: 0;
 }
 
+.meta-tags { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+.link-badge {
+  font-size: 11px;
+  line-height: 1;
+  color: var(--accent-ink);
+}
+
 .status-badge {
   flex-shrink: 0;
   padding: 2px 7px;
@@ -72,5 +80,11 @@
   &--danger:hover {
     background: #b3261e;
     border-color: #b3261e;
+  }
+
+  &--link {
+    border-color: var(--accent);
+    color: var(--accent-ink);
+    &:hover { background: var(--accent); color: var(--ink); border-color: var(--accent); }
   }
 }

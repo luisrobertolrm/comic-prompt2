@@ -162,8 +162,33 @@ def _subject_reference(
     return [ref] if ref else None
 
 
-def _panel_from_dict(data: dict[str, Any], project_id: uuid.UUID, index: int) -> Panel:
+def _locate_excerpt(source: str, excerpt: str) -> tuple[int | None, int | None]:
+    """Resolve o trecho citado pela IA em offsets de caractere na sinopse.
+
+    Tenta casamento literal e, como fallback, ignorando diferenças de espaços
+    em branco. Retorna (None, None) quando não encontra.
+    """
+    excerpt = (excerpt or "").strip()
+    if not source or not excerpt:
+        return None, None
+    idx = source.find(excerpt)
+    if idx != -1:
+        return idx, idx + len(excerpt)
+    pattern = re.compile(re.escape(excerpt).replace(r"\ ", r"\s+"), re.DOTALL)
+    m = pattern.search(source)
+    if m:
+        return m.start(), m.end()
+    return None, None
+
+
+def _panel_from_dict(
+    data: dict[str, Any], project_id: uuid.UUID, index: int, source_text: str | None = None
+) -> Panel:
     """Cria um objeto Panel a partir de um dict (AI ou mock)."""
+    synopsis_start, synopsis_end = (
+        _locate_excerpt(source_text, str(data.get("excerpt", "")))
+        if source_text else (None, None)
+    )
     raw_bubbles: list[dict[str, Any]] = data.get("bubbles") or []  # type: ignore[assignment]
     valid_bubbles: list[dict[str, Any]] = []
     for b in raw_bubbles:
@@ -190,6 +215,8 @@ def _panel_from_dict(data: dict[str, Any], project_id: uuid.UUID, index: int) ->
         framing=str(data.get("framing", "Plano médio"))[:60],
         prompt=str(data.get("prompt", ""))[:2000],
         bubbles_json=json.dumps(valid_bubbles),
+        synopsis_start=synopsis_start,
+        synopsis_end=synopsis_end,
     )
 
 
@@ -214,10 +241,11 @@ def generate(
 ) -> list[PanelOut]:
     project = _check_project(project_id, user, db)
     char_names = _get_char_names(project_id, db)
+    source_text = project.synopsis or project.premise or project.title
 
     # Chama IA (retorna {} em caso de falha). Usa a sinopse trabalhada quando existe.
     ai_data = generate_roteiro(
-        premise=project.synopsis or project.premise or project.title,
+        premise=source_text,
         genre=project.genre,
         tone=project.tone,
         pages=project.pages,
@@ -240,7 +268,7 @@ def generate(
     db.query(Panel).filter(Panel.project_id == project_id).delete()
     panels: list[Panel] = []
     for i, tpl in enumerate(templates, start=1):
-        p = _panel_from_dict(tpl, project_id, i)
+        p = _panel_from_dict(tpl, project_id, i, source_text=source_text)
         db.add(p)
         panels.append(p)
 
@@ -315,6 +343,8 @@ def update_panel(panel_id: uuid.UUID, patch: PanelPatch, user: User, db: Session
     if patch.framing is not None: panel.framing = patch.framing
     if patch.prompt is not None: panel.prompt = patch.prompt
     if patch.status is not None: panel.status = patch.status
+    if patch.synopsis_start is not None: panel.synopsis_start = patch.synopsis_start
+    if patch.synopsis_end is not None: panel.synopsis_end = patch.synopsis_end
     if patch.bubbles is not None:
         panel.bubbles_json = json.dumps([b.model_dump() for b in patch.bubbles])
 

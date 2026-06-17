@@ -34,6 +34,8 @@ class Panel(Base):
     status: Mapped[str] = mapped_column(String(30), nullable=False, server_default="pending")
     bubbles_json: Mapped[str] = mapped_column(Text, nullable=False, server_default="[]")
     image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    synopsis_start: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    synopsis_end: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

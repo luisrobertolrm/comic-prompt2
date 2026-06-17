@@ -24,6 +24,8 @@ export interface PanelOut {
   status: string;
   bubbles: Bubble[];
   image_url: string | null;
+  synopsis_start: number | null;
+  synopsis_end: number | null;
 }
 
 export interface PanelPatch {
@@ -36,4 +38,6 @@ export interface PanelPatch {
   prompt?: string;
   status?: string;
   bubbles?: Bubble[];
+  synopsis_start?: number | null;
+  synopsis_end?: number | null;
 }

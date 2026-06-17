@@ -187,6 +187,28 @@ export class ScriptComponent implements OnInit {
     });
   }
 
+  onTrechoSelected(sel: SynopsisSelection | null): void {
+    this.selectedTrecho.set(sel);
+    this.trechoHighlight.set(sel ? { start: sel.start, end: sel.end } : null);
+  }
+
+  onCardHighlight(range: SynopsisRange | null): void {
+    const sel = this.selectedTrecho();
+    this.trechoHighlight.set(range ?? (sel ? { start: sel.start, end: sel.end } : null));
+  }
+
+  linkTrecho(panel: PanelOut): void {
+    const sel = this.selectedTrecho();
+    if (!sel) return;
+    this.panelService.update(panel.id, { synopsis_start: sel.start, synopsis_end: sel.end }).subscribe({
+      next: updated => {
+        this.panels.update(list => list.map(p => p.id === updated.id ? updated : p));
+        this.selectedTrecho.set(null);
+        this.trechoHighlight.set(null);
+      },
+    });
+  }
+
   back(): void {
     void this.router.navigate(['/projects/new/characters']);
   }

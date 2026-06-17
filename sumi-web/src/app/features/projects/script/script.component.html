@@ -46,7 +46,7 @@
           [highlight]="trechoHighlight()"
           (textChange)="saveSynopsis($event)"
           (regen)="regenSynopsis()"
-          (selectionChange)="selectedTrecho.set($event)" />
+          (selectionChange)="onTrechoSelected($event)" />
         <div class="chips">
           <span class="chip">{{ styleLabel() }}</span>
           <span class="chip">{{ project()!.tone }}</span>
@@ -99,9 +99,12 @@
           [panel]="p"
           [loading]="generatingPanelIds().has(p.id)"
           [canRemove]="panels().length > 1"
+          [canLink]="!!selectedTrecho()"
           (open)="openReview(i)"
           (insertAfter)="insertAfter(i)"
-          (remove)="removePanel(i)" />
+          (remove)="removePanel(i)"
+          (highlight)="onCardHighlight($event)"
+          (link)="linkTrecho(p)" />
       } @empty {
         <div style="grid-column:1/-1;text-align:center;padding:48px 16px">
           <p class="muted-sm" style="margin-bottom:16px">Nenhum quadro ainda. Gere o storyboard a partir da sua premissa{{ project()?.synopsis ? ' e sinopse' : '' }}.</p>

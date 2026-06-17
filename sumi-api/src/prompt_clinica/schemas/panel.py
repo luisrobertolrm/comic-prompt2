@@ -30,6 +30,8 @@ class PanelOut(BaseModel):
     status: str
     bubbles: list[BubbleSchema]
     image_url: str | None
+    synopsis_start: int | None
+    synopsis_end: int | None
 
 
 class PanelPatch(BaseModel):
@@ -42,6 +44,8 @@ class PanelPatch(BaseModel):
     prompt: str | None = None
     status: str | None = None
     bubbles: list[BubbleSchema] | None = None
+    synopsis_start: int | None = None
+    synopsis_end: int | None = None
 
 
 class InsertPanelBody(BaseModel):
@@ -87,4 +91,6 @@ def panel_to_out(p: object) -> PanelOut:
         status=p.status,
         bubbles=bubbles,
         image_url=p.image_url,
+        synopsis_start=p.synopsis_start,
+        synopsis_end=p.synopsis_end,
     )
