@@ -93,7 +93,7 @@ def generate_roteiro(
                 Message(role="system", content=_SYSTEM),
                 Message(role="user", content=user_msg),
             ],
-            temperature=0.85,
+            temperature=0.4,
             max_tokens=budget,
             json_mode=True,
         ))
