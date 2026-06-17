@@ -1,0 +1,45 @@
+<div class="synopsis-head">
+  <p class="eyebrow">SINOPSE PROPOSTA</p>
+  <div class="synopsis-actions">
+    @if (!editing()) {
+      <button class="btn-ghost sm" (click)="startEdit()" [disabled]="generating">✎ Editar</button>
+    }
+    <button class="btn-ghost sm" (click)="showReader.set(true)"
+            [disabled]="!text.trim()" title="Ver em tela cheia para leitura">⤢ Ler</button>
+    <button class="btn-ghost sm" (click)="regen.emit()" [disabled]="generating">
+      @if (generating) { ⏳ Trabalhando… }
+      @else if (hasSynopsis) { ↻ Regerar com IA }
+      @else { ✦ Trabalhar com IA }
+    </button>
+  </div>
+</div>
+
+@if (!hasSynopsis && !editing()) {
+  <p class="muted-sm hint">Ainda é a sua ideia original — clique em "Trabalhar com IA" para gerar a sinopse.</p>
+}
+
+@if (editing()) {
+  <textarea class="synopsis-textarea" rows="4" [value]="draft()"
+            (input)="draft.set($any($event.target).value)"
+            (keydown.escape)="cancel()"></textarea>
+  <div class="edit-actions">
+    <button class="btn-primary sm" (click)="save()">Salvar</button>
+    <button class="btn-ghost sm" (click)="cancel()">Cancelar</button>
+  </div>
+} @else {
+  <div #body class="synopsis-text" (mouseup)="onSelect()"
+       title="Selecione um trecho para vinculá-lo a um quadro">
+    @if (hl(); as h) {
+      <span>{{ text.slice(0, h.start) }}</span><mark class="trecho">{{ text.slice(h.start, h.end) }}</mark><span>{{ text.slice(h.end) }}</span>
+    } @else {
+      {{ text }}
+    }
+  </div>
+  @if (hl()) {
+    <button class="btn-ghost sm clear" (click)="clearSelection()">✕ limpar destaque</button>
+  }
+}
+
+@if (showReader()) {
+  <app-text-reader title="Sinopse proposta" [text]="text" (close)="showReader.set(false)" />
+}

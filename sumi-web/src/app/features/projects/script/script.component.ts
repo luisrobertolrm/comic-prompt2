@@ -9,12 +9,12 @@ import { ProjectService } from '../../../core/services/project.service';
 import { ProjectDraftService } from '../../../core/services/project-draft.service';
 import { StyleService, StyleOption } from '../../../core/services/style.service';
 import { MangaPanelComponent } from '../manga-panel/manga-panel.component';
-import { TextReaderComponent } from '../../../shared/text-reader/text-reader.component';
+import { SynopsisPanelComponent, SynopsisSelection, SynopsisRange } from './synopsis-panel/synopsis-panel.component';
 
 @Component({
   selector: 'app-script',
   standalone: true,
-  imports: [MangaPanelComponent, TextReaderComponent],
+  imports: [MangaPanelComponent, SynopsisPanelComponent],
   templateUrl: './script.component.html',
   styleUrl: './script.component.scss',
 })
@@ -40,10 +40,9 @@ export class ScriptComponent implements OnInit {
 
   private readonly IMAGE_CONCURRENCY = 3;
   skeletons = [1, 2, 3, 4, 5, 6, 7];
-  editingSynopsis = signal(false);
-  synopsisEdit = signal('');
   generatingSynopsis = signal(false);
-  showSynopsisReader = signal(false);
+  selectedTrecho = signal<SynopsisSelection | null>(null);
+  trechoHighlight = signal<SynopsisRange | null>(null);
 
   synopsisText(): string {
     const p = this.project();
@@ -171,25 +170,15 @@ export class ScriptComponent implements OnInit {
     });
   }
 
-  startEditSynopsis(): void {
-    const p = this.project();
-    this.synopsisEdit.set(p?.synopsis ?? p?.premise ?? '');
-    this.editingSynopsis.set(true);
-  }
-
-  saveSynopsis(): void {
-    const text = this.synopsisEdit().trim();
-    if (!text) { this.editingSynopsis.set(false); return; }
-    this.projectService.update(this.projectId(), { synopsis: text }).subscribe({
+  saveSynopsis(text: string): void {
+    const value = text.trim();
+    if (!value) return;
+    this.projectService.update(this.projectId(), { synopsis: value }).subscribe({
       next: () => {
-        this.project.update(p => p ? { ...p, synopsis: text } : p);
-        this.editingSynopsis.set(false);
+        this.project.update(p => p ? { ...p, synopsis: value } : p);
+        this.selectedTrecho.set(null);
       },
     });
-  }
-
-  cancelEditSynopsis(): void {
-    this.editingSynopsis.set(false);
   }
 
   regenSynopsis(): void {
@@ -198,7 +187,7 @@ export class ScriptComponent implements OnInit {
     this.projectService.generateSynopsis(this.projectId()).subscribe({
       next: p => {
         this.project.set(p);
-        this.editingSynopsis.set(false);
+        this.selectedTrecho.set(null);
         this.generatingSynopsis.set(false);
       },
       error: () => this.generatingSynopsis.set(false),

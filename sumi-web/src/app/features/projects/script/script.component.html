@@ -39,35 +39,14 @@
   @if (project()) {
     <div class="synopsis-card">
       <div class="synopsis-main">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">
-          <p class="eyebrow" style="margin:0">SINOPSE PROPOSTA</p>
-          <div style="display:flex;gap:8px;align-items:center">
-          <button class="btn-ghost" style="padding:3px 12px;font-size:12px"
-                  (click)="showSynopsisReader.set(true)" [disabled]="!synopsisText().trim()"
-                  title="Ver em tela cheia para leitura">⤢ Ler</button>
-          <button class="btn-ghost" style="padding:3px 12px;font-size:12px"
-                  (click)="regenSynopsis()" [disabled]="generatingSynopsis()">
-            @if (generatingSynopsis()) { ⏳ Trabalhando… }
-            @else if (project()!.synopsis) { ↻ Regerar com IA }
-            @else { ✦ Trabalhar com IA }
-          </button>
-          </div>
-        </div>
-        @if (!project()!.synopsis && !editingSynopsis()) {
-          <p class="muted-sm" style="margin:0 0 6px">Ainda é a sua ideia original — clique em "Trabalhar com IA" para gerar a sinopse.</p>
-        }
-        @if (editingSynopsis()) {
-          <textarea class="synopsis-textarea" rows="3" [value]="synopsisEdit()"
-                    (input)="synopsisEdit.set($any($event.target).value)"
-                    (keydown.escape)="cancelEditSynopsis()"></textarea>
-          <div style="display:flex;gap:8px;margin-top:6px">
-            <button class="btn-primary" style="padding:4px 14px;font-size:13px" (click)="saveSynopsis()">Salvar</button>
-            <button class="btn-ghost" style="padding:4px 14px;font-size:13px" (click)="cancelEditSynopsis()">Cancelar</button>
-          </div>
-        } @else {
-          <p class="synopsis-text" title="Clique para editar" style="cursor:pointer"
-             (click)="startEditSynopsis()">{{ project()!.synopsis || project()!.premise || project()!.title }}</p>
-        }
+        <app-synopsis-panel
+          [text]="synopsisText()"
+          [hasSynopsis]="!!project()!.synopsis"
+          [generating]="generatingSynopsis()"
+          [highlight]="trechoHighlight()"
+          (textChange)="saveSynopsis($event)"
+          (regen)="regenSynopsis()"
+          (selectionChange)="selectedTrecho.set($event)" />
         <div class="chips">
           <span class="chip">{{ styleLabel() }}</span>
           <span class="chip">{{ project()!.tone }}</span>
@@ -158,9 +137,5 @@
       Revisar quadro a quadro →
     </button>
   </div>
-
-  @if (showSynopsisReader()) {
-    <app-text-reader title="Sinopse proposta" [text]="synopsisText()" (close)="showSynopsisReader.set(false)" />
-  }
 
 </div>
