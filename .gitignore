@@ -11,6 +11,13 @@ __pycache__/
 node_modules/
 dist/
 
+# .NET
+bin/
+obj/
+*.user
+# Dataset/output gerado pelo ConfyManager
+ConfyManager/output_lora/
+
 # IDEs / editor
 .idea/
 .vscode/

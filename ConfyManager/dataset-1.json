@@ -1,0 +1,111 @@
+﻿{
+  "config": {
+    "imagemReferencia": "C:\\git\\comic-prompt2\\sumi-api\\static\\images\\5e3772fa-64ad-4837-a93c-9a9b2fe33344.png",
+    "largura": 896,
+    "altura": 1152,
+    "totalRegistros": 20,
+    "geradoEm": "2026-06-18T16:25:06"
+  },
+  "registros": [
+    {
+      "id": 1,
+      "prompt": "masterpiece, best quality, 1girl, solo, cooking, holding utensil, busy, soft lighting, warm tones",
+      "conteudo": "cooking, holding utensil, busy, samurai armor, feudal japan attire, ponytail, high ponytail, ring, silver ring"
+    },
+    {
+      "id": 2,
+      "prompt": "masterpiece, best quality, 1girl, solo, holding sword, battle ready stance, golden hour lighting, sunset",
+      "conteudo": "holding sword, battle ready stance, detective coat, trench coat, hat, half up half down hairstyle, brooch, crystal brooch"
+    },
+    {
+      "id": 3,
+      "prompt": "masterpiece, best quality, 1girl, solo, meditating, cross-legged, peaceful, natural daylight, outdoor",
+      "conteudo": "meditating, cross-legged, peaceful, maid outfit, frilly apron, headband, bun hairstyle, hair up, brooch, crystal brooch"
+    },
+    {
+      "id": 4,
+      "prompt": "masterpiece, best quality, 1girl, solo, training, punching pose, intense, cinematic lighting",
+      "conteudo": "training, punching pose, intense, gothic dress, dark lace, corset, hair down, loose flowing hair, hairclip, butterfly hairclip"
+    },
+    {
+      "id": 5,
+      "prompt": "masterpiece, best quality, 1girl, solo, standing, one hand raised, waving, golden hour lighting, sunset",
+      "conteudo": "standing, one hand raised, waving, ninja outfit, dark wrappings, stealth gear, curly hair, voluminous, wristband, leather bracelet"
+    },
+    {
+      "id": 6,
+      "prompt": "masterpiece, best quality, 1girl, solo, climbing, reaching up, determined, studio lighting, clean shadows",
+      "conteudo": "climbing, reaching up, determined, leather jacket, punk style, boots, low ponytail, tied at nape, gloves, fingerless gloves"
+    },
+    {
+      "id": 7,
+      "prompt": "masterpiece, best quality, 1girl, solo, playing instrument, violin pose, backlit, silhouette rim light",
+      "conteudo": "playing instrument, violin pose, gothic dress, dark lace, corset, french braid, elegant updo, wristband, leather bracelet"
+    },
+    {
+      "id": 8,
+      "prompt": "masterpiece, best quality, 1girl, solo, playing instrument, violin pose, moonlight, cool blue tones",
+      "conteudo": "playing instrument, violin pose, cyberpunk outfit, neon accents, tech gear, short hair, bob cut, ring, silver ring"
+    },
+    {
+      "id": 9,
+      "prompt": "masterpiece, best quality, 1girl, solo, riding, horseback pose, commanding, cinematic lighting",
+      "conteudo": "riding, horseback pose, commanding, athletic wear, sports bra, shorts, space buns, double buns, hair ornament, flower pin"
+    },
+    {
+      "id": 10,
+      "prompt": "masterpiece, best quality, 1girl, solo, standing, arms behind back, relaxed, studio lighting, clean shadows",
+      "conteudo": "standing, arms behind back, relaxed, military uniform, combat gear, braided hair, single braid, hair ornament, flower pin"
+    },
+    {
+      "id": 11,
+      "prompt": "masterpiece, best quality, 1girl, solo, standing, arms behind back, relaxed, dramatic side lighting",
+      "conteudo": "standing, arms behind back, relaxed, school uniform, pleated skirt, blazer, twin tails, pigtails, gloves, fingerless gloves"
+    },
+    {
+      "id": 12,
+      "prompt": "masterpiece, best quality, 1girl, solo, standing, arms crossed, confident pose, golden hour lighting, sunset",
+      "conteudo": "standing, arms crossed, confident pose, princess gown, tiara, royal attire, bun hairstyle, hair up, hairclip, butterfly hairclip"
+    },
+    {
+      "id": 13,
+      "prompt": "masterpiece, best quality, 1girl, solo, floating, serene expression, weightless, soft lighting, warm tones",
+      "conteudo": "floating, serene expression, weightless, armor, plate armor, medieval style, bun hairstyle, hair up, ribbon, hair ribbon"
+    },
+    {
+      "id": 14,
+      "prompt": "masterpiece, best quality, 1girl, solo, fighting stance, fists up, intense look, dramatic side lighting",
+      "conteudo": "fighting stance, fists up, intense look, pirate outfit, captain coat, bandana, half up half down hairstyle, glasses, round frame"
+    },
+    {
+      "id": 15,
+      "prompt": "masterpiece, best quality, 1girl, solo, hugging knees, sitting, contemplative, moonlight, cool blue tones",
+      "conteudo": "hugging knees, sitting, contemplative, samurai armor, feudal japan attire, side braid, over shoulder, brooch, crystal brooch"
+    },
+    {
+      "id": 16,
+      "prompt": "masterpiece, best quality, 1girl, solo, sword drawing pose, hand on hilt, cinematic lighting",
+      "conteudo": "sword drawing pose, hand on hilt, maid outfit, frilly apron, headband, hair with bangs, straight bangs"
+    },
+    {
+      "id": 17,
+      "prompt": "masterpiece, best quality, 1girl, solo, arms outstretched, embracing wind, backlit, silhouette rim light",
+      "conteudo": "arms outstretched, embracing wind, samurai armor, feudal japan attire, twin tails, pigtails, headband, fabric headband"
+    },
+    {
+      "id": 18,
+      "prompt": "masterpiece, best quality, 1girl, solo, climbing, reaching up, determined, cinematic lighting",
+      "conteudo": "climbing, reaching up, determined, hoodie, casual streetwear, sneakers, space buns, double buns, glasses, round frame"
+    },
+    {
+      "id": 19,
+      "prompt": "masterpiece, best quality, 1girl, solo, jumping, mid-air, energetic, neon lighting, vibrant colors",
+      "conteudo": "jumping, mid-air, energetic, cyberpunk outfit, neon accents, tech gear, long hair, waist length, glasses, round frame"
+    },
+    {
+      "id": 20,
+      "prompt": "masterpiece, best quality, 1girl, solo, writing, pen in hand, concentrated, cinematic lighting",
+      "conteudo": "writing, pen in hand, concentrated, sailor outfit, navy style, striped, ponytail, high ponytail, hair ornament, flower pin"
+    }
+  ]
+}

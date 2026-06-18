@@ -1,0 +1,137 @@
+{
+  "1": {
+    "inputs": {
+      "text": "95-year-old black man",
+      "clip": [
+        "3",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Codificação de Texto CLIP (Prompt)"
+    }
+  },
+  "2": {
+    "inputs": {
+      "text": "low resolution, ugly",
+      "clip": [
+        "3",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Codificação de Texto CLIP (Prompt)"
+    }
+  },
+  "3": {
+    "inputs": {
+      "ckpt_name": "dreamshaperXL_lightningDPMSDE.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "Carregar Checkpoint"
+    }
+  },
+  "4": {
+    "inputs": {
+      "seed": 47931773501971,
+      "steps": 20,
+      "cfg": 8,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "denoise": 0.6,
+      "model": [
+        "3",
+        0
+      ],
+      "positive": [
+        "1",
+        0
+      ],
+      "negative": [
+        "2",
+        0
+      ],
+      "latent_image": [
+        "12",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "5": {
+    "inputs": {
+      "filename_prefix": "ComfyUI",
+      "images": [
+        "10",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Salvar Imagem"
+    }
+  },
+  "8": {
+    "inputs": {
+      "samples": [
+        "4",
+        0
+      ],
+      "vae": [
+        "3",
+        2
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decodificar"
+    }
+  },
+  "10": {
+    "inputs": {
+      "upscale_method": "nearest-exact",
+      "width": 2048,
+      "height": 3072,
+      "crop": "disabled",
+      "image": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "ImageScale",
+    "_meta": {
+      "title": "Aumentar Resolução da Imagem"
+    }
+  },
+  "11": {
+    "inputs": {
+      "image": "eu.jpg"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Carregar Imagem"
+    }
+  },
+  "12": {
+    "inputs": {
+      "pixels": [
+        "11",
+        0
+      ],
+      "vae": [
+        "3",
+        2
+      ]
+    },
+    "class_type": "VAEEncode",
+    "_meta": {
+      "title": "VAE Codificar"
+    }
+  }
+}

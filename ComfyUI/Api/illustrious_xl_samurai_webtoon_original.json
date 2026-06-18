@@ -1,0 +1,120 @@
+{
+  "3": {
+    "inputs": {
+      "seed": 650982525576031,
+      "steps": 28,
+      "cfg": 5.5,
+      "sampler_name": "euler_ancestral",
+      "scheduler": "normal",
+      "denoise": 1,
+      "model": [
+        "4",
+        0
+      ],
+      "positive": [
+        "6",
+        0
+      ],
+      "negative": [
+        "7",
+        0
+      ],
+      "latent_image": [
+        "5",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "4": {
+    "inputs": {
+      "ckpt_name": "illustriousXL20_v20.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "Carregar Checkpoint"
+    }
+  },
+  "5": {
+    "inputs": {
+      "width": 832,
+      "height": 1216,
+      "batch_size": 1
+    },
+    "class_type": "EmptyLatentImage",
+    "_meta": {
+      "title": "Imagem Latente Vazia"
+    }
+  },
+  "6": {
+    "inputs": {
+      "text": "masterpiece, best quality, amazing quality, very aesthetic, newest, 1girl, solo, japanese samurai girl, feudal japan attire, modern webtoon art style, manhwa aesthetic, sharp v-shaped jawline, almond-shaped expressive eyes, highly detailed hair, glossy highlights, clean lineart, cinematic lighting, slim, beautiful, greyscale, monochrome, shades of gray",
+      "clip": [
+        "11",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Codificação de Texto CLIP (Prompt)"
+    }
+  },
+  "7": {
+    "inputs": {
+      "text": "lowres, worst quality, low quality, normal quality, bad anatomy, bad hands, missing fingers, extra digit, fewer digits, cropped, jpeg artifacts, signature, watermark, username, artist name, blurry, text, error, colored, color",
+      "clip": [
+        "11",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Codificação de Texto CLIP (Prompt)"
+    }
+  },
+  "8": {
+    "inputs": {
+      "samples": [
+        "3",
+        0
+      ],
+      "vae": [
+        "4",
+        2
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decodificar"
+    }
+  },
+  "9": {
+    "inputs": {
+      "filename_prefix": "samurai_webtoon",
+      "images": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Salvar Imagem"
+    }
+  },
+  "11": {
+    "inputs": {
+      "stop_at_clip_layer": -2,
+      "clip": [
+        "4",
+        1
+      ]
+    },
+    "class_type": "CLIPSetLastLayer",
+    "_meta": {
+      "title": "CLIP Definir Última Camada"
+    }
+  }
+}
