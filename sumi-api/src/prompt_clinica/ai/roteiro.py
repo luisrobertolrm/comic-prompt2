@@ -111,3 +111,73 @@ def generate_roteiro(
     except Exception as exc:
         logger.warning("generate_roteiro falhou (%s) — usando fallback mock.", exc)
         return {}
+
+
+_PANEL_SYSTEM = """\
+Você é roteirista de mangá. Gere UM único quadro de storyboard para o trecho indicado da sinopse.
+
+Retorne APENAS um objeto JSON com:
+- "label": str — nome curto (máx 3 palavras, ex: "Estabelecimento")
+- "aspect": "16-9" | "4-3" | "1-1" | "3-4"
+- "tone": "dots" | "diag" | "dense"
+- "character_name": str | null — nome do personagem principal em cena (null se sem personagem)
+- "caption": str — direção de cena em português, 1-2 frases concretas e visuais
+- "framing": um de: Plano geral | Plano americano | Plano médio | Close-up | Extreme close | Inserto | Detalhe | Plongée | Contra-plongée
+- "prompt": str — prompt em inglês descrevendo a CENA (composição, ação, cenário, atmosfera), sem texto, sem balões, 1-2 frases. NÃO inclua o estilo de arte: ele é aplicado depois.
+- "bubbles": array de {"text": str, "kind": "say"|"thought"|"shout", "side": "left"|"right", "x": int, "y": int}
+
+O quadro deve representar o TRECHO indicado, coerente com o contexto da sinopse.
+Inclua balões só onde fizerem sentido narrativo.\
+"""
+
+
+def generate_panel(
+    excerpt: str,
+    synopsis: str,
+    genre: str,
+    tone: str,
+    character_names: list[str],
+    style: str | None = None,
+    color_mode: str | None = None,
+    temperature: float = 0.4,
+) -> dict[str, object]:
+    """Gera o conteúdo de UM quadro ancorado em `excerpt` (ou na sinopse inteira).
+
+    Retorna o dict do quadro ({} em caso de falha).
+    """
+    chars = ", ".join(character_names) if character_names else "nenhum definido ainda"
+    vs = styles.resolve(style)
+    style_line = f"{vs.label} ({vs.note}), {styles.resolve_color(color_mode).label}"
+    focus = (excerpt or "").strip() or (synopsis or "").strip()
+
+    user_msg = (
+        f"Sinopse (contexto):\n{synopsis}\n\n"
+        f"Trecho que ESTE quadro deve representar:\n{focus}\n\n"
+        f"Gênero: {genre} | Tom: {tone}\n"
+        f"Estilo visual da HQ: {style_line}. "
+        "Mantenha cenário, atmosfera e direção de cena coerentes com esse estilo.\n"
+        f"Personagens disponíveis: {chars}\n\n"
+        "Gere o quadro para o trecho indicado. Retorne o objeto JSON."
+    )
+
+    try:
+        resp = ai.text(TextRequest(
+            messages=[
+                Message(role="system", content=_PANEL_SYSTEM),
+                Message(role="user", content=user_msg),
+            ],
+            temperature=temperature,
+            # M3 é modelo de raciocínio: o budget precisa cobrir o raciocínio + o
+            # JSON do quadro. Com pouco (ex.: 800) o raciocínio consome tudo e a
+            # resposta volta vazia.
+            max_tokens=2500,
+            json_mode=True,
+        ))
+        data: dict[str, object] = json.loads(resp.content)
+        if not isinstance(data, dict):
+            raise ValueError("Resposta não é um objeto JSON")
+        logger.info("Quadro gerado: %d tokens out.", resp.output_tokens)
+        return data
+    except Exception as exc:
+        logger.warning("generate_panel falhou (%s).", exc)
+        return {}

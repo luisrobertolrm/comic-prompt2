@@ -40,6 +40,10 @@ export class PanelService {
     return this.http.put<void>(`${this.base}/projects/${projectId}/panels/order`, { panel_ids: panelIds });
   }
 
+  generateContent(panelId: string): Observable<PanelOut> {
+    return this.http.post<PanelOut>(`${this.base}/panels/${panelId}/generate`, {});
+  }
+
   generateImage(panelId: string): Observable<PanelOut> {
     return this.http.post<PanelOut>(`${this.base}/panels/${panelId}/image`, {});
   }

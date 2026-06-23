@@ -132,6 +132,7 @@
         <app-script-panel-card
           [panel]="p"
           [loading]="generatingPanelIds().has(p.id)"
+          [generatingContent]="generatingContentIds().has(p.id)"
           [canRemove]="panels().length > 1"
           [canLink]="!!selectedTrecho()"
           [selectable]="selectMode()"
@@ -140,6 +141,7 @@
           (open)="openReview(i)"
           (insertAfter)="insertAfter(i)"
           (remove)="removePanel(i)"
+          (generate)="generateContent(p)"
           (highlight)="onCardHighlight($event)"
           (link)="linkTrecho(p)"
           (toggleSelect)="togglePanelSelect(p.id)" />

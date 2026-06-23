@@ -402,16 +402,35 @@ export class CharactersScreenComponent implements OnInit {
   regenPortrait(force = false): void {
     if (!this.eSummary().trim() || this.eGenerating()) return;
     const ed = this.editing();
-    if (!force && ed && ed.project_count > 0) {
+    if (!ed) return;
+    if (!this.eName().trim()) {
+      this.eError.set('Informe o nome antes de regerar.');
+      return;
+    }
+    if (!force && ed.project_count > 0) {
       this.eRegenWarn.set(true);
       return;
     }
     this.eRegenWarn.set(false);
     this.eGenerating.set(true);
     this.eError.set('');
+
+    // Salva os dados da tela primeiro; só dispara a geração após a confirmação do save.
+    this.characterService.update(ed.id, this.buildEditReq()).subscribe({
+      next: char => {
+        this.characters.update(list => list.map(c => (c.id === char.id ? char : c)));
+        this.runPortraitRegen();
+      },
+      error: err => {
+        this.eGenerating.set(false);
+        this.eError.set(err?.error?.detail ?? err?.message ?? 'Falha ao salvar antes de regerar.');
+      },
+    });
+  }
+
+  private runPortraitRegen(): void {
     this.eCandidates.set([]);
     this.ePicked.set(null);
-
     this.portraitStream({ gender: this.eGender(), extra: this.eSummary() }).subscribe({
       next: job => {
         if (job.status === 'done') {
@@ -433,13 +452,8 @@ export class CharactersScreenComponent implements OnInit {
     this.ePicked.set(this.ePicked() === id ? null : id);
   }
 
-  saveEdit(): void {
-    const current = this.editing();
-    if (!current || !this.eName().trim() || this.eSaving()) return;
-    this.eSaving.set(true);
-
-    const picked = this.eCandidates().find(c => c.id === this.ePicked());
-    const req: CharacterUpdate = {
+  private buildEditReq(): CharacterUpdate {
+    return {
       name: this.eName(),
       role: this.eRole() || 'Personagem',
       gender: this.eGender() || null,
@@ -450,6 +464,15 @@ export class CharactersScreenComponent implements OnInit {
       traits: this.eTraits().split(',').map(t => t.trim()).filter(Boolean),
       narrator_voice_id: this.eNarratorVoiceId(),
     };
+  }
+
+  saveEdit(): void {
+    const current = this.editing();
+    if (!current || !this.eName().trim() || this.eSaving()) return;
+    this.eSaving.set(true);
+
+    const picked = this.eCandidates().find(c => c.id === this.ePicked());
+    const req: CharacterUpdate = this.buildEditReq();
     if (picked) req.image_url = picked.imageUrl;
 
     this.characterService.update(current.id, req).subscribe({

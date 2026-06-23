@@ -36,9 +36,9 @@
   <div #body class="synopsis-text" (mouseup)="onSelect()"
        title="Selecione um trecho para vinculá-lo a um quadro">
     @if (hl(); as h) {
-      <span>{{ text.slice(0, h.start) }}</span><mark class="trecho">{{ text.slice(h.start, h.end) }}</mark><span>{{ text.slice(h.end) }}</span>
+      <span>{{ disp().slice(0, h.start) }}</span><mark class="trecho">{{ disp().slice(h.start, h.end) }}</mark><span>{{ disp().slice(h.end) }}</span>
     } @else {
-      {{ text }}
+      {{ disp() }}
     }
   </div>
   @if (hl()) {

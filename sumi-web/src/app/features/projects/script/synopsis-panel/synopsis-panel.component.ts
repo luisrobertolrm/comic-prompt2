@@ -42,6 +42,16 @@ export class SynopsisPanelComponent {
   showReader = signal(false);
   protected activeRange = signal<SynopsisRange | null>(null);
 
+  /**
+   * Texto exibido: cola palavras de 1-2 letras ("O", "A", "de"…) à seguinte com
+   * espaço inquebrável, para não caírem sozinhas no fim da linha (o que fazia o
+   * usuário "perder" a primeira palavra ao selecionar). Mantém o comprimento, então
+   * os offsets de seleção continuam mapeando 1:1 com `text`.
+   */
+  disp(): string {
+    return this.text.replace(/(?<=^|\s)(\p{L}{1,2}) (?=\S)/gu, (_, w) => `${w} `);
+  }
+
   /** Faixa de destaque já validada contra o texto atual. */
   hl(): SynopsisRange | null {
     const r = this.activeRange();
@@ -74,12 +84,17 @@ export class SynopsisPanelComponent {
     const range = sel.getRangeAt(0);
     if (range.collapsed || !body.contains(range.commonAncestorContainer)) return;
 
-    const start = this.offsetWithin(body, range.startContainer, range.startOffset);
-    const end = this.offsetWithin(body, range.endContainer, range.endOffset);
+    let start = this.offsetWithin(body, range.startContainer, range.startOffset);
+    let end = this.offsetWithin(body, range.endContainer, range.endOffset);
     if (end <= start) return;
 
+    // Snap para palavras inteiras: nunca cortar uma palavra ao meio.
+    const t = this.text;
+    while (start > 0 && /\S/.test(t[start - 1])) start--;
+    while (end < t.length && /\S/.test(t[end])) end++;
+
     this.activeRange.set({ start, end });
-    this.selectionChange.emit({ start, end, text: this.text.slice(start, end) });
+    this.selectionChange.emit({ start, end, text: t.slice(start, end) });
   }
 
   clearSelection(): void {

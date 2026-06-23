@@ -13,6 +13,7 @@ import type { SynopsisRange } from '../synopsis-panel/synopsis-panel.component';
 export class PanelCardComponent {
   @Input({ required: true }) panel!: PanelOut;
   @Input() loading = false;
+  @Input() generatingContent = false;
   @Input() canRemove = true;
   @Input() canLink = false;
   @Input() selectable = false;
@@ -24,6 +25,7 @@ export class PanelCardComponent {
   @Output() open = new EventEmitter<void>();
   @Output() insertAfter = new EventEmitter<void>();
   @Output() remove = new EventEmitter<void>();
+  @Output() generate = new EventEmitter<void>();
   @Output() highlight = new EventEmitter<SynopsisRange | null>();
   @Output() link = new EventEmitter<void>();
   @Output() toggleSelect = new EventEmitter<void>();

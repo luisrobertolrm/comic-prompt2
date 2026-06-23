@@ -36,6 +36,7 @@ export class ScriptComponent implements OnInit {
   generating = signal(false);
   generatingImages = signal(false);
   generatingPanelIds = signal<Set<string>>(new Set());
+  generatingContentIds = signal<Set<string>>(new Set());
   imagesDone = signal(0);
   targetPanels = signal<number | null>(null);
 
@@ -96,6 +97,18 @@ export class ScriptComponent implements OnInit {
         this.generating.set(false);
       },
       error: () => this.generating.set(false),
+    });
+  }
+
+  generateContent(panel: PanelOut): void {
+    if (this.generatingContentIds().has(panel.id)) return;
+    this.generatingContentIds.update(s => new Set(s).add(panel.id));
+    this.panelService.generateContent(panel.id).subscribe({
+      next: updated => {
+        this.panels.update(list => list.map(p => p.id === updated.id ? updated : p));
+        this.generatingContentIds.update(s => { const n = new Set(s); n.delete(panel.id); return n; });
+      },
+      error: () => this.generatingContentIds.update(s => { const n = new Set(s); n.delete(panel.id); return n; }),
     });
   }
 

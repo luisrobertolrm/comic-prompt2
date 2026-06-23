@@ -31,6 +31,15 @@ def delete_panel(
     panel_service.delete_panel(panel_id, user, db)
 
 
+@router.post("/panels/{panel_id}/generate", response_model=PanelOut)
+def generate_panel_content(
+    panel_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> PanelOut:
+    return panel_service.generate_one(panel_id, user, db)
+
+
 @router.post("/panels/{panel_id}/image", response_model=PanelOut)
 def generate_panel_image(
     panel_id: uuid.UUID,

@@ -99,13 +99,25 @@ export class ReviewComponent implements OnInit {
     this.patchSubject.next({ id: cur.id, patch });
   }
 
+  /** Persiste imediatamente (eventos únicos: click/change/drag), sem debounce. */
+  private patchCurNow(patch: PanelPatch): void {
+    const cur = this.cur;
+    if (!cur) return;
+    this.panels.update(ps => ps.map((p, i) => i === this.idx() ? { ...p, ...patch } : p));
+    this.panelService.update(cur.id, patch).subscribe();
+  }
+
   approve(): void {
-    this.patchCur({ status: 'approved' });
-    if (this.idx() < this.panels().length - 1) {
-      this.idx.update(i => i + 1);
-    } else {
-      void this.router.navigate(['/projects', this.projectId(), 'editor']);
-    }
+    const cur = this.cur;
+    if (!cur) return;
+    this.panels.update(ps => ps.map((p, i) => i === this.idx() ? { ...p, status: 'approved' } : p));
+    this.panelService.update(cur.id, { status: 'approved' }).subscribe(() => {
+      if (this.idx() < this.panels().length - 1) {
+        this.idx.update(i => i + 1);
+      } else {
+        void this.router.navigate(['/projects', this.projectId(), 'editor']);
+      }
+    });
   }
 
   save(): void {
@@ -129,15 +141,17 @@ export class ReviewComponent implements OnInit {
     });
   }
 
-  regen(): void {
+  regenContent(): void {
     const cur = this.cur;
-    if (!cur) return;
+    if (!cur || this.regenAnim()) return;
     this.regenAnim.set(true);
-    const tones: Record<string, string> = { dots: 'diag', diag: 'dense', dense: 'dots' };
-    setTimeout(() => {
-      this.patchCur({ tone: tones[cur.tone] ?? 'dots' });
-      this.regenAnim.set(false);
-    }, 900);
+    this.panelService.generateContent(cur.id).subscribe({
+      next: updated => {
+        this.panels.update(ps => ps.map(p => p.id === updated.id ? updated : p));
+        this.regenAnim.set(false);
+      },
+      error: () => this.regenAnim.set(false),
+    });
   }
 
   deletePanel(): void {
@@ -189,7 +203,7 @@ export class ReviewComponent implements OnInit {
   }
 
   setFraming(f: string): void {
-    this.patchCur({ framing: f });
+    this.patchCurNow({ framing: f });
     this.showFramingPicker.set(false);
   }
 
@@ -197,20 +211,29 @@ export class ReviewComponent implements OnInit {
     const cur = this.cur;
     if (!cur) return;
     const bubble: Bubble = { text: 'Novo balão', kind: 'say', side: 'left', tail: 'none', x: 8, y: 12 };
-    this.patchCur({ bubbles: [...cur.bubbles, bubble] });
+    this.patchCurNow({ bubbles: [...cur.bubbles, bubble] });
   }
 
+  // Selects do balão (tipo/lado/seta) — evento único, persiste imediato.
   updateBubble(i: number, patch: Partial<Bubble>): void {
     const cur = this.cur;
     if (!cur) return;
     const updated = cur.bubbles.map((b, j) => j === i ? { ...b, ...patch } : b);
+    this.patchCurNow({ bubbles: updated });
+  }
+
+  // Texto do balão — digitação, mantém debounce.
+  setBubbleText(i: number, text: string): void {
+    const cur = this.cur;
+    if (!cur) return;
+    const updated = cur.bubbles.map((b, j) => j === i ? { ...b, text } : b);
     this.patchCur({ bubbles: updated });
   }
 
   removeBubble(i: number): void {
     const cur = this.cur;
     if (!cur) return;
-    this.patchCur({ bubbles: cur.bubbles.filter((_, j) => j !== i) });
+    this.patchCurNow({ bubbles: cur.bubbles.filter((_, j) => j !== i) });
   }
 
   onBubbleDrag(e: { idx: number; x: number; y: number }): void {
@@ -226,7 +249,7 @@ export class ReviewComponent implements OnInit {
   onBubbleDragEnd(e: { idx: number; x: number; y: number }): void {
     const cur = this.cur;
     if (!cur) return;
-    this.patchSubject.next({ id: cur.id, patch: { bubbles: cur.bubbles } });
+    this.panelService.update(cur.id, { bubbles: cur.bubbles }).subscribe();
   }
 
   padNum(n: number): string { return String(n).padStart(2, '0'); }

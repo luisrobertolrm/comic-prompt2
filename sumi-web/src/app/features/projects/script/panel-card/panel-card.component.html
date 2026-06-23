@@ -37,6 +37,11 @@
             (click)="toggleTrecho()"
             title="Ver o trecho da sinopse vinculado a este quadro">⚓ ver trecho</button>
   }
+  <button class="card-action-btn card-action-btn--gen" (click)="generate.emit()"
+          [disabled]="generatingContent"
+          title="Gerar o conteúdo deste quadro com IA (direção, prompt, enquadramento e balões)">
+    @if (generatingContent) { ⏳ gerando… } @else { ✦ gerar conteúdo }
+  </button>
   <button class="card-action-btn" (click)="insertAfter.emit()"
           title="Inserir um quadro depois deste">+ inserir aqui</button>
   <button class="card-action-btn card-action-btn--danger" (click)="remove.emit()"

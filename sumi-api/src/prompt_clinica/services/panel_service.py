@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session
 import prompt_clinica._paths  # noqa: F401
 from prompt_clinica import styles
 from prompt_clinica.ai import ImageRequest, Message, TextRequest, ai
-from prompt_clinica.ai.roteiro import generate_roteiro
+from prompt_clinica.ai.roteiro import generate_panel, generate_roteiro
 
 _BUBBLES_SYSTEM = """\
 Você é roteirista de mangá shojo. Gere balões de diálogo para um quadro específico.
@@ -209,14 +209,7 @@ def _locate_excerpt(source: str, excerpt: str) -> tuple[int | None, int | None]:
     return None, None
 
 
-def _panel_from_dict(
-    data: dict[str, Any], project_id: uuid.UUID, index: int, source_text: str | None = None
-) -> Panel:
-    """Cria um objeto Panel a partir de um dict (AI ou mock)."""
-    synopsis_start, synopsis_end = (
-        _locate_excerpt(source_text, str(data.get("excerpt", "")))
-        if source_text else (None, None)
-    )
+def _validated_bubbles(data: dict[str, Any]) -> str:
     raw_bubbles: list[dict[str, Any]] = data.get("bubbles") or []  # type: ignore[assignment]
     valid_bubbles: list[dict[str, Any]] = []
     for b in raw_bubbles:
@@ -229,23 +222,36 @@ def _panel_from_dict(
             "x": max(5, min(75, int(b.get("x", 8)))),
             "y": max(5, min(75, int(b.get("y", 12)))),
         })
+    return json.dumps(valid_bubbles)
 
+
+def _apply_panel_fields(panel: Panel, data: dict[str, Any]) -> None:
+    """Aplica os campos de conteúdo de um dict (IA/mock) a um Panel existente."""
     valid_aspects = ("16-9", "4-3", "1-1", "3-4")
     valid_tones = ("dots", "diag", "dense")
-    return Panel(
-        project_id=project_id,
-        index_order=index,
-        label=str(data.get("label", f"Quadro {index}"))[:100],
-        aspect=data.get("aspect", "4-3") if data.get("aspect") in valid_aspects else "4-3",  # type: ignore[arg-type]
-        tone=data.get("tone", "dots") if data.get("tone") in valid_tones else "dots",  # type: ignore[arg-type]
-        character_name=str(data["character_name"]) if data.get("character_name") else None,
-        caption=str(data.get("caption", ""))[:2000],
-        framing=str(data.get("framing", "Plano médio"))[:60],
-        prompt=str(data.get("prompt", ""))[:2000],
-        bubbles_json=json.dumps(valid_bubbles),
-        synopsis_start=synopsis_start,
-        synopsis_end=synopsis_end,
+    panel.label = str(data.get("label", f"Quadro {panel.index_order}"))[:100]
+    panel.aspect = data.get("aspect", "4-3") if data.get("aspect") in valid_aspects else "4-3"  # type: ignore[assignment]
+    panel.tone = data.get("tone", "dots") if data.get("tone") in valid_tones else "dots"  # type: ignore[assignment]
+    panel.character_name = str(data["character_name"]) if data.get("character_name") else None
+    panel.caption = str(data.get("caption", ""))[:2000]
+    panel.framing = str(data.get("framing", "Plano médio"))[:60]
+    panel.prompt = str(data.get("prompt", ""))[:2000]
+    panel.bubbles_json = _validated_bubbles(data)
+
+
+def _panel_from_dict(
+    data: dict[str, Any], project_id: uuid.UUID, index: int, source_text: str | None = None
+) -> Panel:
+    """Cria um objeto Panel a partir de um dict (AI ou mock)."""
+    synopsis_start, synopsis_end = (
+        _locate_excerpt(source_text, str(data.get("excerpt", "")))
+        if source_text else (None, None)
     )
+    panel = Panel(project_id=project_id, index_order=index)
+    _apply_panel_fields(panel, data)
+    panel.synopsis_start = synopsis_start
+    panel.synopsis_end = synopsis_end
+    return panel
 
 
 # ── CRUD público ────────────────────────────────────────────────────
@@ -305,6 +311,54 @@ def generate(
     for p in panels:
         db.refresh(p)
     return [panel_to_out(p) for p in panels]
+
+
+def generate_one(panel_id: uuid.UUID, user: User, db: Session) -> PanelOut:
+    """Gera (via IA) o conteúdo de um único quadro, ancorado no trecho vinculado.
+
+    Usado para preencher quadros inseridos manualmente sem regerar o storyboard
+    inteiro. Mantém o vínculo de sinopse existente; substitui os demais campos.
+    """
+    panel: Panel | None = (
+        db.query(Panel)
+        .join(Project, Project.id == Panel.project_id)
+        .filter(Panel.id == panel_id, Project.user_id == user.id)
+        .first()
+    )
+    if panel is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quadro não encontrado.")
+
+    project: Project | None = db.query(Project).filter(Project.id == panel.project_id).first()
+    if project is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Projeto não encontrado.")
+
+    source_text = project.synopsis or project.premise or project.title or ""
+    excerpt = ""
+    if panel.synopsis_start is not None and panel.synopsis_end is not None and source_text:
+        s = max(0, min(panel.synopsis_start, len(source_text)))
+        e = max(s, min(panel.synopsis_end, len(source_text)))
+        excerpt = source_text[s:e]
+
+    data = generate_panel(
+        excerpt=excerpt,
+        synopsis=source_text,
+        genre=project.genre,
+        tone=project.tone,
+        character_names=_get_char_names(panel.project_id, db),
+        style=project.style,
+        color_mode=project.color_mode,
+        temperature=project.panels_temperature,
+    )
+    if not data:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Geração do quadro falhou.",
+        )
+
+    _apply_panel_fields(panel, data)
+    db.commit()
+    db.refresh(panel)
+    return panel_to_out(panel)
 
 
 def generate_image(panel_id: uuid.UUID, user: User, db: Session) -> PanelOut:

@@ -81,7 +81,10 @@
             @else { ✓ Aprovar e avançar }
           </button>
           <div class="action-row">
-            <button class="btn-secondary" style="flex:1;justify-content:center" (click)="regen()" [disabled]="regenAnim()">↻ Regerar texto</button>
+            <button class="btn-secondary" style="flex:1;justify-content:center" (click)="regenContent()" [disabled]="regenAnim()"
+                    title="Gera direção da cena, prompt visual, enquadramento e balões deste quadro com IA">
+              @if (regenAnim()) { ⏳ Gerando… } @else { ✦ Regerar conteúdo (IA) }
+            </button>
             <button class="btn-image" style="flex:1" (click)="generateImage()" [disabled]="generatingImage()">
               @if (generatingImage()) { ⏳ Gerando… }
               @else if (cur.image_url) { 🖼 Nova imagem }
@@ -168,7 +171,7 @@
                 <button class="btn-remove" (click)="removeBubble(i)" title="Remover">✕</button>
               </div>
               <input class="input-sm" [value]="b.text"
-                     (input)="updateBubble(i, { text: $any($event.target).value })">
+                     (input)="setBubbleText(i, $any($event.target).value)">
             </div>
           }
         </div>

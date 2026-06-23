@@ -126,6 +126,12 @@
     border-style: solid;
     border-color: var(--accent);
   }
+
+  &--gen {
+    border-color: var(--mint, #7bbfa3);
+    color: var(--ink-2, #4a4236);
+    &:hover { background: var(--mint, #7bbfa3); color: var(--ink); border-color: var(--mint, #7bbfa3); }
+  }
 }
 
 .trecho-popup {
