@@ -28,6 +28,10 @@ export class PanelService {
     return this.http.delete<void>(`${this.base}/panels/${panelId}`);
   }
 
+  deleteMany(projectId: string, panelIds: string[]): Observable<void> {
+    return this.http.post<void>(`${this.base}/projects/${projectId}/panels/delete`, { panel_ids: panelIds });
+  }
+
   insert(projectId: string, afterIndex: number): Observable<PanelOut> {
     return this.http.post<PanelOut>(`${this.base}/projects/${projectId}/panels`, { after_index: afterIndex });
   }

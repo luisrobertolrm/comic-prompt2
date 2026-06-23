@@ -25,7 +25,8 @@ class MinimaxProvider:
         cfg = config or MinimaxConfig()
         # M3 é modelo de raciocínio: geração longa (roteiro/história) passa de 60s.
         self._text = MinimaxTextClient(cfg, timeout=180.0)
-        self._image = MinimaxImageClient(cfg)
+        # image-01 síncrono (sobretudo com subject_reference) regularmente passa de 60s.
+        self._image = MinimaxImageClient(cfg, timeout=180.0)
 
     @property
     def name(self) -> str:

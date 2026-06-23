@@ -1,10 +1,12 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { MINIMAX_VOICES } from '../../core/data/minimax-voices';
 import { SavedVoice, VoiceService } from '../../core/services/voice.service';
+import { VoicePreviewButtonComponent } from '../../shared/voice-preview-button/voice-preview-button.component';
 
 @Component({
   selector: 'app-voice-test',
   standalone: true,
+  imports: [VoicePreviewButtonComponent],
   templateUrl: './voice-test.component.html',
 })
 export class VoiceTestComponent implements OnInit {
@@ -75,6 +77,17 @@ export class VoiceTestComponent implements OnInit {
       this.formSex.set('');
       this.formDetails.set('');
     }
+    this.saveError.set('');
+  }
+
+  editSaved(v: SavedVoice): void {
+    this.selectedId.set(v.voice_id);
+    this.editingId.set(v.id);
+    this.formName.set(v.name);
+    this.formAgeStart.set(v.age_start != null ? String(v.age_start) : '');
+    this.formAgeEnd.set(v.age_end != null ? String(v.age_end) : '');
+    this.formSex.set(v.sex ?? '');
+    this.formDetails.set(v.details ?? '');
     this.saveError.set('');
   }
 

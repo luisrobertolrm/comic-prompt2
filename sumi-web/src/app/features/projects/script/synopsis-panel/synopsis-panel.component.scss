@@ -9,6 +9,25 @@
 
 .synopsis-actions { display: flex; gap: 8px; align-items: center; }
 
+.temp {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ink-3);
+
+  input {
+    width: 64px;
+    padding: 3px 8px;
+    border: 1px solid var(--rule);
+    border-radius: var(--r-sm);
+    background: var(--paper-2);
+    color: var(--ink);
+    font-size: 12px;
+    &:disabled { opacity: .4; cursor: default; }
+  }
+}
+
 .eyebrow {
   font-family: var(--mono);
   font-size: 11px;

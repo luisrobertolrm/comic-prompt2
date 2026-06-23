@@ -12,6 +12,9 @@
       <button class="btn-primary" (click)="generateVideo()" [disabled]="rendering()">
         @if (rendering()) { ⏳ Gerando vídeo… } @else { 🎬 Gerar vídeo (.mp4) }
       </button>
+      @if (videoUrl() && !rendering()) {
+        <button class="btn-ghost" (click)="downloadVideo()">⬇ Baixar .mp4</button>
+      }
       <button class="btn-ghost" (click)="startExport()" [disabled]="exporting()">
         @if (exporting()) { ⏳ Exportando… } @else { ⬇ Exportar quadros }
       </button>
@@ -115,29 +118,29 @@
                 <div class="panel-meta-tag">
                   PANEL · {{ padNum(scene()!.index_order) }} · {{ scene()!.label }}
                 </div>
+
+                <!-- Lower-third caption (dentro do quadro, limitado à imagem) -->
+                @if (beat() && beat()!.text) {
+                  <div class="lower-third">
+                    @if (beat()!.speaker !== 'Narrador' && beat()!.speaker !== '—') {
+                      <div class="lt-avatar">{{ initial(beat()!.speaker) }}</div>
+                    }
+                    <div class="lt-body">
+                      <div class="lt-speaker">
+                        {{ beat()!.speaker === 'Narrador' ? 'NARRAÇÃO' : beat()!.speaker.toUpperCase() }}
+                        @if (curVoice().voice !== '—') { <span class="lt-voice">· {{ curVoice().voice }}</span> }
+                      </div>
+                      <div class="lt-text"
+                           [class.lt-text--narration]="beat()!.kind === 'narration'"
+                           [class.lt-text--thought]="beat()!.kind === 'thought'">
+                        {{ beat()!.text }}
+                      </div>
+                    </div>
+                  </div>
+                }
               </div>
             }
           </div>
-
-          <!-- Lower-third caption -->
-          @if (beat() && beat()!.text) {
-            <div class="lower-third">
-              @if (beat()!.speaker !== 'Narrador' && beat()!.speaker !== '—') {
-                <div class="lt-avatar">{{ initial(beat()!.speaker) }}</div>
-              }
-              <div class="lt-body">
-                <div class="lt-speaker">
-                  {{ beat()!.speaker === 'Narrador' ? 'NARRAÇÃO' : beat()!.speaker.toUpperCase() }}
-                  @if (curVoice().voice !== '—') { <span class="lt-voice">· {{ curVoice().voice }}</span> }
-                </div>
-                <div class="lt-text"
-                     [class.lt-text--narration]="beat()!.kind === 'narration'"
-                     [class.lt-text--thought]="beat()!.kind === 'thought'">
-                  {{ beat()!.text }}
-                </div>
-              </div>
-            </div>
-          }
 
           <!-- Play overlay (quando pausado) -->
           @if (!playing()) {
@@ -163,7 +166,7 @@
             } @else if (playing() && beat()?.text) {
               <span><strong>{{ beat()!.speaker }}</strong> falando — <span class="muted">{{ curVoice().voice }}</span></span>
             } @else {
-              <span class="muted">Pressione play para ouvir a narração simulada</span>
+              <span class="muted">Pressione play para ouvir a narração</span>
             }
           </div>
         </div>
@@ -238,13 +241,9 @@
               }
               <div class="voice-info">
                 <div class="voice-name">{{ name }}</div>
-                <select class="voice-select"
-                        [value]="voices()[name]?.voice ?? voiceOptions[0]"
-                        (change)="setVoice(name, { voice: $any($event.target).value })">
-                  @for (opt of voiceOptions; track opt) {
-                    <option [value]="opt">{{ opt }}</option>
-                  }
-                </select>
+                <div class="voice-saved" [class.voice-saved--default]="!speakerVoice(name)">
+                  {{ speakerVoice(name)?.name ?? 'Voz padrão (defina em Ideia)' }}
+                </div>
               </div>
               <button class="mute-btn" [class.mute-btn--muted]="voices()[name]?.muted"
                       (click)="setVoice(name, { muted: !voices()[name]?.muted })"

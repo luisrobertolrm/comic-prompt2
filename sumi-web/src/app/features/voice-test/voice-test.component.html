@@ -16,14 +16,17 @@
 
   <div style="border:1px solid var(--line,#e5e0d8);border-radius:10px;max-height:240px;overflow:auto">
     @for (v of filtered(); track v.id) {
-      <button type="button" (click)="selectVoice(v.id)"
-              style="display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;
-                     text-align:left;padding:9px 14px;border:0;cursor:pointer;font-size:13px;
-                     border-bottom:1px solid var(--line,#e5e0d8)"
-              [style.background]="v.id === selectedId() ? 'var(--peach-soft,#fbeee6)' : 'transparent'">
+      <div (click)="selectVoice(v.id)"
+           style="display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;
+                  text-align:left;padding:9px 14px;cursor:pointer;font-size:13px;
+                  border-bottom:1px solid var(--line,#e5e0d8)"
+           [style.background]="v.id === selectedId() ? 'var(--peach-soft,#fbeee6)' : 'transparent'">
         <span [style.font-weight]="v.id === selectedId() ? '600' : '400'">{{ v.name }}</span>
-        <span style="color:var(--muted);font-size:11px;white-space:nowrap">{{ v.id }}</span>
-      </button>
+        <span style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+          <span style="color:var(--muted);font-size:11px;white-space:nowrap">{{ v.id }}</span>
+          <app-voice-preview-button [voiceId]="v.id" />
+        </span>
+      </div>
     } @empty {
       <div style="padding:14px;font-size:13px;color:var(--muted)">Nenhuma voz encontrada.</div>
     }
@@ -132,7 +135,8 @@
   } @else {
     <div style="border:1px solid var(--line,#e5e0d8);border-radius:10px;overflow:hidden">
       @for (v of saved(); track v.id) {
-        <div style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;
+        <div (click)="editSaved(v)" title="Editar esta voz"
+             style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;cursor:pointer;
                     border-bottom:1px solid var(--line,#e5e0d8)"
              [style.background]="editingId() === v.id ? 'var(--peach-soft,#fbeee6)' : 'transparent'">
           <div style="flex:1">
@@ -146,7 +150,8 @@
               <div style="font-size:12px;color:var(--ink);margin-top:4px">{{ v.details }}</div>
             }
           </div>
-          <button type="button" (click)="remove(v.id)"
+          <app-voice-preview-button [voiceId]="v.voice_id" />
+          <button type="button" (click)="$event.stopPropagation(); remove(v.id)"
                   style="border:0;background:transparent;cursor:pointer;color:var(--danger,#c0392b);
                          font-size:13px;white-space:nowrap;flex-shrink:0">
             Excluir

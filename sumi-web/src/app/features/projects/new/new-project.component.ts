@@ -5,6 +5,7 @@ import { ProjectService } from '../../../core/services/project.service';
 import { StyleService, type StyleOption } from '../../../core/services/style.service';
 import { VoiceService, type SavedVoice } from '../../../core/services/voice.service';
 import { TextReaderComponent } from '../../../shared/text-reader/text-reader.component';
+import { VoicePreviewButtonComponent } from '../../../shared/voice-preview-button/voice-preview-button.component';
 
 
 const GENRES = [
@@ -32,7 +33,7 @@ const LANGUAGES = [
 @Component({
   selector: 'app-new-project',
   standalone: true,
-  imports: [TextReaderComponent],
+  imports: [TextReaderComponent, VoicePreviewButtonComponent],
   templateUrl: './new-project.component.html',
   styleUrl: './new-project.component.scss',
 })

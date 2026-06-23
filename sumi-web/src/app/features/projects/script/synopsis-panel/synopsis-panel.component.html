@@ -6,6 +6,12 @@
     }
     <button class="btn-ghost sm" (click)="showReader.set(true)"
             [disabled]="!text.trim()" title="Ver em tela cheia para leitura">⤢ Ler</button>
+    <label class="temp" title="Temperatura da geração da sinopse (0 a 2)">
+      Temperatura
+      <input type="number" min="0" max="2" step="0.1" [value]="temperature"
+             (change)="temperatureChange.emit($any($event.target).value)"
+             [disabled]="generating">
+    </label>
     <button class="btn-ghost sm" (click)="regen.emit()" [disabled]="generating">
       @if (generating) { ⏳ Trabalhando… }
       @else if (hasSynopsis) { ↻ Regerar com IA }

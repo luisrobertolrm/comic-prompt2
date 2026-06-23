@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -34,6 +34,8 @@ class Project(Base):
     color_mode: Mapped[str] = mapped_column(String(30), nullable=False, server_default="tons-cinza")
     premise: Mapped[str | None] = mapped_column(Text, nullable=True)
     synopsis: Mapped[str | None] = mapped_column(Text, nullable=True)
+    synopsis_temperature: Mapped[float] = mapped_column(Float, nullable=False, server_default="0.8")
+    panels_temperature: Mapped[float] = mapped_column(Float, nullable=False, server_default="0.4")
     narrator_voice_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("narration_voices.id", ondelete="SET NULL"), nullable=True
     )

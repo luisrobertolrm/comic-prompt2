@@ -147,6 +147,8 @@ h1 { font-family: var(--serif); font-size: 30px; line-height: 1.1; margin-bottom
   cursor: pointer;
   &:hover { background: var(--paper-2); color: var(--ink); }
   &:disabled { opacity: .4; cursor: default; }
+  &--danger { color: #b3261e; border-color: #f3c0bd; }
+  &--danger:hover:not(:disabled) { background: #fdecec; color: #b3261e; border-color: #f3c0bd; }
 }
 
 .btn-primary {

@@ -88,12 +88,25 @@
               @else { ✦ Imagem IA (opcional) }
             </button>
           </div>
+          @if (imageError(); as err) {
+            <p class="image-error" role="alert">⚠ {{ err }}</p>
+          }
           <button class="btn-secondary" style="justify-content:center" (click)="save()" [disabled]="saving()">
             @if (saving()) { ⏳ Salvando… }
             @else if (justSaved()) { ✓ Salvo }
             @else { 💾 Salvar (sem aprovar) }
           </button>
         </div>
+
+        <!-- Trecho da sinopse (somente leitura) -->
+        @if (curTrecho(); as trecho) {
+          <div class="side-card">
+            <div class="side-card-head">
+              <span class="eyebrow">⚓ TRECHO DA SINOPSE</span>
+            </div>
+            <p class="synopsis-trecho">{{ trecho }}</p>
+          </div>
+        }
 
         <!-- Direção da cena -->
         <div class="side-card">

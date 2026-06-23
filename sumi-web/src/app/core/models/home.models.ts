@@ -11,6 +11,8 @@ export interface ProjectOut {
   cover_accent: string;
   cover_tone: string;
   video_url: string | null;
+  synopsis_temperature: number;
+  panels_temperature: number;
   updated_at: string;
 }
 
@@ -43,6 +45,8 @@ export interface ProjectUpdate {
   style?: string;
   color_mode?: string;
   narrator_voice_id?: string | null;
+  synopsis_temperature?: number;
+  panels_temperature?: number;
 }
 
 export interface SeriesOut {

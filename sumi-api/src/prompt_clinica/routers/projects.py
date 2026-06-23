@@ -16,6 +16,7 @@ from prompt_clinica.ai.youtube_metadata import generate_youtube_metadata
 from prompt_clinica.database import SessionLocal, get_db
 from prompt_clinica.deps import get_current_user
 from prompt_clinica.schemas.panel import (
+    DeletePanelsBody,
     GeneratePanelsBody,
     InsertPanelBody,
     PanelOut,
@@ -251,6 +252,16 @@ def reorder_panels(
     db: Session = Depends(get_db),
 ) -> None:
     panel_service.reorder(project_id, body, user, db)
+
+
+@router.post("/{project_id}/panels/delete", status_code=204)
+def delete_panels(
+    project_id: uuid.UUID,
+    body: DeletePanelsBody,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> None:
+    panel_service.delete_panels(project_id, body.panel_ids, user, db)
 
 
 # ── YouTube Metadata ─────────────────────────────────────────────────────────

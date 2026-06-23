@@ -52,6 +52,7 @@ def generate_roteiro(
     target_panels: int | None = None,
     style: str | None = None,
     color_mode: str | None = None,
+    temperature: float = 0.4,
 ) -> dict[str, object]:
     """
     Chama a IA e retorna {"title": str, "panels": list[dict]}.
@@ -93,7 +94,7 @@ def generate_roteiro(
                 Message(role="system", content=_SYSTEM),
                 Message(role="user", content=user_msg),
             ],
-            temperature=0.4,
+            temperature=temperature,
             max_tokens=budget,
             json_mode=True,
         ))

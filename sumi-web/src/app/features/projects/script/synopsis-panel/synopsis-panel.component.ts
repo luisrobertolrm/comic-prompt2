@@ -23,6 +23,7 @@ export class SynopsisPanelComponent {
   @Input() text = '';
   @Input() hasSynopsis = false;
   @Input() generating = false;
+  @Input() temperature = 0.8;
 
   /** Trecho a destacar (ex.: o quadro vinculado sob o mouse). */
   @Input() set highlight(value: SynopsisRange | null) {
@@ -31,6 +32,7 @@ export class SynopsisPanelComponent {
 
   @Output() textChange = new EventEmitter<string>();
   @Output() regen = new EventEmitter<void>();
+  @Output() temperatureChange = new EventEmitter<string>();
   @Output() selectionChange = new EventEmitter<SynopsisSelection | null>();
 
   @ViewChild('body') bodyRef?: ElementRef<HTMLElement>;

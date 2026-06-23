@@ -31,6 +31,8 @@ class ProjectPatch(BaseModel):
     style: StyleId | None = None
     color_mode: ColorModeId | None = None
     narrator_voice_id: uuid.UUID | None = None
+    synopsis_temperature: float | None = Field(default=None, ge=0, le=2)
+    panels_temperature: float | None = Field(default=None, ge=0, le=2)
 
 
 class CharacterIdsBody(BaseModel):
@@ -51,6 +53,8 @@ class ProjectOut(BaseModel):
     cover_tone: str
     narrator_voice_id: uuid.UUID | None
     video_url: str | None = None
+    synopsis_temperature: float
+    panels_temperature: float
     updated_at: datetime
 
     model_config = {"from_attributes": True}

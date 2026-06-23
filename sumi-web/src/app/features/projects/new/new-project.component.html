@@ -99,16 +99,19 @@
             <span class="voice-name">— Sem voz de narração —</span>
           </button>
           @for (v of voices(); track v.id) {
-            <button class="voice-option" [class.voice-option--active]="narratorVoiceId() === v.id"
-                    (click)="narratorVoiceId.set(v.id)">
-              <span class="voice-name">{{ v.name }}</span>
-              @if (voiceMeta(v)) {
-                <span class="voice-meta">{{ voiceMeta(v) }}</span>
-              }
-              @if (v.details) {
-                <span class="voice-detail">{{ v.details }}</span>
-              }
-            </button>
+            <div class="voice-option" [class.voice-option--active]="narratorVoiceId() === v.id"
+                 (click)="narratorVoiceId.set(v.id)">
+              <div class="voice-option-info">
+                <span class="voice-name">{{ v.name }}</span>
+                @if (voiceMeta(v)) {
+                  <span class="voice-meta">{{ voiceMeta(v) }}</span>
+                }
+                @if (v.details) {
+                  <span class="voice-detail">{{ v.details }}</span>
+                }
+              </div>
+              <app-voice-preview-button [voiceId]="v.voice_id" />
+            </div>
           }
         </div>
       </div>

@@ -200,6 +200,7 @@ void HandleGerar(string fullInput)
     string imagePath;
     int quantidade;
     string nomeFinal;
+    string sexo;
 
     if (string.IsNullOrWhiteSpace(argsStr))
     {
@@ -256,6 +257,16 @@ void HandleGerar(string fullInput)
         nomeFinal = parts[2];
     }
 
+    // Seleção de sexo
+    AnsiConsole.WriteLine();
+    var sexoChoice = AnsiConsole.Prompt(
+        new SelectionPrompt<string>()
+            .Title("  [cyan]Sexo da personagem:[/]")
+            .HighlightStyle(Style.Parse("mediumpurple1"))
+            .AddChoices("Feminino", "Masculino")
+    );
+    sexo = sexoChoice == "Masculino" ? "M" : "F";
+
     // Seleção de resolução
     AnsiConsole.WriteLine();
     var presetChoice = AnsiConsole.Prompt(
@@ -301,6 +312,7 @@ void HandleGerar(string fullInput)
         .AddRow("[dim]Imagem[/]", Markup.Escape(Path.GetFileName(imagePath)))
         .AddRow("[dim]Caminho completo[/]", Markup.Escape(Path.GetFullPath(imagePath)))
         .AddRow("[dim]Quantidade[/]", quantidade.ToString())
+        .AddRow("[dim]Sexo[/]", sexo == "M" ? "Masculino (1boy)" : "Feminino (1girl)")
         .AddRow("[dim]Resolução[/]", $"{width}×{height}")
         .AddRow("[dim]Arquivo de saída[/]", Markup.Escape(nomeFinal.EndsWith(".json", StringComparison.OrdinalIgnoreCase) ? nomeFinal : $"{nomeFinal}.json"));
 
@@ -319,7 +331,7 @@ void HandleGerar(string fullInput)
             {
                 ctx.Status("[cyan]Combinando poses, roupas e acessórios...[/]");
                 Thread.Sleep(300);
-                outputPath = PoseDataGenerator.Generate(imagePath, quantidade, nomeFinal, width, height);
+                outputPath = PoseDataGenerator.Generate(imagePath, quantidade, nomeFinal, width, height, sexo);
                 ctx.Status("[green]Salvando arquivo JSON...[/]");
                 Thread.Sleep(200);
             });

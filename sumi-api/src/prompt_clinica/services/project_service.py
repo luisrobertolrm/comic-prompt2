@@ -99,6 +99,10 @@ def update(project_id: uuid.UUID, patch: ProjectPatch, user: User, db: Session) 
         project.color_mode = patch.color_mode
     if "narrator_voice_id" in patch.model_fields_set:
         project.narrator_voice_id = patch.narrator_voice_id
+    if patch.synopsis_temperature is not None:
+        project.synopsis_temperature = patch.synopsis_temperature
+    if patch.panels_temperature is not None:
+        project.panels_temperature = patch.panels_temperature
     if patch.genre is not None or patch.pages is not None:
         g = project.genre
         project.subtitle = f"{g.lower()} · {project.pages * 3}–{project.pages * 4} quadros"
@@ -128,6 +132,7 @@ def generate_synopsis(project_id: uuid.UUID, user: User, db: Session) -> Project
         genre=project.genre,
         tone=project.tone,
         character_names=[c.name for c in chars],
+        temperature=project.synopsis_temperature,
     )
     if not text:
         raise HTTPException(

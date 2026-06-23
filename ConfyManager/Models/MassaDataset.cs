@@ -12,6 +12,7 @@ public record MassaConfig(
     [property: JsonPropertyName("largura")] int Largura,
     [property: JsonPropertyName("altura")] int Altura,
     [property: JsonPropertyName("totalRegistros")] int TotalRegistros,
+    [property: JsonPropertyName("sexo")] string Sexo,
     [property: JsonPropertyName("geradoEm")] string GeradoEm
 );
 

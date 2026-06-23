@@ -45,6 +45,13 @@ export class ScriptComponent implements OnInit {
   selectedTrecho = signal<SynopsisSelection | null>(null);
   trechoHighlight = signal<SynopsisRange | null>(null);
 
+  selectMode = signal(false);
+  selectedIds = signal<Set<string>>(new Set());
+  deleting = signal(false);
+
+  synopsisTemperature = signal(0.8);
+  panelsTemperature = signal(0.4);
+
   synopsisText(): string {
     const p = this.project();
     return p ? (p.synopsis || p.premise || p.title || '') : '';
@@ -53,7 +60,12 @@ export class ScriptComponent implements OnInit {
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id') ?? '';
     this.projectId.set(id);
-    this.projectService.get(id).subscribe({ next: p => { this.project.set(p); this.draft.currentProjectTitle.set(p.title); } });
+    this.projectService.get(id).subscribe({ next: p => {
+      this.project.set(p);
+      this.draft.currentProjectTitle.set(p.title);
+      this.synopsisTemperature.set(p.synopsis_temperature);
+      this.panelsTemperature.set(p.panels_temperature);
+    } });
     this.styleService.catalog().subscribe({
       next: c => { this.styles.set(c.styles); this.colorModes.set(c.color_modes); },
     });
@@ -123,6 +135,54 @@ export class ScriptComponent implements OnInit {
     });
   }
 
+  toggleSelectMode(): void {
+    this.selectMode.update(v => !v);
+    if (!this.selectMode()) this.selectedIds.set(new Set());
+  }
+
+  togglePanelSelect(id: string): void {
+    this.selectedIds.update(set => {
+      const next = new Set(set);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  selectAll(): void {
+    this.selectedIds.set(new Set(this.panels().map(p => p.id)));
+  }
+
+  clearSelection(): void {
+    this.selectedIds.set(new Set());
+  }
+
+  deleteSelected(): void {
+    this.removePanels([...this.selectedIds()]);
+  }
+
+  deleteAll(): void {
+    this.removePanels(this.panels().map(p => p.id));
+  }
+
+  private removePanels(ids: string[]): void {
+    if (this.deleting() || ids.length === 0) return;
+    this.deleting.set(true);
+    this.panelService.deleteMany(this.projectId(), ids).subscribe({
+      next: () => {
+        const idSet = new Set(ids);
+        const ps = this.panels()
+          .filter(p => !idSet.has(p.id))
+          .map((p, idx) => ({ ...p, index_order: idx + 1 }));
+        this.panels.set(ps);
+        this.targetPanels.set(ps.length || null);
+        this.selectedIds.set(new Set());
+        this.selectMode.set(false);
+        this.deleting.set(false);
+      },
+      error: () => this.deleting.set(false),
+    });
+  }
+
   openReview(panelIndex = 0): void {
     void this.router.navigate(['/projects', this.projectId(), 'review'], {
       queryParams: { panel: panelIndex },
@@ -172,6 +232,30 @@ export class ScriptComponent implements OnInit {
         this.selectedTrecho.set(null);
       },
     });
+  }
+
+  /** Converte o texto do input em temperatura válida (0–2) ou null se não for número. */
+  private parseTemperature(value: string): number | null {
+    if (value.trim() === '') return null;
+    const n = Number(value);
+    if (!Number.isFinite(n)) return null;
+    return Math.min(2, Math.max(0, n));
+  }
+
+  setSynopsisTemperature(value: string): void {
+    const t = this.parseTemperature(value);
+    if (t === null) return;
+    this.synopsisTemperature.set(t);
+    this.project.update(p => p ? { ...p, synopsis_temperature: t } : p);
+    this.projectService.update(this.projectId(), { synopsis_temperature: t }).subscribe();
+  }
+
+  setPanelsTemperature(value: string): void {
+    const t = this.parseTemperature(value);
+    if (t === null) return;
+    this.panelsTemperature.set(t);
+    this.project.update(p => p ? { ...p, panels_temperature: t } : p);
+    this.projectService.update(this.projectId(), { panels_temperature: t }).subscribe();
   }
 
   regenSynopsis(): void {

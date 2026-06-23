@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, debounceTime, switchMap } from 'rxjs';
 import type { Bubble, PanelOut, PanelPatch } from '../../../core/models/panel.models';
 import { PanelService } from '../../../core/services/panel.service';
+import { ProjectService } from '../../../core/services/project.service';
 import { MangaPanelComponent } from '../manga-panel/manga-panel.component';
 
 const FRAMINGS = [
@@ -22,11 +23,13 @@ export class ReviewComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private panelService = inject(PanelService);
+  private projectService = inject(ProjectService);
   private destroyRef = inject(DestroyRef);
 
   readonly framings = FRAMINGS;
 
   projectId = signal('');
+  synopsis = signal('');
   panels = signal<PanelOut[]>([]);
   idx = signal(0);
   loading = signal(true);
@@ -35,6 +38,7 @@ export class ReviewComponent implements OnInit {
   generatingImage     = signal(false);
   generatingAllImages = signal(false);
   generatingBubbles   = signal(false);
+  imageError = signal<string | null>(null);
   saving    = signal(false);
   justSaved = signal(false);
 
@@ -42,10 +46,24 @@ export class ReviewComponent implements OnInit {
 
   get cur(): PanelOut | undefined { return this.panels()[this.idx()]; }
 
+  curTrecho(): string | null {
+    const c = this.cur;
+    if (!c || c.synopsis_start == null || c.synopsis_end == null) return null;
+    const text = this.synopsis();
+    if (!text) return null;
+    const start = Math.max(0, Math.min(c.synopsis_start, text.length));
+    const end = Math.max(start, Math.min(c.synopsis_end, text.length));
+    return end > start ? text.slice(start, end) : null;
+  }
+
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id') ?? '';
     const startPanel = +(this.route.snapshot.queryParams['panel'] ?? 0);
     this.projectId.set(id);
+
+    this.projectService.get(id).subscribe({
+      next: p => this.synopsis.set(p.synopsis || p.premise || p.title || ''),
+    });
 
     this.panelService.list(id).subscribe({
       next: panels => {
@@ -234,25 +252,38 @@ export class ReviewComponent implements OnInit {
     });
   }
 
+  private imageErrorMessage(err: unknown): string {
+    const detail = (err as { error?: { detail?: string } })?.error?.detail;
+    return detail || 'Falha ao gerar a imagem. Tente novamente.';
+  }
+
   generateImage(): void {
     const cur = this.cur;
     if (!cur || this.generatingImage()) return;
     this.generatingImage.set(true);
+    this.imageError.set(null);
     this.panelService.generateImage(cur.id).subscribe({
       next: updated => {
         this.panels.update(ps => ps.map(p => p.id === updated.id ? updated : p));
         this.generatingImage.set(false);
       },
-      error: () => this.generatingImage.set(false),
+      error: err => {
+        this.imageError.set(this.imageErrorMessage(err));
+        this.generatingImage.set(false);
+      },
     });
   }
 
   generateAllImages(): void {
     if (this.generatingAllImages()) return;
     this.generatingAllImages.set(true);
+    this.imageError.set(null);
     this.panelService.generateAllImages(this.projectId()).subscribe({
       next: updated => { this.panels.set(updated); this.generatingAllImages.set(false); },
-      error: () => this.generatingAllImages.set(false),
+      error: err => {
+        this.imageError.set(this.imageErrorMessage(err));
+        this.generatingAllImages.set(false);
+      },
     });
   }
 

@@ -1,4 +1,12 @@
-<div class="open-area" (click)="open.emit()">
+@if (selectable) {
+  <button class="select-box" [class.select-box--on]="selected"
+          (click)="toggleSelect.emit()"
+          [title]="selected ? 'Desmarcar quadro' : 'Selecionar quadro'">
+    {{ selected ? '✓' : '' }}
+  </button>
+}
+<div class="open-area" [class.open-area--selectable]="selectable"
+     (click)="selectable ? toggleSelect.emit() : open.emit()">
   <app-manga-panel
     [index]="panel.index_order"
     [label]="panel.label"
@@ -18,13 +26,27 @@
     </div>
   </div>
 </div>
+@if (!selectable) {
 <div class="card-actions">
   @if (canLink) {
     <button class="card-action-btn card-action-btn--link" (click)="link.emit()"
             title="Vincular o trecho selecionado da sinopse a este quadro">⚓ vincular trecho</button>
+  }
+  @if (hasLink()) {
+    <button class="card-action-btn card-action-btn--link" [class.card-action-btn--on]="showTrecho()"
+            (click)="toggleTrecho()"
+            title="Ver o trecho da sinopse vinculado a este quadro">⚓ ver trecho</button>
   }
   <button class="card-action-btn" (click)="insertAfter.emit()"
           title="Inserir um quadro depois deste">+ inserir aqui</button>
   <button class="card-action-btn card-action-btn--danger" (click)="remove.emit()"
           [disabled]="!canRemove" title="Remover este quadro">🗑 remover</button>
 </div>
+@if (showTrecho()) {
+  <div class="trecho-popup">
+    <button class="trecho-popup__close" (click)="showTrecho.set(false)" title="Fechar">✕</button>
+    <span class="trecho-popup__label">TRECHO DA SINOPSE</span>
+    <p class="trecho-popup__text">{{ trechoText() }}</p>
+  </div>
+}
+}

@@ -56,6 +56,10 @@ class ReorderBody(BaseModel):
     panel_ids: list[uuid.UUID]
 
 
+class DeletePanelsBody(BaseModel):
+    panel_ids: list[uuid.UUID]
+
+
 class GeneratePanelsBody(BaseModel):
     target_panels: int | None = None
 

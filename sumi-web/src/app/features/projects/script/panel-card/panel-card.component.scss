@@ -13,6 +13,38 @@
   flex-direction: column;
   gap: 8px;
   cursor: pointer;
+
+  &--selectable { cursor: default; }
+}
+
+.select-box {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  line-height: 1;
+  border: 1.5px solid var(--ink, #2a241c);
+  border-radius: 6px;
+  background: var(--paper, #fdfaf4);
+  color: var(--paper, #fdfaf4);
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease;
+
+  &--on {
+    background: var(--ink, #2a241c);
+    color: var(--paper, #fdfaf4);
+  }
+}
+
+:host:has(.select-box--on) app-manga-panel {
+  outline: 2px solid var(--ink, #2a241c);
+  outline-offset: 2px;
 }
 
 .storyboard-meta {
@@ -87,4 +119,72 @@
     color: var(--accent-ink);
     &:hover { background: var(--accent); color: var(--ink); border-color: var(--accent); }
   }
+
+  &--on {
+    background: var(--accent);
+    color: var(--ink);
+    border-style: solid;
+    border-color: var(--accent);
+  }
+}
+
+.trecho-popup {
+  position: absolute;
+  left: 50%;
+  bottom: 40px;
+  transform: translateX(-50%);
+  z-index: 6;
+  width: 90%;
+  max-width: 320px;
+  padding: 12px 14px 14px;
+  background: var(--paper, #fdfaf4);
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(42, 36, 28, .18);
+  text-align: left;
+  animation: trecho-pop .12s ease-out;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 7px solid transparent;
+    border-top-color: var(--accent);
+  }
+
+  &__close {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    border: none;
+    background: none;
+    font-size: 13px;
+    line-height: 1;
+    color: var(--muted, #8a7d6b);
+    cursor: pointer;
+    &:hover { color: var(--ink, #2a241c); }
+  }
+
+  &__label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: .12em;
+    color: var(--accent-ink);
+    margin-bottom: 6px;
+  }
+
+  &__text {
+    margin: 0;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--ink-2, #4a4236);
+  }
+}
+
+@keyframes trecho-pop {
+  from { opacity: 0; transform: translate(-50%, 4px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
 }

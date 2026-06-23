@@ -1,11 +1,12 @@
 import { Component, computed, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { DecimalPipe, DatePipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { timer, switchMap, takeWhile } from 'rxjs';
+import { forkJoin, timer, switchMap, takeWhile } from 'rxjs';
 import type { PanelOut } from '../../../core/models/panel.models';
 import { PanelService } from '../../../core/services/panel.service';
 import { ProjectDraftService } from '../../../core/services/project-draft.service';
 import { ProjectService, VideoJob, YtMeta } from '../../../core/services/project.service';
+import { VoiceService, type SavedVoice } from '../../../core/services/voice.service';
 import { environment } from '../../../../environments/environment';
 
 // ── Tipos ────────────────────────────────────────────────────────────
@@ -104,6 +105,7 @@ export class VideoComponent implements OnInit, OnDestroy {
   private draft = inject(ProjectDraftService);
   private panelService = inject(PanelService);
   private projectService = inject(ProjectService);
+  private voiceService = inject(VoiceService);
 
   readonly voiceOptions = VOICE_OPTIONS;
   readonly speeds = SPEEDS;
@@ -175,6 +177,13 @@ export class VideoComponent implements OnInit, OnDestroy {
   private speechActive = false;
   private availableVoices = signal<SpeechSynthesisVoice[]>([]);
 
+  // Vozes salvas (mesmas usadas no .mp4): narrador do projeto + voz por personagem.
+  narratorVoice   = signal<SavedVoice | null>(null);
+  charVoiceByName = signal<Map<string, SavedVoice>>(new Map());
+  private audioEl: HTMLAudioElement | null = null;
+  private currentBeatKey = '';
+  private audioCache = new Map<string, string>();
+
   constructor() {
     // Transição de cena
     effect(() => {
@@ -183,79 +192,51 @@ export class VideoComponent implements OnInit, OnDestroy {
       this.prevScene = idx;
     });
 
-    // Narração: fala o beat atual sempre que ele muda durante o play
+    // Narração: toca o beat atual sempre que ele muda durante o play
     effect(() => {
-      const idx      = this.beatIdx();
+      const idx       = this.beatIdx();
       const isPlaying = this.playing();
-      const beat     = this.bd().beats[idx];
-      const voiceMap = this.voices();
-      const names    = this.castNames();
-      const spd      = this.speed();
-      const avail    = this.availableVoices();
+      const beat      = this.bd().beats[idx];
+      const voiceMap  = this.voices();
 
       if (!isPlaying || !beat?.text || beat.kind === 'silent') {
-        this.cancelSpeech();
+        this.stopNarration();
         return;
       }
-      const vd = voiceMap[beat.speaker];
-      if (vd?.muted) { this.cancelSpeech(); return; }
-
-      this.cancelSpeech();
-      const utter = new SpeechSynthesisUtterance(beat.text);
-      utter.lang  = 'pt-BR';
-      utter.rate  = Math.max(0.5, Math.min(2, spd));
-
-      const opt = vd?.voice ?? '';
-      if (opt.includes('Grave'))                               { utter.pitch = 0.5; }
-      else if (opt.includes('Energética'))                     { utter.pitch = 1.35; }
-      else if (opt.includes('Suave') || opt.includes('Doce')) { utter.pitch = 1.1; }
-      else if (opt.includes('Misteriosa') || opt.includes('Madura')) { utter.pitch = 0.7; }
-      else if (opt.includes('feminina'))                       { utter.pitch = 1.2; }
-      else if (opt.includes('masculina'))                      { utter.pitch = 0.85; }
-
-      const ptVoices = avail.filter(v => v.lang.startsWith('pt'));
-      if (ptVoices.length) {
-        const si = names.indexOf(beat.speaker);
-        utter.voice = ptVoices[si % ptVoices.length] ?? null;
-      }
-
-      // Pausa o timer até o áudio terminar
-      this.speechActive = true;
-      utter.onend = () => {
-        this.speechActive = false;
-        // Avança t para o fim do beat se ainda estiver atrás dele
-        if (this.playing() && this.t() < beat.start + beat.dur) {
-          this.t.set(beat.start + beat.dur);
-        }
-      };
-      utter.onerror = () => { this.speechActive = false; };
-      window.speechSynthesis.speak(utter);
+      if (voiceMap[beat.speaker]?.muted) { this.stopNarration(); return; }
+      this.narrate(beat);
     });
   }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id') ?? '';
     this.projectId.set(id);
-    this.loadVoices();
-    this.panelService.list(id).subscribe({
-      next: ps => { this.panels.set(ps); this.initVoices(ps); this.loading.set(false); },
-      error: () => this.loading.set(false),
-    });
-    this.projectService.get(id).subscribe({
-      next: p => {
-        this.projectTitle.set(p.title);
-        if (p.video_url) this.videoUrl.set(`${this.baseUrl}${p.video_url}`);
+    this.loadBrowserVoices();
+    forkJoin({
+      panels: this.panelService.list(id),
+      project: this.projectService.get(id),
+      voices: this.voiceService.list(),
+    }).subscribe({
+      next: ({ panels, project, voices }) => {
+        this.projectTitle.set(project.title);
+        if (project.video_url) this.videoUrl.set(`${this.baseUrl}${project.video_url}`);
+        this.buildVoiceMaps(project.narrator_voice_id, project.characters, voices);
+        this.panels.set(panels);
+        this.initVoices(panels);
+        this.loading.set(false);
       },
+      error: () => this.loading.set(false),
     });
   }
 
   ngOnDestroy(): void {
     this.stopTicker();
     this.clearExportTimer();
-    this.cancelSpeech();
+    this.stopNarration();
+    for (const url of this.audioCache.values()) URL.revokeObjectURL(url);
   }
 
-  private loadVoices(): void {
+  private loadBrowserVoices(): void {
     if (!('speechSynthesis' in window)) return;
     const load = (): void => {
       const v = window.speechSynthesis.getVoices();
@@ -265,14 +246,104 @@ export class VideoComponent implements OnInit, OnDestroy {
     window.speechSynthesis.onvoiceschanged = load;
   }
 
+  private buildVoiceMaps(
+    narratorVoiceId: string | null,
+    characters: { name: string; narrator_voice_id: string | null }[],
+    saved: SavedVoice[],
+  ): void {
+    const byId = new Map(saved.map(v => [v.id, v]));
+    this.narratorVoice.set(narratorVoiceId ? byId.get(narratorVoiceId) ?? null : null);
+    const charMap = new Map<string, SavedVoice>();
+    for (const c of characters) {
+      if (c.narrator_voice_id) {
+        const v = byId.get(c.narrator_voice_id);
+        if (v) charMap.set(c.name, v);
+      }
+    }
+    this.charVoiceByName.set(charMap);
+  }
+
+  /** Voz salva (narrador do projeto ou voz do personagem em cena), igual ao render do .mp4. */
+  speakerVoice(name: string): SavedVoice | null {
+    if (name === 'Narrador' || name === '—') return this.narratorVoice();
+    return this.charVoiceByName().get(name) ?? this.narratorVoice();
+  }
+
   private initVoices(panels: PanelOut[]): void {
     const names = ['Narrador'];
     for (const p of panels) if (p.character_name && !names.includes(p.character_name)) names.push(p.character_name);
     const v: Record<string, VoiceData> = {};
-    names.forEach((n, i) => {
-      v[n] = { voice: n === 'Narrador' ? VOICE_OPTIONS[0] : VOICE_OPTIONS[(i + 1) % VOICE_OPTIONS.length], muted: false };
-    });
+    for (const n of names) {
+      const sv = this.speakerVoice(n);
+      v[n] = { voice: sv ? sv.name : 'Voz padrão', muted: false };
+    }
     this.voices.set(v);
+  }
+
+  // ── Narração (voz salva via MiniMax, com fallback do navegador) ────
+
+  private narrate(beat: Beat): void {
+    const key = `${beat.start}|${beat.speaker}|${beat.text}`;
+    if (key === this.currentBeatKey) return;
+    this.currentBeatKey = key;
+    window.speechSynthesis?.cancel();
+    if (this.audioEl) this.audioEl.pause();
+
+    const voiceId = this.speakerVoice(beat.speaker)?.voice_id ?? null;
+    if (!voiceId) { this.speakBrowser(beat); return; }
+
+    this.speechActive = true;
+    this.getAudio(beat.text, voiceId).then(url => {
+      if (this.currentBeatKey !== key || !this.playing()) return;
+      const audio = this.audioEl ?? (this.audioEl = new Audio());
+      audio.src = url;
+      audio.playbackRate = Math.max(0.5, Math.min(4, this.speed()));
+      audio.onended = () => this.onBeatEnd(beat);
+      audio.onerror = () => { this.speechActive = false; };
+      void audio.play();
+    }).catch(() => this.speakBrowser(beat));
+  }
+
+  private speakBrowser(beat: Beat): void {
+    this.speechActive = true;
+    if (!('speechSynthesis' in window)) {
+      this.onBeatEnd(beat);
+      return;
+    }
+    const utter = new SpeechSynthesisUtterance(beat.text);
+    utter.lang = 'pt-BR';
+    utter.rate = Math.max(0.5, Math.min(2, this.speed()));
+    const ptVoices = this.availableVoices().filter(v => v.lang.startsWith('pt'));
+    if (ptVoices.length) {
+      const si = this.castNames().indexOf(beat.speaker);
+      utter.voice = ptVoices[Math.max(0, si) % ptVoices.length] ?? null;
+    }
+    utter.onend = () => this.onBeatEnd(beat);
+    utter.onerror = () => { this.speechActive = false; };
+    window.speechSynthesis.speak(utter);
+  }
+
+  private onBeatEnd(beat: Beat): void {
+    this.speechActive = false;
+    if (this.playing() && this.t() < beat.start + beat.dur) {
+      this.t.set(beat.start + beat.dur);
+    }
+  }
+
+  private getAudio(text: string, voiceId: string): Promise<string> {
+    const key = `${voiceId}|${text}`;
+    const cached = this.audioCache.get(key);
+    if (cached) return Promise.resolve(cached);
+    return new Promise<string>((resolve, reject) => {
+      this.voiceService.synthesize(text, voiceId).subscribe({
+        next: blob => {
+          const url = URL.createObjectURL(blob);
+          this.audioCache.set(key, url);
+          resolve(url);
+        },
+        error: reject,
+      });
+    });
   }
 
   private triggerTransition(): void {
@@ -300,32 +371,34 @@ export class VideoComponent implements OnInit, OnDestroy {
 
   private stopTicker(): void {
     if (this.intervalId) { clearInterval(this.intervalId); this.intervalId = null; }
-    this.cancelSpeech();
+    this.stopNarration();
     this.playing.set(false);
   }
 
-  private cancelSpeech(): void {
+  private stopNarration(): void {
     window.speechSynthesis?.cancel();
+    if (this.audioEl) this.audioEl.pause();
+    this.currentBeatKey = '';
     this.speechActive = false;
   }
 
   jumpScene(dir: -1 | 1): void {
-    this.cancelSpeech();
+    this.stopNarration();
     const target = this.sceneIdx() + dir;
     const b = this.bd().beats.find(x => x.sceneIdx === target);
     if (b) this.t.set(b.start + 0.001);
   }
 
   jumpToScene(si: number): void {
-    this.cancelSpeech();
+    this.stopNarration();
     const b = this.bd().beats.find(x => x.sceneIdx === si);
     if (b) this.t.set(b.start + 0.001);
   }
 
-  jumpToBeat(b: Beat): void { this.cancelSpeech(); this.t.set(b.start + 0.001); }
+  jumpToBeat(b: Beat): void { this.stopNarration(); this.t.set(b.start + 0.001); }
 
   onSeek(event: MouseEvent): void {
-    this.cancelSpeech();
+    this.stopNarration();
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
     const pct = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
     this.t.set(pct * this.bd().total);

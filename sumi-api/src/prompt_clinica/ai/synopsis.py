@@ -29,6 +29,7 @@ def generate_synopsis(
     genre: str,
     tone: str,
     character_names: list[str],
+    temperature: float = 0.8,
 ) -> str:
     chars = ", ".join(character_names) if character_names else "nenhum definido ainda"
 
@@ -45,7 +46,7 @@ def generate_synopsis(
                 Message(role="system", content=_SYSTEM),
                 Message(role="user", content=user_msg),
             ],
-            temperature=0.8,
+            temperature=temperature,
             max_tokens=3000,
         ))
         text = resp.content.strip()

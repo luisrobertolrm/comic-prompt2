@@ -112,11 +112,39 @@ def _get_char_names(project_id: uuid.UUID, db: Session) -> list[str]:
     return [c.name for c in chars]
 
 
-def _img_prompt(style: str, color_mode: str, base_prompt: str) -> str:
-    return (
-        f"{styles.prompt_fragment(style, color_mode)}, "
-        f"no text, no speech bubbles. {base_prompt}"
-    )
+# Traduz o enquadramento do quadro em instrução de câmera para o gerador de
+# imagem. Sem isso, o modelo ignora o plano escolhido e tende ao close de rosto.
+_FRAMING_PROMPT: dict[str, str] = {
+    "Plano geral": "wide establishing shot, full figure visible, subject small in the frame, lots of environment",
+    "Plano americano": "american shot, character framed from the knees up",
+    "Plano médio": "medium shot, character framed from the waist up",
+    "Close-up": "close-up shot of the face",
+    "Extreme close": "extreme close-up",
+    "Inserto": "insert shot, close-up of an object or detail, no face",
+    "Detalhe": "detail macro shot of a single element, no face",
+    "Plongée": "high-angle shot looking down on the scene",
+    "Contra-plongée": "low-angle shot looking up",
+}
+
+# Planos sem rosto: o retrato usado como subject_reference é um close de rosto e
+# puxa a câmera para perto. Nesses planos (geral/inserto/detalhe) omitimos a
+# referência para não contaminar a composição.
+_WIDE_FRAMINGS = frozenset({"Plano geral", "Inserto", "Detalhe"})
+
+# Plano que mostra a figura inteira: reforça corpo inteiro/distância para vencer
+# o viés de close. (Inserto/Detalhe são closes de objeto — não levam isso.)
+_FULLBODY_FRAMINGS = frozenset({"Plano geral"})
+
+
+def _img_prompt(style: str, color_mode: str, base_prompt: str, framing: str | None = None) -> str:
+    parts = [styles.prompt_fragment(style, color_mode)]
+    shot = _FRAMING_PROMPT.get(framing or "")
+    if shot:
+        parts.append(shot)
+    if framing in _FULLBODY_FRAMINGS:
+        parts.append("full body, whole figure visible, character framed at a distance")
+    parts.append("no text, no speech bubbles.")
+    return f"{', '.join(parts)} {base_prompt}"
 
 
 def _portrait_reference(image_url: str | None) -> str | None:
@@ -253,6 +281,7 @@ def generate(
         target_panels=target_panels,
         style=project.style,
         color_mode=project.color_mode,
+        temperature=project.panels_temperature,
     )
 
     templates: list[dict[str, Any]] = ai_data.get("panels") or []  # type: ignore[assignment]
@@ -297,8 +326,11 @@ def generate_image(panel_id: uuid.UUID, user: User, db: Session) -> PanelOut:
     project_style = (row.style if row else None) or styles.DEFAULT_STYLE
     project_color_mode = (row.color_mode if row else None) or styles.DEFAULT_COLOR_MODE
     base_prompt = panel.prompt or panel.caption or "manga panel"
-    img_prompt = _img_prompt(project_style, project_color_mode, base_prompt)
-    subject_ref = _subject_reference(panel.character_name, panel.project_id, db)
+    img_prompt = _img_prompt(project_style, project_color_mode, base_prompt, panel.framing)
+    subject_ref = (
+        None if panel.framing in _WIDE_FRAMINGS
+        else _subject_reference(panel.character_name, panel.project_id, db)
+    )
 
     try:
         resp = ai.image(ImageRequest(
@@ -364,6 +396,17 @@ def delete_panel(panel_id: uuid.UUID, user: User, db: Session) -> None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quadro não encontrado.")
     project_id = panel.project_id
     db.delete(panel)
+    db.commit()
+    _reindex(project_id, db)
+
+
+def delete_panels(project_id: uuid.UUID, panel_ids: list[uuid.UUID], user: User, db: Session) -> None:
+    _check_project(project_id, user, db)
+    if not panel_ids:
+        return
+    db.query(Panel).filter(
+        Panel.project_id == project_id, Panel.id.in_(panel_ids)
+    ).delete(synchronize_session=False)
     db.commit()
     _reindex(project_id, db)
 
@@ -468,13 +511,18 @@ def generate_all_images(project_id: uuid.UUID, user: User, db: Session) -> list[
     project_color_mode = project.color_mode or styles.DEFAULT_COLOR_MODE
 
     # Resolve as referências no thread principal — a Session não é thread-safe.
+    # Planos abertos não usam referência de rosto (ver _WIDE_FRAMINGS).
     refs: dict[uuid.UUID, list[str] | None] = {
-        p.id: _subject_reference(p.character_name, project_id, db) for p in panels
+        p.id: (
+            None if p.framing in _WIDE_FRAMINGS
+            else _subject_reference(p.character_name, project_id, db)
+        )
+        for p in panels
     }
 
     def _gen_one(panel: Panel) -> None:
         base_prompt = panel.prompt or panel.caption or "manga panel"
-        img_prompt = _img_prompt(project_style, project_color_mode, base_prompt)
+        img_prompt = _img_prompt(project_style, project_color_mode, base_prompt, panel.framing)
         try:
             resp = ai.image(ImageRequest(
                 prompt=img_prompt, size="1024x1024", quality="medium",
