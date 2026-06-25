@@ -113,6 +113,88 @@ def generate_roteiro(
         return {}
 
 
+_OUTLINE_SYSTEM = """\
+Você é roteirista de mangá. Recorte a sinopse em quadros sequenciais para um storyboard.
+
+Retorne APENAS um objeto JSON com:
+- "title": str — título criativo da HQ (2-6 palavras em português)
+- "panels": array, cada item com:
+  - "excerpt": str — trecho EXATO e literal da sinopse (cópia contínua, sem alterar palavras) que este quadro representa
+  - "character_name": str | null — nome do personagem principal em cena (null se nenhum)
+
+Os "excerpt" devem ser fatias literais e sequenciais que cobrem a sinopse em ordem, sem sobreposição.
+NÃO descreva a cena, NÃO gere prompt nem balões: só recorte a sinopse em quadros e indique o personagem.\
+"""
+
+
+def _outline_budget(n_panels: int) -> int:
+    # Outline só recorta a sinopse (excerpt + personagem), sem prompt/balões:
+    # saída pequena, mas o M3 ainda raciocina por quadro. Folga linear + teto.
+    return min(16000, 2500 + n_panels * 420)
+
+
+def generate_outline(
+    premise: str,
+    genre: str,
+    tone: str,
+    pages: int,
+    character_names: list[str],
+    target_panels: int | None = None,
+    temperature: float = 0.4,
+) -> dict[str, object]:
+    """Recorta a sinopse em quadros (só excerpt + personagem), sem conteúdo pesado.
+
+    Passo leve do storyboard: o conteúdo de cada quadro (framing, prompt, balões)
+    é gerado depois, individualmente, por `generate_panel`. Retorna
+    {"title": str, "panels": [{"excerpt", "character_name"}]} ou {} se falhar.
+    """
+    chars = ", ".join(character_names) if character_names else "nenhum definido ainda"
+
+    if target_panels is not None:
+        n = max(MIN_PANELS, min(MAX_PANELS, target_panels))
+        count_line = f"Gere exatamente {n} quadros."
+        budget = _outline_budget(n)
+    else:
+        hint = max(MIN_PANELS, pages * 3)
+        count_line = (
+            f"Escolha quantos quadros a história precisa, entre {MIN_PANELS} e {MAX_PANELS} "
+            f"(referência do autor: ~{hint})."
+        )
+        budget = _outline_budget(MAX_PANELS)
+
+    user_msg = (
+        f"Sinopse:\n{premise}\n\n"
+        f"Gênero: {genre} | Tom: {tone}\n"
+        f"{count_line}\n"
+        f"Personagens disponíveis: {chars}\n\n"
+        "Recorte a sinopse em quadros sequenciais. Retorne o objeto JSON."
+    )
+
+    try:
+        resp = ai.text(TextRequest(
+            messages=[
+                Message(role="system", content=_OUTLINE_SYSTEM),
+                Message(role="user", content=user_msg),
+            ],
+            temperature=temperature,
+            max_tokens=budget,
+            json_mode=True,
+        ))
+        data: dict[str, object] = json.loads(resp.content)
+        if "panels" not in data or not isinstance(data["panels"], list):
+            raise ValueError("JSON sem chave 'panels'")
+        data["panels"] = data["panels"][:MAX_PANELS]  # type: ignore[index]
+        logger.info(
+            "Outline gerado: %d quadros, %d tokens out.",
+            len(data["panels"]),  # type: ignore[arg-type]
+            resp.output_tokens,
+        )
+        return data
+    except Exception as exc:
+        logger.warning("generate_outline falhou (%s) — usando split determinístico.", exc)
+        return {}
+
+
 _PANEL_SYSTEM = """\
 Você é roteirista de mangá. Gere UM único quadro de storyboard para o trecho indicado da sinopse.
 

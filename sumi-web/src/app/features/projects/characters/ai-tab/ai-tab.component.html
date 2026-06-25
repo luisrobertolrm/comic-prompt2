@@ -1,0 +1,138 @@
+<div class="ai-grid">
+
+  <!-- Input -->
+  <div class="card">
+    <div class="field">
+      <label class="field-label">Nome do personagem</label>
+      <input class="input serif" placeholder="Ex: Aiko Tanaka"
+             [value]="name()" (input)="setField(name, $event)">
+    </div>
+    <div class="mode-toggle">
+      <button class="mode-btn" [class.mode-btn--active]="mode() === 'prompt'" (click)="mode.set('prompt')">Prompt livre</button>
+      <button class="mode-btn" [class.mode-btn--active]="mode() === 'attrs'" (click)="mode.set('attrs')">Por atributos</button>
+    </div>
+
+    @if (mode() === 'prompt') {
+      <div class="field">
+        <label class="field-label">Descreva o personagem em linguagem natural</label>
+        <p class="field-hint">Quanto mais detalhe visual, melhor a IA mantém coerência.</p>
+        <p class="field-hint" style="color:var(--accent,#b8860b)">
+          ⚠ Escreva de preferência em <strong>inglês</strong> — o modelo de imagem adere melhor a prompts em inglês, e atributos como gênero e tipo físico são respeitados com mais consistência.
+        </p>
+        <textarea class="textarea" rows="7"
+                  [value]="prompt()" (input)="setField(prompt, $event)"></textarea>
+      </div>
+    }
+
+    @if (mode() === 'attrs') {
+      <div class="field-row-3">
+        <div class="field">
+          <label class="field-label">Gênero</label>
+          <select class="input" [value]="gender()" (change)="setField(gender, $event)">
+            <option value="">Não especificado</option>
+            @for (g of genders; track g) {
+              <option [value]="g" [selected]="gender() === g">{{ g }}</option>
+            }
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">Faixa etária</label>
+          <select class="input" [value]="ageRange()" (change)="setField(ageRange, $event)">
+            <option value="">Não especificado</option>
+            @for (a of ageRanges; track a.id) {
+              <option [value]="a.id" [selected]="ageRange() === a.id">{{ a.label }}</option>
+            }
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">Etnia <span class="field-optional">(opcional)</span></label>
+          <select class="input" [value]="ethnicity()" (change)="setField(ethnicity, $event)">
+            <option value="">Não especificado</option>
+            @for (e of ethnicities; track e.id) {
+              <option [value]="e.id" [selected]="ethnicity() === e.id">{{ e.label }}</option>
+            }
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">Cabelo</label>
+        <input class="input" placeholder="Ex: cabelo preto longo preso em coque, mechas soltas onduladas"
+               [value]="hair()" (input)="setField(hair, $event)">
+      </div>
+      <div class="field">
+        <label class="field-label">Detalhes adicionais <span class="field-optional">(opcional)</span></label>
+        <p class="field-hint">Texto livre anexado ao final do prompt do estilo (olhos, acessórios, expressão…). De preferência em inglês.</p>
+        <textarea class="textarea" rows="3"
+                  [value]="extra()" (input)="setField(extra, $event)"></textarea>
+      </div>
+    }
+
+    <button class="btn-accent" style="width:100%;justify-content:center;margin-top:8px"
+            (click)="generate()" [disabled]="generating()">
+      {{ generating() ? 'Gerando 2 esboços…' : '✦ Gerar 2 retratos' }}
+    </button>
+    <p class="field-hint" style="text-align:center;margin-top:6px">
+      A IA propõe duas variações. Você confirma a que combina.
+    </p>
+  </div>
+
+  <!-- Candidatos -->
+  <div>
+    <p class="eyebrow" style="margin-bottom:12px">
+      {{ candidates().length ? 'ESCOLHA O RETRATO' : 'OS RETRATOS APARECEM AQUI' }}
+    </p>
+
+    @if (generating()) {
+      <div class="portraits-grid">
+        @for (i of [1,2]; track i) {
+          <div class="portrait-skeleton"></div>
+        }
+      </div>
+    }
+
+    @if (!generating() && error()) {
+      <div class="empty-hint" style="color:var(--error,#c0392b)">⚠ {{ error() }}</div>
+    }
+    @if (!generating() && !error() && candidates().length === 0) {
+      <div class="empty-hint">Escreva a descrição e clique em <strong>Gerar 2 retratos</strong>.</div>
+    }
+
+    @if (!generating() && candidates().length > 0) {
+      <div class="portraits-grid">
+        @for (c of candidates(); track c.id; let i = $index) {
+          <button class="portrait" [class.portrait--picked]="picked() === c.id"
+                  (click)="pickCandidate(c.id)">
+            <img class="portrait-img" [src]="c.imageUrl" [alt]="c.notes">
+            <div class="portrait-idx">VAR · {{ (i + 1).toString().padStart(2, '0') }}</div>
+            <div class="portrait-notes">{{ c.notes }}</div>
+            @if (picked() === c.id) {
+              <div class="portrait-check">✓</div>
+            }
+          </button>
+        }
+      </div>
+
+      <div class="ai-actions">
+        <button class="btn-ghost" (click)="generate()">↻ Gerar outras 2</button>
+        <span class="field-hint">Clique em um retrato para selecioná-lo.</span>
+      </div>
+
+      @if (picked()) {
+        <div class="card" style="margin-top:18px">
+          <p class="eyebrow" style="margin-bottom:10px">CONFIRMAR PERSONAGEM</p>
+          @if (!name().trim()) {
+            <p class="field-hint" style="color:var(--accent,#b8860b)">
+              ⚠ Informe o <strong>nome do personagem</strong> no topo para adicionar ao elenco.
+            </p>
+          }
+          <div style="display:flex;justify-content:flex-end;margin-top:14px">
+            <button class="btn-primary" (click)="confirm()"
+                    [disabled]="!name().trim() || saving()">
+              {{ saving() ? 'Salvando…' : '✓ Adicionar ao elenco' }}
+            </button>
+          </div>
+        </div>
+      }
+    }
+  </div>
+</div>

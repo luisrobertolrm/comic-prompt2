@@ -1,29 +1,23 @@
 import { Component, DestroyRef, computed, inject, OnInit, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { Observable, timer, switchMap, takeWhile } from 'rxjs';
-import { environment } from '../../../../environments/environment';
-import type { AttrOption, CharacterCreate, CharacterOut, CharacterUpdate, PortraitJob } from '../../../core/models/home.models';
+import type { AttrOption, CharacterOut, CharacterUpdate } from '../../../core/models/home.models';
 import { CharacterService } from '../../../core/services/character.service';
 import { ProjectDraftService } from '../../../core/services/project-draft.service';
 import { ProjectService } from '../../../core/services/project.service';
 import { StyleService, type StyleOption } from '../../../core/services/style.service';
 import { VoiceService, type SavedVoice } from '../../../core/services/voice.service';
+import { AiTabComponent } from './ai-tab/ai-tab.component';
+import { ManualTabComponent } from './manual-tab/manual-tab.component';
+import { AiCandidate, portraitStream, toCandidates } from './shared/portrait-stream';
 
 type Tab = 'library' | 'manual' | 'ai';
-type AiMode = 'prompt' | 'attrs';
 
 const GENDERS = ['Feminino', 'Masculino', 'Outro', 'Não especificado'];
-
-interface AiCandidate {
-  id: string;
-  imageUrl: string;
-  notes: string;
-}
 
 @Component({
   selector: 'app-characters-screen',
   standalone: true,
+  imports: [ManualTabComponent, AiTabComponent],
   templateUrl: './characters-screen.component.html',
   styleUrl: './characters-screen.component.scss',
 })
@@ -53,42 +47,6 @@ export class CharactersScreenComponent implements OnInit {
   styleLabel = computed(() =>
     this.styleCatalog().find(s => s.id === this.projectStyle())?.label ?? this.projectStyle()
   );
-
-  // Form manual
-  mName = signal('');
-  mRole = signal('Protagonista');
-  mGender = signal('');
-  mAge = signal('16');
-  mHeight = signal('');
-  mSummary = signal('');
-  mOutfit = signal('');
-  mTraits = signal('');
-  mNarratorVoiceId = signal<string | null>(null);
-  mSaving = signal(false);
-  mGenerating = signal(false);
-  mError = signal('');
-  mCandidates = signal<AiCandidate[]>([]);
-  mPicked = signal<string | null>(null);
-
-  manualComplete = computed(() =>
-    !!(this.mName().trim() && this.mRole().trim() && this.mGender() && this.mAge().trim()
-       && this.mHeight().trim() && this.mSummary().trim() && this.mOutfit().trim() && this.mTraits().trim())
-  );
-
-  // IA
-  aiMode = signal<AiMode>('prompt');
-  aiGender = signal('');
-  aiAgeRange = signal('');
-  aiEthnicity = signal('');
-  aiHair = signal('preto, longo');
-  aiExtra = signal('');
-  aiPrompt = signal('Uma garota tímida de 16 anos, olhos grandes castanho-âmbar com brilho, franja reta, sempre carrega um caderno. Veste uniforme escolar.');
-  aiGenerating = signal(false);
-  aiError = signal('');
-  aiCandidates = signal<AiCandidate[]>([]);
-  aiPicked = signal<string | null>(null);
-  aiName = signal('');
-  aiSaving = signal(false);
 
   // Modal de edição
   editing = signal<CharacterOut | null>(null);
@@ -147,6 +105,13 @@ export class CharactersScreenComponent implements OnInit {
     }
   }
 
+  /** Personagem criado por uma das abas (manual/ia): adiciona, seleciona e volta à biblioteca. */
+  onCharacterCreated(char: CharacterOut): void {
+    this.characters.update(c => [...c, char]);
+    this.toggleChar(char.id);
+    this.tab.set('library');
+  }
+
   deleteUnused(): void {
     const ids = this.deletableUnused().map(c => c.id);
     if (ids.length === 0 || this.deletingUnused()) return;
@@ -190,188 +155,8 @@ export class CharactersScreenComponent implements OnInit {
     return parts.join(' · ');
   }
 
-  // ── Manual form ──
-
   setField(sig: ReturnType<typeof signal<string>>, e: Event): void {
     sig.set((e.target as HTMLInputElement | HTMLTextAreaElement).value);
-  }
-
-  submitManual(): void {
-    if (!this.mName().trim() || this.mSaving()) return;
-    this.mSaving.set(true);
-    const picked = this.mCandidates().find(c => c.id === this.mPicked());
-    const req: CharacterCreate = {
-      name: this.mName(),
-      role: this.mRole() || 'Personagem',
-      gender: this.mGender() || undefined,
-      age: this.mAge() ? +this.mAge() : undefined,
-      height: this.mHeight() || undefined,
-      summary: this.mSummary() || undefined,
-      outfit: this.mOutfit() || undefined,
-      traits: this.mTraits().split(',').map(t => t.trim()).filter(Boolean),
-      style: this.projectStyle(),
-      narrator_voice_id: this.mNarratorVoiceId(),
-    };
-    if (picked) req.image_url = picked.imageUrl;
-    this.characterService.create(req).subscribe({
-      next: char => {
-        this.characters.update(c => [...c, char]);
-        this.toggleChar(char.id);
-        this.resetManual();
-        this.tab.set('library');
-        this.mSaving.set(false);
-      },
-      error: () => this.mSaving.set(false),
-    });
-  }
-
-  private resetManual(): void {
-    this.mName.set(''); this.mRole.set('Protagonista'); this.mGender.set('');
-    this.mAge.set('16'); this.mHeight.set('');
-    this.mSummary.set(''); this.mOutfit.set(''); this.mTraits.set('');
-    this.mNarratorVoiceId.set(null);
-    this.mCandidates.set([]); this.mPicked.set(null); this.mError.set('');
-  }
-
-  private buildManualPrompt(): string {
-    const v = (s: string) => s.trim();
-    return [
-      v(this.mName()),
-      v(this.mRole()),
-      v(this.mAge()) && `${v(this.mAge())} anos`,
-      v(this.mHeight()) && `altura ${v(this.mHeight())}`,
-      v(this.mSummary()),
-      v(this.mOutfit()) && `figurino: ${v(this.mOutfit())}`,
-      v(this.mTraits()) && `personalidade: ${v(this.mTraits())}`,
-    ].filter(Boolean).join(', ');
-  }
-
-  generateManual(): void {
-    if (!this.manualComplete() || this.mGenerating()) return;
-    this.mGenerating.set(true);
-    this.mError.set('');
-    this.mCandidates.set([]);
-    this.mPicked.set(null);
-    this.portraitStream({ gender: this.mGender(), extra: this.buildManualPrompt() }).subscribe({
-      next: job => {
-        if (job.status === 'done') {
-          this.mCandidates.set(this.toCandidates(job));
-          this.mGenerating.set(false);
-        } else if (job.status === 'error') {
-          this.mError.set(job.detail || 'Erro ao gerar retratos.');
-          this.mGenerating.set(false);
-        }
-      },
-      error: err => {
-        this.mGenerating.set(false);
-        this.mError.set(err?.error?.detail ?? err?.message ?? 'Erro ao gerar retratos.');
-      },
-    });
-  }
-
-  pickManualCandidate(id: string): void {
-    this.mPicked.set(this.mPicked() === id ? null : id);
-  }
-
-  // ── IA ──
-
-  private portraitStream(opts: {
-    gender?: string;
-    ageRange?: string;
-    ethnicity?: string;
-    hair?: string;
-    extra?: string;
-    prompt?: string;
-    raw?: boolean;
-  }): Observable<PortraitJob> {
-    return this.characterService.generatePortrait({
-      style: this.projectStyle(),
-      colorMode: this.projectColorMode(),
-      ...opts,
-    }).pipe(
-      switchMap(job =>
-        timer(0, 3000).pipe(
-          switchMap(() => this.characterService.pollPortraitJob(job.job_id)),
-          takeWhile(j => j.status !== 'done' && j.status !== 'error', true),
-        )
-      ),
-      takeUntilDestroyed(this.destroyRef),
-    );
-  }
-
-  private toCandidates(job: PortraitJob): AiCandidate[] {
-    return job.portraits.map(c => ({
-      id: c.id,
-      imageUrl: c.url.startsWith('http') ? c.url : `${environment.apiUrl}${c.url}`,
-      notes: c.notes,
-    }));
-  }
-
-  generateAi(): void {
-    this.aiGenerating.set(true);
-    this.aiError.set('');
-    this.aiCandidates.set([]);
-    this.aiPicked.set(null);
-
-    const isAttrs = this.aiMode() === 'attrs';
-    const stream = isAttrs
-      ? this.portraitStream({
-          gender: this.aiGender() || undefined,
-          ageRange: this.aiAgeRange() || undefined,
-          ethnicity: this.aiEthnicity() || undefined,
-          hair: this.aiHair() || undefined,
-          extra: this.aiExtra() || undefined,
-        })
-      : this.portraitStream({ prompt: this.aiPrompt(), raw: true });
-
-    stream.subscribe({
-      next: job => {
-        if (job.status === 'done') {
-          this.aiCandidates.set(this.toCandidates(job));
-          this.aiGenerating.set(false);
-        } else if (job.status === 'error') {
-          this.aiError.set(job.detail || 'Erro ao gerar retratos.');
-          this.aiGenerating.set(false);
-        }
-      },
-      error: err => {
-        this.aiGenerating.set(false);
-        const msg = err?.error?.detail ?? err?.message ?? 'Erro ao gerar retratos.';
-        this.aiError.set(msg);
-      },
-    });
-  }
-
-  pickCandidate(id: string): void {
-    this.aiPicked.set(this.aiPicked() === id ? null : id);
-  }
-
-  confirmAi(): void {
-    if (!this.aiPicked() || !this.aiName().trim() || this.aiSaving()) return;
-    const picked = this.aiCandidates().find(c => c.id === this.aiPicked());
-    this.aiSaving.set(true);
-    const req: CharacterCreate = {
-      name: this.aiName(),
-      role: 'Personagem',
-      gender: this.aiGender() || undefined,
-      ethnicity: this.aiEthnicity() || undefined,
-      summary: this.aiMode() === 'prompt'
-        ? this.aiPrompt()
-        : [this.aiHair(), this.aiExtra()].filter(v => v.trim()).join(', '),
-      traits: ['gerado por IA'],
-      style: this.projectStyle(),
-      image_url: picked?.imageUrl,
-    };
-    this.characterService.create(req).subscribe({
-      next: char => {
-        this.characters.update(c => [...c, char]);
-        this.toggleChar(char.id);
-        this.aiCandidates.set([]); this.aiPicked.set(null); this.aiName.set('');
-        this.tab.set('library');
-        this.aiSaving.set(false);
-      },
-      error: () => this.aiSaving.set(false),
-    });
   }
 
   // ── Modal de edição ──
@@ -431,10 +216,15 @@ export class CharactersScreenComponent implements OnInit {
   private runPortraitRegen(): void {
     this.eCandidates.set([]);
     this.ePicked.set(null);
-    this.portraitStream({ gender: this.eGender(), extra: this.eSummary() }).subscribe({
+    portraitStream(this.characterService, this.destroyRef, {
+      style: this.projectStyle(),
+      colorMode: this.projectColorMode(),
+      gender: this.eGender(),
+      extra: this.eSummary(),
+    }).subscribe({
       next: job => {
         if (job.status === 'done') {
-          this.eCandidates.set(this.toCandidates(job));
+          this.eCandidates.set(toCandidates(job));
           this.eGenerating.set(false);
         } else if (job.status === 'error') {
           this.eError.set(job.detail || 'Erro ao gerar retratos.');

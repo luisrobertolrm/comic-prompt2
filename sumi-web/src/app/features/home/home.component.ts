@@ -48,7 +48,11 @@ export class HomeComponent implements OnInit {
     });
   }
 
-  goNewProject(): void { this.draft.projectId.set(null); void this.router.navigate(['/projects', 'new']); }
+  goNewProject(): void {
+    this.draft.projectId.set(null);
+    this.draft.currentProjectTitle.set('');
+    void this.router.navigate(['/projects', 'new']);
+  }
   goLibrary(): void { void this.router.navigate(['/library']); }
 
   openProject(p: ProjectOut): void {

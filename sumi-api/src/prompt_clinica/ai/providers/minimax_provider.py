@@ -50,11 +50,15 @@ class MinimaxProvider:
     def image(self, req: ImageRequest) -> ImageResponse:
         # Os consumidores (character/panel) decodificam b64_json para salvar no
         # storage, então pedimos base64 em vez da URL temporária do provider.
+        # image-01 aceita apenas UMA referência ("image_reference must be one");
+        # multi-referência é capacidade do Seedream. Usa só a primeira.
+        refs = req.subject_reference[:1] if req.subject_reference else None
         result = self._image.generate(
             prompt=req.prompt,
             n=req.n,
+            aspect_ratio=req.aspect_ratio,
             response_format="base64",
-            subject_reference=req.subject_reference,
+            subject_reference=refs,
         )
         return ImageResponse(
             model=result.model,

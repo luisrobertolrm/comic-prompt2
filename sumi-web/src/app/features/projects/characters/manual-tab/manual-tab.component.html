@@ -1,0 +1,137 @@
+<div class="manual-grid">
+  <div class="card">
+    <div class="field-row-3">
+      <div class="field">
+        <label class="field-label">Nome do personagem</label>
+        <input class="input serif" placeholder="Ex: Aiko Tanaka"
+               [value]="name()" (input)="setField(name, $event)">
+      </div>
+      <div class="field">
+        <label class="field-label">Gênero</label>
+        <select class="input" [value]="gender()" (change)="setField(gender, $event)">
+          <option value="" disabled [selected]="!gender()">Selecione…</option>
+          @for (g of genders; track g) {
+            <option [value]="g" [selected]="gender() === g">{{ g }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <div class="field-row-3">
+      <div class="field">
+        <label class="field-label">Papel</label>
+        <input class="input" placeholder="Protagonista"
+               [value]="role()" (input)="setField(role, $event)">
+      </div>
+      <div class="field">
+        <label class="field-label">Idade</label>
+        <input class="input" type="number"
+               [value]="age()" (input)="setField(age, $event)">
+      </div>
+      <div class="field">
+        <label class="field-label">Altura</label>
+        <input class="input" placeholder="1.60 m"
+               [value]="height()" (input)="setField(height, $event)">
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Descrição visual</label>
+      <p class="field-hint">Cabelo, olhos, expressão — a IA usa para manter coerência entre quadros.</p>
+      <textarea class="textarea" rows="3"
+                placeholder="Olhos grandes castanho-âmbar, franja reta, sempre carrega um caderno surrado…"
+                [value]="summary()" (input)="setField(summary, $event)"></textarea>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Figurino padrão</label>
+      <input class="input" placeholder="Uniforme escolar, meia-calça preta"
+             [value]="outfit()" (input)="setField(outfit, $event)">
+    </div>
+
+    <div class="field">
+      <label class="field-label">Traços de personalidade</label>
+      <p class="field-hint">Separe por vírgula. A IA usa para escrever os balões.</p>
+      <input class="input" placeholder="curiosa, sarcástica, leal"
+             [value]="traits()" (input)="setField(traits, $event)">
+    </div>
+
+    <div class="field">
+      <label class="field-label">Voz do personagem</label>
+      <div class="voice-list">
+        <button class="voice-option" [class.voice-option--active]="!narratorVoiceId()"
+                (click)="narratorVoiceId.set(null)">
+          <span class="voice-name">— Sem voz —</span>
+        </button>
+        @for (v of voices; track v.id) {
+          <button class="voice-option" [class.voice-option--active]="narratorVoiceId() === v.id"
+                  (click)="narratorVoiceId.set(v.id)">
+            <span class="voice-name">{{ v.name }}</span>
+            @if (voiceMeta(v)) {
+              <span class="voice-meta">{{ voiceMeta(v) }}</span>
+            }
+            @if (v.details) {
+              <span class="voice-detail">{{ v.details }}</span>
+            }
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="card preview-card">
+    <p class="eyebrow" style="margin-bottom: 12px">PRÉVIA</p>
+    <div class="preview-body">
+      <div class="avatar avatar--lg">{{ name() ? initial(name()) : '?' }}</div>
+      <div class="preview-name">{{ name() || 'Novo personagem' }}</div>
+      <div class="preview-sub">
+        {{ role() || '—' }}{{ age() ? ' · ' + age() + ' anos' : '' }}
+      </div>
+    </div>
+    <div class="divider"></div>
+
+    <button class="btn-accent" style="width:100%;justify-content:center;margin-top:8px"
+            (click)="generate()" [disabled]="!complete() || generating()">
+      {{ generating() ? 'Gerando 2 esboços…' : '✦ Gerar retrato' }}
+    </button>
+    @if (!complete()) {
+      <p class="field-hint" style="text-align:center;margin-top:6px">Preencha todos os campos para gerar o retrato.</p>
+    }
+
+    <div class="divider"></div>
+    <button class="btn-primary" style="width:100%;justify-content:center"
+            (click)="submit()" [disabled]="!name().trim() || saving()">
+      {{ saving() ? 'Salvando…' : '✓ Adicionar ao elenco' }}
+    </button>
+    <p class="field-hint" style="text-align:center;margin-top:8px">
+      {{ picked() ? 'O retrato selecionado será salvo.' : 'Imagem é opcional — pode salvar sem.' }}
+    </p>
+  </div>
+</div>
+
+@if (generating() || candidates().length > 0 || error()) {
+  <div class="manual-portraits">
+    <p class="eyebrow" style="margin-bottom:10px">
+      {{ candidates().length ? 'ESCOLHA O RETRATO' : 'GERANDO RETRATOS' }}
+    </p>
+    @if (generating()) {
+      <div class="portraits-grid">
+        @for (i of [1,2]; track i) { <div class="portrait-skeleton"></div> }
+      </div>
+    } @else if (candidates().length > 0) {
+      <div class="portraits-grid">
+        @for (c of candidates(); track c.id; let i = $index) {
+          <button class="portrait" [class.portrait--picked]="picked() === c.id"
+                  (click)="pickCandidate(c.id)">
+            <img class="portrait-img" [src]="c.imageUrl" [alt]="c.notes">
+            <div class="portrait-idx">VAR · {{ (i + 1).toString().padStart(2, '0') }}</div>
+            @if (picked() === c.id) { <div class="portrait-check">✓</div> }
+          </button>
+        }
+      </div>
+    }
+    @if (error()) {
+      <p class="field-hint" style="color:var(--error,#c0392b)">⚠ {{ error() }}</p>
+    }
+  </div>
+}

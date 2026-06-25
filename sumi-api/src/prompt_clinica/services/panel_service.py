@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import io
 import json
 import logging
 import re
@@ -8,6 +9,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
+from PIL import Image, ImageDraw, ImageFont
 from character import Character
 from fastapi import HTTPException, status
 from panel import Panel
@@ -18,7 +20,7 @@ from sqlalchemy.orm import Session
 import prompt_clinica._paths  # noqa: F401
 from prompt_clinica import styles
 from prompt_clinica.ai import ImageRequest, Message, TextRequest, ai
-from prompt_clinica.ai.roteiro import generate_panel, generate_roteiro
+from prompt_clinica.ai.roteiro import generate_outline, generate_panel
 
 _BUBBLES_SYSTEM = """\
 Você é roteirista de mangá shojo. Gere balões de diálogo para um quadro específico.
@@ -47,48 +49,6 @@ from prompt_clinica.schemas.panel import (
 from prompt_clinica.storage import get_storage
 
 logger = logging.getLogger(__name__)
-
-_MOCK_TEMPLATES = [
-    {"label": "Estabelecimento", "aspect": "16-9", "tone": "dots",
-     "caption": "Plano geral de abertura. Ambiente estabelecido.",
-     "framing": "Plano geral",
-     "prompt": "Wide establishing shot of a Japanese school setting, soft light, manga screentone, no characters.",
-     "character_name": None, "bubbles": []},
-    {"label": "Reação", "aspect": "4-3", "tone": "dots",
-     "caption": "Close no protagonista. Expressão de surpresa.",
-     "framing": "Close-up",
-     "prompt": "Close-up of a shojo manga character with wide expressive eyes, surprised expression, blurred background.",
-     "character_name": None, "bubbles": [{"text": "...", "kind": "say", "side": "left", "x": 8, "y": 8}]},
-    {"label": "Reveal", "aspect": "1-1", "tone": "diag",
-     "caption": "Segundo personagem aparece em cena. Postura serena.",
-     "framing": "Plano médio",
-     "prompt": "Manga character standing calmly, diagonal screentone background, gentle wind.",
-     "character_name": None, "bubbles": [{"text": "Você estava me esperando?", "kind": "say", "side": "right", "x": 6, "y": 10}]},
-    {"label": "Confronto interno", "aspect": "3-4", "tone": "dense",
-     "caption": "Protagonista hesitante. Conflito interno visível.",
-     "framing": "Plano americano",
-     "prompt": "Shojo manga panel, character looking conflicted, dense dot screentone background, emotional expression.",
-     "character_name": None,
-     "bubbles": [
-         {"text": "Eu não sei o que dizer.", "kind": "say", "side": "left", "x": 8, "y": 8},
-         {"text": "(Por que justo agora?)", "kind": "thought", "side": "left", "x": 8, "y": 60},
-     ]},
-    {"label": "Beat de tensão", "aspect": "16-9", "tone": "dots",
-     "caption": "Inserto. Detalhe simbólico em primeiro plano.",
-     "framing": "Inserto",
-     "prompt": "Close-up detail of symbolic object, manga screentone, shallow depth of field, petal falling.",
-     "character_name": None, "bubbles": []},
-    {"label": "Resposta", "aspect": "4-3", "tone": "dots",
-     "caption": "Personagem responde com expressão suave.",
-     "framing": "Plano médio",
-     "prompt": "Manga character with soft smile, warm golden light, gentle screentone.",
-     "character_name": None, "bubbles": [{"text": "Tudo bem se demorar.", "kind": "say", "side": "right", "x": 6, "y": 10}]},
-    {"label": "Cliffhanger", "aspect": "16-9", "tone": "diag",
-     "caption": "Fechamento emocional. Elemento que gera suspense.",
-     "framing": "Detalhe",
-     "prompt": "Dramatic closing manga panel, diagonal screentone, emotional atmosphere, symbolic detail.",
-     "character_name": None, "bubbles": []},
-]
 
 
 def _check_project(project_id: uuid.UUID, user: User, db: Session) -> Project:
@@ -172,22 +132,79 @@ def _portrait_reference(image_url: str | None) -> str | None:
     return f"data:{mime};base64,{base64.b64encode(data).decode()}"
 
 
-def _subject_reference(
-    character_name: str | None, project_id: uuid.UUID, db: Session
-) -> list[str] | None:
-    """Retrato do personagem em cena como referência visual (consistência entre painéis)."""
-    if not character_name:
-        return None
-    char: Character | None = (
+_MAX_PANEL_REFS = 10  # limite de imagens de referência por geração (Seedream)
+
+
+def _label_portrait(data_uri: str, name: str) -> str:
+    """Desenha o nome do personagem numa faixa abaixo do retrato.
+
+    Recebe e devolve um data-URI base64. O rótulo deixa o modelo distinguir
+    cada referência quando vários personagens vão juntos. URLs externas (sem
+    bytes em mãos) voltam sem alteração.
+    """
+    if not data_uri.startswith("data:"):
+        return data_uri
+    try:
+        b64 = data_uri.split(",", 1)[1]
+        img = Image.open(io.BytesIO(base64.b64decode(b64))).convert("RGB")
+    except Exception:
+        return data_uri
+
+    bar_h = max(48, img.height // 12)
+    canvas = Image.new("RGB", (img.width, img.height + bar_h), "black")
+    canvas.paste(img, (0, 0))
+
+    draw = ImageDraw.Draw(canvas)
+    font = ImageFont.load_default(size=int(bar_h * 0.6))
+    text = name[:40]
+    box = draw.textbbox((0, 0), text, font=font)
+    tw, th = box[2] - box[0], box[3] - box[1]
+    draw.text(
+        ((img.width - tw) / 2 - box[0], img.height + (bar_h - th) / 2 - box[1]),
+        text, fill="white", font=font,
+    )
+
+    buf = io.BytesIO()
+    canvas.save(buf, format="PNG")
+    return f"data:image/png;base64,{base64.b64encode(buf.getvalue()).decode()}"
+
+
+def _project_character_refs(
+    project_id: uuid.UUID, db: Session
+) -> list[tuple[str, str]]:
+    """Retrato rotulado de cada personagem do projeto que tem imagem.
+
+    Devolve (nome, data-URI rotulado). A consistência entre painéis vem de
+    passar esses retratos como referência.
+    """
+    chars = (
         db.query(Character)
         .join(ProjectCharacter, ProjectCharacter.character_id == Character.id)
-        .filter(ProjectCharacter.project_id == project_id, Character.name == character_name)
-        .first()
+        .filter(ProjectCharacter.project_id == project_id)
+        .order_by(Character.name)
+        .all()
     )
-    if char is None:
-        return None
-    ref = _portrait_reference(char.image_url)
-    return [ref] if ref else None
+    out: list[tuple[str, str]] = []
+    for c in chars:
+        ref = _portrait_reference(c.image_url)
+        if ref:
+            out.append((c.name, _label_portrait(ref, c.name)))
+    return out
+
+
+def _select_references(
+    panel: Panel, refs: list[tuple[str, str]]
+) -> list[str] | None:
+    """Decide quais imagens de personagem entram como referência DESTE quadro.
+
+    Primeira implementação: todos os personagens do projeto, com o personagem
+    do quadro em primeiro — providers de referência única (MiniMax) usam só a
+    primeira, então ela precisa ser a do quadro.
+    Implementação futura: filtrar `refs` pelos personagens presentes no quadro.
+    """
+    ordered = sorted(refs, key=lambda r: r[0] != panel.character_name)
+    selected = [data_uri for _name, data_uri in ordered[:_MAX_PANEL_REFS]]
+    return selected or None
 
 
 def _locate_excerpt(source: str, excerpt: str) -> tuple[int | None, int | None]:
@@ -239,21 +256,6 @@ def _apply_panel_fields(panel: Panel, data: dict[str, Any]) -> None:
     panel.bubbles_json = _validated_bubbles(data)
 
 
-def _panel_from_dict(
-    data: dict[str, Any], project_id: uuid.UUID, index: int, source_text: str | None = None
-) -> Panel:
-    """Cria um objeto Panel a partir de um dict (AI ou mock)."""
-    synopsis_start, synopsis_end = (
-        _locate_excerpt(source_text, str(data.get("excerpt", "")))
-        if source_text else (None, None)
-    )
-    panel = Panel(project_id=project_id, index_order=index)
-    _apply_panel_fields(panel, data)
-    panel.synopsis_start = synopsis_start
-    panel.synopsis_end = synopsis_end
-    return panel
-
-
 # ── CRUD público ────────────────────────────────────────────────────
 
 def list_panels(project_id: uuid.UUID, user: User, db: Session) -> list[PanelOut]:
@@ -267,43 +269,79 @@ def list_panels(project_id: uuid.UUID, user: User, db: Session) -> list[PanelOut
     return [panel_to_out(p) for p in panels]
 
 
+def _split_outline(source_text: str, n: int) -> list[dict[str, Any]]:
+    """Fallback sem IA: recorta a sinopse em N trechos sequenciais por frases."""
+    sentences = [s for s in re.split(r"(?<=[.!?])\s+", (source_text or "").strip()) if s]
+    if not sentences:
+        return [{"excerpt": "", "character_name": None} for _ in range(n)]
+    n = max(1, min(n, len(sentences)))
+    per = len(sentences) / n
+    items: list[dict[str, Any]] = []
+    for i in range(n):
+        chunk = sentences[round(i * per):round((i + 1) * per)]
+        items.append({"excerpt": " ".join(chunk), "character_name": None})
+    return items
+
+
+def _outline_slot(
+    item: dict[str, Any], project_id: uuid.UUID, index: int, source_text: str | None
+) -> Panel:
+    """Cria um quadro 'pending' só com o trecho ancorado — sem conteúdo pesado.
+
+    Framing/prompt/caption/balões são preenchidos depois, individualmente, por
+    generate_one (geração assíncrona quadro a quadro no front).
+    """
+    s, e = (
+        _locate_excerpt(source_text, str(item.get("excerpt", "")))
+        if source_text else (None, None)
+    )
+    return Panel(
+        project_id=project_id, index_order=index,
+        label=f"Quadro {index}", aspect="4-3", tone="dots",
+        character_name=str(item["character_name"]) if item.get("character_name") else None,
+        caption="", framing="Plano médio", prompt="", bubbles_json="[]",
+        status="pending", synopsis_start=s, synopsis_end=e,
+    )
+
+
 def generate(
     project_id: uuid.UUID,
     user: User,
     db: Session,
     target_panels: int | None = None,
 ) -> list[PanelOut]:
+    """Passo 1 do storyboard: recorta a sinopse em quadros 'pending' e retorna rápido.
+
+    O conteúdo de cada quadro é gerado depois, individualmente, via generate_one
+    (o front dispara uma chamada assíncrona por quadro).
+    """
     project = _check_project(project_id, user, db)
     char_names = _get_char_names(project_id, db)
     source_text = project.synopsis or project.premise or project.title
 
-    # Chama IA (retorna {} em caso de falha). Usa a sinopse trabalhada quando existe.
-    ai_data = generate_roteiro(
+    outline = generate_outline(
         premise=source_text,
         genre=project.genre,
         tone=project.tone,
         pages=project.pages,
         character_names=char_names,
         target_panels=target_panels,
-        style=project.style,
-        color_mode=project.color_mode,
         temperature=project.panels_temperature,
     )
 
-    templates: list[dict[str, Any]] = ai_data.get("panels") or []  # type: ignore[assignment]
-    if not templates:
-        templates = list(_MOCK_TEMPLATES)  # type: ignore[assignment]
+    items: list[dict[str, Any]] = outline.get("panels") or []  # type: ignore[assignment]
+    if not items:
+        n = target_panels or max(5, project.pages * 3)
+        items = _split_outline(source_text or "", n)
 
-    # Atualiza título se IA retornou um
-    ai_title: str = str(ai_data.get("title", "")).strip()
+    ai_title: str = str(outline.get("title", "")).strip()
     if ai_title:
         project.title = ai_title[:200]
 
-    # Apaga painéis anteriores e cria os novos
     db.query(Panel).filter(Panel.project_id == project_id).delete()
     panels: list[Panel] = []
-    for i, tpl in enumerate(templates, start=1):
-        p = _panel_from_dict(tpl, project_id, i, source_text=source_text)
+    for i, item in enumerate(items, start=1):
+        p = _outline_slot(item, project_id, i, source_text=source_text)
         db.add(p)
         panels.append(p)
 
@@ -383,12 +421,13 @@ def generate_image(panel_id: uuid.UUID, user: User, db: Session) -> PanelOut:
     img_prompt = _img_prompt(project_style, project_color_mode, base_prompt, panel.framing)
     subject_ref = (
         None if panel.framing in _WIDE_FRAMINGS
-        else _subject_reference(panel.character_name, panel.project_id, db)
+        else _select_references(panel, _project_character_refs(panel.project_id, db))
     )
 
     try:
         resp = ai.image(ImageRequest(
-            prompt=img_prompt, size="1024x1024", quality="medium", subject_reference=subject_ref,
+            prompt=img_prompt, size="1024x1024", quality="medium", aspect_ratio="16:9",
+            subject_reference=subject_ref,
         ))
     except Exception as exc:
         raise HTTPException(
@@ -565,11 +604,13 @@ def generate_all_images(project_id: uuid.UUID, user: User, db: Session) -> list[
     project_color_mode = project.color_mode or styles.DEFAULT_COLOR_MODE
 
     # Resolve as referências no thread principal — a Session não é thread-safe.
+    # Os retratos rotulados são iguais para todo o projeto: monta uma vez.
     # Planos abertos não usam referência de rosto (ver _WIDE_FRAMINGS).
+    char_refs = _project_character_refs(project_id, db)
     refs: dict[uuid.UUID, list[str] | None] = {
         p.id: (
             None if p.framing in _WIDE_FRAMINGS
-            else _subject_reference(p.character_name, project_id, db)
+            else _select_references(p, char_refs)
         )
         for p in panels
     }
@@ -579,7 +620,7 @@ def generate_all_images(project_id: uuid.UUID, user: User, db: Session) -> list[
         img_prompt = _img_prompt(project_style, project_color_mode, base_prompt, panel.framing)
         try:
             resp = ai.image(ImageRequest(
-                prompt=img_prompt, size="1024x1024", quality="medium",
+                prompt=img_prompt, size="1024x1024", quality="medium", aspect_ratio="16:9",
                 subject_reference=refs[panel.id],
             ))
             if resp.b64_json:

@@ -120,7 +120,7 @@
                 </div>
 
                 <!-- Lower-third caption (dentro do quadro, limitado à imagem) -->
-                @if (beat() && beat()!.text) {
+                @if (showNarration() && beat() && beat()!.text) {
                   <div class="lower-third">
                     @if (beat()!.speaker !== 'Narrador' && beat()!.speaker !== '—') {
                       <div class="lt-avatar">{{ initial(beat()!.speaker) }}</div>
@@ -294,6 +294,13 @@
           <div class="setting-row">
             <span class="setting-label">Mostrar balões</span>
             <button class="toggle-btn" [class.toggle-btn--on]="showBubbles()" (click)="showBubbles.update(v => !v)">
+              <span class="toggle-knob"></span>
+            </button>
+          </div>
+
+          <div class="setting-row">
+            <span class="setting-label">Mostrar narração</span>
+            <button class="toggle-btn" [class.toggle-btn--on]="showNarration()" (click)="showNarration.update(v => !v)">
               <span class="toggle-knob"></span>
             </button>
           </div>

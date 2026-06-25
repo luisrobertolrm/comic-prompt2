@@ -141,6 +141,7 @@ export class VideoComponent implements OnInit, OnDestroy {
   t          = signal(0);
   playing    = signal(false);
   showBubbles = signal(true);
+  showNarration = signal(false);
   transition  = signal('fade');
   speed       = signal(1);
   music       = signal(true);

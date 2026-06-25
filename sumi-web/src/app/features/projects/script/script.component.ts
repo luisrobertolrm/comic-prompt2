@@ -41,6 +41,7 @@ export class ScriptComponent implements OnInit {
   targetPanels = signal<number | null>(null);
 
   private readonly IMAGE_CONCURRENCY = 3;
+  private readonly CONTENT_CONCURRENCY = 3;
   skeletons = [1, 2, 3, 4, 5, 6, 7];
   generatingSynopsis = signal(false);
   selectedTrecho = signal<SynopsisSelection | null>(null);
@@ -66,6 +67,8 @@ export class ScriptComponent implements OnInit {
       this.draft.currentProjectTitle.set(p.title);
       this.synopsisTemperature.set(p.synopsis_temperature);
       this.panelsTemperature.set(p.panels_temperature);
+      // Sugere ~3 quadros por página (limites do campo) e informa ao modelo.
+      this.targetPanels.set(Math.min(30, Math.max(5, p.pages * 3)));
     } });
     this.styleService.catalog().subscribe({
       next: c => { this.styles.set(c.styles); this.colorModes.set(c.color_modes); },
@@ -88,15 +91,38 @@ export class ScriptComponent implements OnInit {
   }
 
   runGenerate(): void {
+    if (this.generating()) return;
     this.generating.set(true);
     this.panels.set([]);
+    // Passo 1: recorta a sinopse em quadros 'pending' (retorno rápido).
     this.panelService.generate(this.projectId(), this.targetPanels()).subscribe({
-      next: panels => {
-        this.panels.set(panels);
-        this.targetPanels.set(panels.length);
+      next: slots => {
+        this.panels.set(slots);
+        this.targetPanels.set(slots.length);
         this.generating.set(false);
+        this.fillPanelsContent(slots);
       },
       error: () => this.generating.set(false),
+    });
+  }
+
+  /** Passo 2: gera o conteúdo de cada quadro individualmente, em paralelo. */
+  private fillPanelsContent(slots: PanelOut[]): void {
+    if (slots.length === 0) return;
+    this.generatingContentIds.set(new Set(slots.map(p => p.id)));
+    from(slots).pipe(
+      mergeMap(
+        panel => this.panelService.generateContent(panel.id).pipe(
+          map(updated => ({ id: panel.id, updated: updated as PanelOut | null })),
+          catchError(() => of({ id: panel.id, updated: null as PanelOut | null })),
+        ),
+        this.CONTENT_CONCURRENCY,
+      ),
+    ).subscribe(({ id, updated }) => {
+      if (updated) {
+        this.panels.update(list => list.map(p => p.id === updated.id ? updated : p));
+      }
+      this.generatingContentIds.update(s => { const n = new Set(s); n.delete(id); return n; });
     });
   }
 

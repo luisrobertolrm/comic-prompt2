@@ -246,6 +246,10 @@ h1 { font-family: var(--serif); font-size: 26px; line-height: 1.1; margin: 6px 0
   font-size: 15px;
   color: var(--ink);
   line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
   &--narration { font-family: var(--sans); font-size: 13px; }
   &--thought { font-style: italic; }
 }
