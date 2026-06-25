@@ -16,23 +16,31 @@ from prompt_clinica.ai.types import (
     TextResponse,
 )
 
-# Seedream usa `size` como dimensão concreta (1K~4K). Mapeamos as proporções
-# que o app pede para um lado ~2K mantendo o aspecto.
+# Dimensões 2K recomendadas pelo Seedream por razão de aspecto (ver tabela no
+# README). Enviamos a dimensão concreta — e não o tier "2K" — para preservar a
+# proporção (retrato 1:1, painel 16:9); o tier sozinho cai em 3:2. A API NÃO
+# suporta 1K, então o `size` genérico do app (1024x1024) é ignorado aqui.
 _ASPECT_TO_SIZE = {
-    "16:9": "2048x1152",
-    "9:16": "1152x2048",
-    "4:3": "2048x1536",
-    "3:4": "1536x2048",
     "1:1": "2048x2048",
+    "3:4": "1728x2304",
+    "4:3": "2304x1728",
+    "16:9": "2848x1600",
+    "9:16": "1600x2848",
+    "3:2": "2496x1664",
+    "2:3": "1664x2496",
+    "21:9": "3136x1344",
 }
+
+# 2K quadrado: fallback para retratos (sem aspect) e razões fora da tabela.
+_DEFAULT_SIZE = "2048x2048"
 
 _MAX_REFERENCE_IMAGES = 10  # limite do Seedream 4.0
 
 
 def _resolve_size(req: ImageRequest) -> str:
     if req.aspect_ratio:
-        return _ASPECT_TO_SIZE.get(req.aspect_ratio, req.aspect_ratio)
-    return req.size or "2048x2048"
+        return _ASPECT_TO_SIZE.get(req.aspect_ratio, _DEFAULT_SIZE)
+    return _DEFAULT_SIZE
 
 
 class SeedreamProvider:

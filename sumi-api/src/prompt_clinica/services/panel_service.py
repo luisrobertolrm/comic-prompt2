@@ -269,20 +269,6 @@ def list_panels(project_id: uuid.UUID, user: User, db: Session) -> list[PanelOut
     return [panel_to_out(p) for p in panels]
 
 
-def _split_outline(source_text: str, n: int) -> list[dict[str, Any]]:
-    """Fallback sem IA: recorta a sinopse em N trechos sequenciais por frases."""
-    sentences = [s for s in re.split(r"(?<=[.!?])\s+", (source_text or "").strip()) if s]
-    if not sentences:
-        return [{"excerpt": "", "character_name": None} for _ in range(n)]
-    n = max(1, min(n, len(sentences)))
-    per = len(sentences) / n
-    items: list[dict[str, Any]] = []
-    for i in range(n):
-        chunk = sentences[round(i * per):round((i + 1) * per)]
-        items.append({"excerpt": " ".join(chunk), "character_name": None})
-    return items
-
-
 def _outline_slot(
     item: dict[str, Any], project_id: uuid.UUID, index: int, source_text: str | None
 ) -> Panel:
@@ -310,10 +296,12 @@ def generate(
     db: Session,
     target_panels: int | None = None,
 ) -> list[PanelOut]:
-    """Passo 1 do storyboard: recorta a sinopse em quadros 'pending' e retorna rápido.
+    """Passo 1 do storyboard: a IA divide o roteiro inteiro em quadros 'pending'.
 
-    O conteúdo de cada quadro é gerado depois, individualmente, via generate_one
-    (o front dispara uma chamada assíncrona por quadro).
+    Envia o texto completo do roteiro à IA, que decide a divisão e a quantidade
+    (em torno de target_panels). O conteúdo de cada quadro é gerado depois,
+    individualmente, via generate_one (chamada assíncrona por quadro no front).
+    Levanta 503 se a IA não retornar quadros — não há recorte determinístico.
     """
     project = _check_project(project_id, user, db)
     char_names = _get_char_names(project_id, db)
@@ -331,12 +319,10 @@ def generate(
 
     items: list[dict[str, Any]] = outline.get("panels") or []  # type: ignore[assignment]
     if not items:
-        n = target_panels or max(5, project.pages * 3)
-        items = _split_outline(source_text or "", n)
-
-    ai_title: str = str(outline.get("title", "")).strip()
-    if ai_title:
-        project.title = ai_title[:200]
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Não foi possível gerar os quadros agora. Tente novamente.",
+        )
 
     db.query(Panel).filter(Panel.project_id == project_id).delete()
     panels: list[Panel] = []

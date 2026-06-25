@@ -117,7 +117,6 @@ _OUTLINE_SYSTEM = """\
 Você é roteirista de mangá. Recorte a sinopse em quadros sequenciais para um storyboard.
 
 Retorne APENAS um objeto JSON com:
-- "title": str — título criativo da HQ (2-6 palavras em português)
 - "panels": array, cada item com:
   - "excerpt": str — trecho EXATO e literal da sinopse (cópia contínua, sem alterar palavras) que este quadro representa
   - "character_name": str | null — nome do personagem principal em cena (null se nenhum)
@@ -146,14 +145,20 @@ def generate_outline(
 
     Passo leve do storyboard: o conteúdo de cada quadro (framing, prompt, balões)
     é gerado depois, individualmente, por `generate_panel`. Retorna
-    {"title": str, "panels": [{"excerpt", "character_name"}]} ou {} se falhar.
+    {"panels": [{"excerpt", "character_name"}]} ou {} se falhar.
     """
     chars = ", ".join(character_names) if character_names else "nenhum definido ainda"
 
     if target_panels is not None:
         n = max(MIN_PANELS, min(MAX_PANELS, target_panels))
-        count_line = f"Gere exatamente {n} quadros."
-        budget = _outline_budget(n)
+        margin = max(1, round(n * 0.2))
+        lo = max(MIN_PANELS, n - margin)
+        hi = min(MAX_PANELS, n + margin)
+        count_line = (
+            f"Gere aproximadamente {n} quadros (entre {lo} e {hi}) — você decide a "
+            f"quantidade nessa faixa: mais quadros se a história for rica, menos se for simples."
+        )
+        budget = _outline_budget(hi)
     else:
         hint = max(MIN_PANELS, pages * 3)
         count_line = (
@@ -191,7 +196,7 @@ def generate_outline(
         )
         return data
     except Exception as exc:
-        logger.warning("generate_outline falhou (%s) — usando split determinístico.", exc)
+        logger.warning("generate_outline falhou (%s).", exc)
         return {}
 
 

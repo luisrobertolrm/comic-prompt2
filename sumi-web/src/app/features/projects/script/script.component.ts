@@ -39,6 +39,7 @@ export class ScriptComponent implements OnInit {
   generatingContentIds = signal<Set<string>>(new Set());
   imagesDone = signal(0);
   targetPanels = signal<number | null>(null);
+  generateError = signal<string | null>(null);
 
   private readonly IMAGE_CONCURRENCY = 3;
   private readonly CONTENT_CONCURRENCY = 3;
@@ -93,8 +94,9 @@ export class ScriptComponent implements OnInit {
   runGenerate(): void {
     if (this.generating()) return;
     this.generating.set(true);
+    this.generateError.set(null);
     this.panels.set([]);
-    // Passo 1: recorta a sinopse em quadros 'pending' (retorno rápido).
+    // Passo 1: a IA divide o roteiro inteiro em quadros 'pending' (retorno rápido).
     this.panelService.generate(this.projectId(), this.targetPanels()).subscribe({
       next: slots => {
         this.panels.set(slots);
@@ -102,7 +104,10 @@ export class ScriptComponent implements OnInit {
         this.generating.set(false);
         this.fillPanelsContent(slots);
       },
-      error: () => this.generating.set(false),
+      error: () => {
+        this.generating.set(false);
+        this.generateError.set('Não foi possível gerar os quadros agora. Tente novamente.');
+      },
     });
   }
 

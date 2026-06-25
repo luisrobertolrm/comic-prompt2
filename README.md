@@ -193,6 +193,31 @@ alembic upgrade head
 alembic downgrade -1
 ```
 
+### Geração de imagem — Seedream 5.0 lite
+
+Provider de imagem ativo via `AI_IMAGE_PROVIDER=seedream` (BytePlus ModelArk),
+modelo `SEEDREAM_MODEL=seedream-5-0-lite`. O `size` enviado à API deve ser uma
+dimensão concreta — abaixo as dimensões recomendadas por razão de aspecto e
+resolução-alvo.
+
+| Razão | 1K | 2K | 3K | 4K |
+|-------|----|----|----|----|
+| 1:1   | Not supported | 2048×2048 | 3072×3072 | 4096×4096 |
+| 3:4   | Not supported | 1728×2304 | 2592×3456 | 3520×4704 |
+| 4:3   | Not supported | 2304×1728 | 3456×2592 | 4704×3520 |
+| 16:9  | Not supported | 2848×1600 | 4096×2304 | 5504×3040 |
+| 9:16  | Not supported | 1600×2848 | 2304×4096 | 3040×5504 |
+| 3:2   | Not supported | 2496×1664 | 3744×2496 | 4992×3328 |
+| 2:3   | Not supported | 1664×2496 | 2496×3744 | 3328×4992 |
+| 21:9  | Not supported | 3136×1344 | 4704×2016 | 6240×2656 |
+
+**Observações:**
+- A coluna **1K não é suportada** para nenhuma razão de aspecto.
+- Na imagem original, na coluna **3K** as posições de `3:2` e `2:3` aparecem
+  trocadas em relação às outras colunas — lá, `2:3 : 2496×3744` vem antes de
+  `3:2 : 3744×2496`. A tabela acima mantém os valores como na imagem, alinhados
+  por razão de aspecto.
+
 ---
 
 ## Frontend Angular — `sumi-web`
