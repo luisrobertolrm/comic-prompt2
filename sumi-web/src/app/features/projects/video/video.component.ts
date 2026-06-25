@@ -1,5 +1,6 @@
 import { Component, computed, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { DecimalPipe, DatePipe } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin, timer, switchMap, takeWhile } from 'rxjs';
 import type { PanelOut } from '../../../core/models/panel.models';
@@ -106,6 +107,7 @@ export class VideoComponent implements OnInit, OnDestroy {
   private panelService = inject(PanelService);
   private projectService = inject(ProjectService);
   private voiceService = inject(VoiceService);
+  private http = inject(HttpClient);
 
   readonly voiceOptions = VOICE_OPTIONS;
   readonly speeds = SPEEDS;
@@ -509,10 +511,20 @@ export class VideoComponent implements OnInit, OnDestroy {
       .normalize('NFD').replace(/[̀-ͯ]/g, '')
       .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
       || `sumi-${this.projectId().slice(0, 8)}`;
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${slug}.mp4`;
-    a.click();
+    // Baixa como blob (object URL same-origin): o atributo `download` é ignorado
+    // quando o href é cross-origin (vídeo em :8000, app em :4200) e o browser abre
+    // inline. Buscar o blob força o salvamento como anexo.
+    this.http.get(url, { responseType: 'blob' }).subscribe({
+      next: blob => {
+        const objUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = objUrl;
+        a.download = `${slug}.mp4`;
+        a.click();
+        URL.revokeObjectURL(objUrl);
+      },
+      error: () => window.open(url, '_blank'),
+    });
   }
 
   goFinal(): void { void this.router.navigate(['/projects', this.projectId(), 'final']); }
