@@ -55,10 +55,14 @@
           <div class="panel-actions">
             <button class="icon-btn" title="Excluir quadro" (click)="deletePanel()"
                     [disabled]="panels().length <= 1">🗑</button>
-            <button class="icon-btn" title="Mover para a esquerda" (click)="movePanel(-1)"
+            <button class="icon-btn" title="Quadro anterior" (click)="prev()"
                     [disabled]="idx() === 0">←</button>
-            <button class="icon-btn" title="Mover para a direita" (click)="movePanel(1)"
+            <button class="icon-btn" title="Próximo quadro" (click)="next()"
                     [disabled]="idx() === panels().length - 1">→</button>
+            <button class="icon-btn" title="Mover quadro para a esquerda" (click)="movePanel(-1)"
+                    [disabled]="idx() === 0">⇤</button>
+            <button class="icon-btn" title="Mover quadro para a direita" (click)="movePanel(1)"
+                    [disabled]="idx() === panels().length - 1">⇥</button>
             <button class="icon-btn" title="Inserir quadro depois deste" (click)="insertPanel()">+</button>
           </div>
           <button class="btn-ghost" (click)="next()" [disabled]="idx() === panels().length - 1">Próximo →</button>
