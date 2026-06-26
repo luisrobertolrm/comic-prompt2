@@ -69,7 +69,8 @@ function buildBeats(panels: PanelOut[]): BeatData {
       beats.push({ sceneIdx: si, speaker: 'Narrador', kind: 'narration', text: p.caption, dur: 0, start: 0 });
     }
     p.bubbles.forEach(b => {
-      beats.push({ sceneIdx: si, speaker: p.character_name ?? 'Narrador', kind: b.kind, text: b.text, dur: 0, start: 0 });
+      const speaker = b.kind === 'narration' ? 'Narrador' : (p.character_name ?? 'Narrador');
+      beats.push({ sceneIdx: si, speaker, kind: b.kind, text: b.text, dur: 0, start: 0 });
     });
     if (!p.caption?.trim() && p.bubbles.length === 0) {
       beats.push({ sceneIdx: si, speaker: '—', kind: 'silent', text: '', dur: 0, start: 0 });
@@ -222,7 +223,7 @@ export class VideoComponent implements OnInit, OnDestroy {
     }).subscribe({
       next: ({ panels, project, voices }) => {
         this.projectTitle.set(project.title);
-        if (project.video_url) this.videoUrl.set(`${this.baseUrl}${project.video_url}`);
+        if (project.video_url) this.videoUrl.set(`${this.baseUrl}${project.video_url}?t=${Date.now()}`);
         this.buildVoiceMaps(project.narrator_voice_id, project.characters, voices);
         this.panels.set(panels);
         this.initVoices(panels);
@@ -490,7 +491,9 @@ export class VideoComponent implements OnInit, OnDestroy {
         this.renderProgress.set(j.progress);
         this.renderStage.set(j.detail);
         if (j.status === 'done') {
-          this.videoUrl.set(j.video_url ? `${this.baseUrl}${j.video_url}` : null);
+          // Cache-bust: a URL do vídeo é fixa (mesma key sobrescrita); sem isto o
+          // browser serviria o .mp4 antigo do cache após uma nova geração.
+          this.videoUrl.set(j.video_url ? `${this.baseUrl}${j.video_url}?t=${Date.now()}` : null);
           this.rendering.set(false);
         } else if (j.status === 'error') {
           this.renderError.set(j.detail || 'Falha ao gerar o vídeo.');

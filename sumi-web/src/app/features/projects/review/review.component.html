@@ -132,6 +132,19 @@
           }
         </div>
 
+        <!-- Proporção do quadro -->
+        <div class="side-card">
+          <div class="side-card-head">
+            <span class="eyebrow">PROPORÇÃO</span>
+          </div>
+          <div class="chips">
+            @for (a of aspects; track a.value) {
+              <button class="chip" [class.chip--active]="cur.aspect === a.value" (click)="setAspect(a.value)">{{ a.label }}</button>
+            }
+          </div>
+          <p class="tiny-label">Ajusta a moldura do quadro na prévia e no vídeo. A imagem é gerada em 16:9.</p>
+        </div>
+
         <!-- Balões -->
         <div class="side-card">
           <div class="side-card-head">

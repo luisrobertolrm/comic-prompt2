@@ -282,8 +282,13 @@ def _concat_audio(parts: list[Path], out: Path) -> None:
 def _concat_clips(clips: list[Path], out: Path) -> None:
     listing = out.with_suffix(".txt")
     listing.write_text("".join(f"file '{p.as_posix()}'\n" for p in clips), encoding="utf-8")
+    # Re-encoda em vez de "-c copy": a concatenação por stream-copy de vários MP4 de
+    # imagem estática gera DTS não-monotônico que o ffmpeg "corrige" reemitindo um GOP
+    # anterior — o efeito era um quadro do início reaparecer duplicado no fim. Reencodar
+    # regenera os timestamps na ordem do listing, sem repetição.
     res = _run([_ffmpeg(), "-y", "-f", "concat", "-safe", "0", "-i", str(listing),
-                "-c", "copy", "-movflags", "+faststart", str(out)])
+                "-fflags", "+genpts", *_V_ARGS, *_A_ARGS,
+                "-movflags", "+faststart", str(out)])
     if not out.exists():
         raise RuntimeError(f"ffmpeg falhou na concatenação: {res.stderr.decode(errors='ignore')[-400:]}")
 
@@ -350,14 +355,17 @@ def render(project_id: uuid.UUID, user_id: uuid.UUID, db: Session,
         for i, panel in enumerate(panels):
             report(int(i / len(panels) * 85), f"Cena {i + 1}/{len(panels)}")
 
-            # Beats: caption (narrador) + balões (voz do personagem em cena).
+            # Beats: caption + balões. Narração (caption e balões "narration") usa a voz
+            # do narrador; balões de fala usam a voz do personagem em cena.
             beats: list[tuple[str, str]] = []
+            narrator = narrator_voice or default_voice
             if panel.caption and panel.caption.strip():
-                beats.append((panel.caption.strip(), narrator_voice or default_voice))
-            char_voice = char_voices.get(panel.character_name or "", narrator_voice or default_voice)
+                beats.append((panel.caption.strip(), narrator))
+            char_voice = char_voices.get(panel.character_name or "", narrator)
             for b in json.loads(panel.bubbles_json or "[]"):
                 if isinstance(b, dict) and str(b.get("text", "")).strip():
-                    beats.append((str(b["text"]).strip(), char_voice))
+                    voice = narrator if b.get("kind") == "narration" else char_voice
+                    beats.append((str(b["text"]).strip(), voice))
 
             # Frame
             img_bytes = storage.read(f"{panel.id}.png") if panel.image_url else None

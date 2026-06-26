@@ -12,6 +12,13 @@ const FRAMINGS = [
   'Extreme close', 'Inserto', 'Detalhe', 'Plongée', 'Contra-plongée',
 ];
 
+const ASPECTS = [
+  { value: '16-9', label: '16:9' },
+  { value: '4-3', label: '4:3' },
+  { value: '1-1', label: '1:1' },
+  { value: '3-4', label: '3:4' },
+];
+
 @Component({
   selector: 'app-review',
   standalone: true,
@@ -27,6 +34,7 @@ export class ReviewComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
 
   readonly framings = FRAMINGS;
+  readonly aspects = ASPECTS;
 
   projectId = signal('');
   synopsis = signal('');
@@ -205,6 +213,10 @@ export class ReviewComponent implements OnInit {
   setFraming(f: string): void {
     this.patchCurNow({ framing: f });
     this.showFramingPicker.set(false);
+  }
+
+  setAspect(a: string): void {
+    this.patchCurNow({ aspect: a });
   }
 
   addBubble(): void {
