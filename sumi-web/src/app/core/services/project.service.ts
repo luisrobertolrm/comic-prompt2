@@ -78,4 +78,17 @@ export class ProjectService {
   pollVideoJob(projectId: string, jobId: string): Observable<VideoJob> {
     return this.http.get<VideoJob>(`${this.base}/projects/${projectId}/export/video/${jobId}`);
   }
+
+  exportBackup(projectId: string): Observable<Blob> {
+    return this.http.get(`${this.base}/projects/${projectId}/backup`, { responseType: 'blob' });
+  }
+
+  importBackup(file: File, projectId?: string): Observable<ProjectOut> {
+    const fd = new FormData();
+    fd.append('file', file);
+    if (projectId) {
+      fd.append('project_id', projectId);
+    }
+    return this.http.post<ProjectOut>(`${this.base}/projects/import`, fd);
+  }
 }

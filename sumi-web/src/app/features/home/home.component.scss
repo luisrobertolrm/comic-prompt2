@@ -51,6 +51,232 @@ h1 {
   &:hover { background: var(--accent-ink); color: var(--paper); }
 }
 
+.head-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.btn-ghost {
+  padding: 10px 16px;
+  background: var(--paper-2);
+  border: 1.5px solid var(--ink);
+  border-radius: var(--r-sm);
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: .05em;
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:hover { background: var(--paper-3); }
+  &:disabled { opacity: .6; cursor: default; }
+}
+
+.cover-export {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 2;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--ink);
+  border-radius: var(--r-sm);
+  background: var(--paper-3);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+
+  &:hover { background: var(--accent); }
+}
+
+.list-export {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-sm);
+  background: var(--paper-2);
+  font-size: 14px;
+  cursor: pointer;
+
+  &:hover { background: var(--accent); border-color: var(--ink); }
+}
+
+/* ── Toast (exportação) ── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 400;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 520px;
+  padding: 12px 18px;
+  border-radius: var(--r-sm);
+  border: 1.5px solid var(--ink);
+  box-shadow: var(--shadow-2);
+  font-size: 14px;
+}
+
+.toast--info { background: var(--paper-3); color: var(--ink); }
+
+.toast--success {
+  background: var(--mint-soft);
+  border-color: var(--mint);
+  color: var(--ink);
+}
+
+.toast--error {
+  background: var(--blush-soft);
+  border-color: var(--blush);
+  color: var(--ink);
+}
+
+.toast-spinner {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  border: 2px solid var(--ink-4);
+  border-top-color: var(--ink);
+  border-radius: 50%;
+  animation: toast-spin .7s linear infinite;
+}
+
+@keyframes toast-spin { to { transform: rotate(360deg); } }
+
+.toast-close {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--ink-3);
+  flex-shrink: 0;
+  &:hover { color: var(--ink); }
+}
+
+/* ── Modal de importação ── */
+.imp-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(30,24,18,.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+  padding: 24px;
+}
+
+.imp-modal {
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  border-radius: var(--r-lg);
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-2);
+  overflow: hidden;
+}
+
+.imp-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--rule);
+  gap: 12px;
+}
+
+.imp-title { font-family: var(--serif); font-size: 20px; margin: 4px 0 0; }
+
+.imp-close {
+  width: 32px; height: 32px;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-sm);
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+  display: grid; place-items: center;
+  color: var(--ink-3);
+  &:hover { background: var(--paper-2); color: var(--ink); }
+}
+
+.imp-body {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.imp-file {
+  font-family: var(--mono);
+  font-size: 13px;
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-sm);
+  padding: 10px 12px;
+  word-break: break-all;
+}
+
+.imp-field { display: flex; flex-direction: column; gap: 6px; }
+
+.imp-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .1em;
+  color: var(--ink-3);
+  text-transform: uppercase;
+}
+
+.imp-id-row { display: flex; gap: 8px; }
+
+.imp-input {
+  flex: 1;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-sm);
+  background: var(--paper-2);
+  padding: 9px 12px;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--ink);
+  &:focus { outline: 2px solid var(--accent); border-color: transparent; }
+}
+
+.imp-regen {
+  flex-shrink: 0;
+  border: 1.5px solid var(--ink);
+  border-radius: var(--r-sm);
+  background: var(--paper-2);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 0 14px;
+  cursor: pointer;
+  &:hover { background: var(--paper-3); }
+}
+
+.imp-hint { font-size: 11px; color: var(--ink-3); }
+
+.imp-error {
+  font-size: 13px;
+  color: var(--blush);
+  background: var(--blush-soft);
+  border: 1px solid var(--blush);
+  border-radius: var(--r-sm);
+  padding: 9px 12px;
+}
+
+.imp-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--rule);
+}
+
 /* ── Toolbar ── */
 .toolbar {
   display: flex;

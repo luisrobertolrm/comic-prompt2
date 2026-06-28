@@ -12,6 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from prompt_clinica.config import settings
 from prompt_clinica.routers import (
     auth,
+    backup,
     character_options,
     characters,
     health,
@@ -61,6 +62,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(projects.router)
+app.include_router(backup.router)
 app.include_router(series.router)
 app.include_router(characters.router)
 app.include_router(character_options.router)

@@ -7,7 +7,11 @@
       <h1>Onde sua próxima história começa.</h1>
       <p class="lede">Continue um capítulo em andamento ou inicie uma nova HQ.</p>
     </div>
-    <button class="btn-accent" (click)="goNewProject()">+ Nova HQ</button>
+    <div class="head-actions">
+      <button class="btn-ghost" (click)="importInput.click()">↥ Importar backup</button>
+      <input #importInput type="file" accept=".zip" hidden (change)="onImportFile($event)" />
+      <button class="btn-accent" (click)="goNewProject()">+ Nova HQ</button>
+    </div>
   </div>
 
   <!-- ── Filtros + toggle ── -->
@@ -47,6 +51,10 @@
             </div>
             <span class="cover-tag cover-tag--genre">{{ p.genre.toUpperCase() }}</span>
             <span class="cover-tag cover-tag--pages">{{ p.pages }} pg</span>
+            <button class="cover-export" title="Exportar backup (.zip)"
+                    [disabled]="exportingId() === p.id" (click)="exportProject(p, $event)">
+              {{ exportingId() === p.id ? '…' : '↧' }}
+            </button>
             <h2 class="cover-title">{{ p.title }}</h2>
           </div>
           <!-- Meta -->
@@ -83,6 +91,10 @@
           <div class="list-genre">{{ p.genre }}</div>
           <div class="list-status">{{ p.status }}</div>
           <div class="list-date">{{ formatDate(p.updated_at) }}</div>
+          <button class="list-export" title="Exportar backup (.zip)"
+                  [disabled]="exportingId() === p.id" (click)="exportProject(p, $event)">
+            {{ exportingId() === p.id ? '…' : '↧' }}
+          </button>
           <span class="arr">›</span>
         </div>
       }
@@ -111,5 +123,74 @@
       </button>
     </div>
   </div>
+
+  <!-- ── Aviso de exportação ── -->
+  @if (exportingId()) {
+    <div class="toast toast--info">
+      <span class="toast-spinner"></span>
+      Gerando backup de “{{ exportTitle() }}”… isso pode demorar alguns segundos.
+    </div>
+  }
+  @if (exportError()) {
+    <div class="toast toast--error">
+      <span>{{ exportError() }}</span>
+      <button class="toast-close" (click)="exportError.set('')">✕</button>
+    </div>
+  }
+
+  <!-- ── Aviso de importação ── -->
+  @if (importToast(); as t) {
+    <div class="toast"
+         [class.toast--info]="t.kind === 'info'"
+         [class.toast--success]="t.kind === 'success'"
+         [class.toast--error]="t.kind === 'error'">
+      @if (t.kind === 'info') { <span class="toast-spinner"></span> }
+      <span>{{ t.msg }}</span>
+      @if (t.kind !== 'info') {
+        <button class="toast-close" (click)="importToast.set(null)">✕</button>
+      }
+    </div>
+  }
+
+  <!-- ── Modal de importação ── -->
+  @if (importFile(); as file) {
+    <div class="imp-overlay" (click)="cancelImport()">
+      <div class="imp-modal" (click)="$event.stopPropagation()">
+        <div class="imp-head">
+          <div>
+            <p class="eyebrow">IMPORTAR BACKUP</p>
+            <h2 class="imp-title">Novo projeto a partir do .zip</h2>
+          </div>
+          <button class="imp-close" (click)="cancelImport()">✕</button>
+        </div>
+
+        <div class="imp-body">
+          <div class="imp-file">📦 {{ file.name }}</div>
+
+          <div class="imp-field">
+            <label class="imp-label">ID do projeto (GUID)</label>
+            <div class="imp-id-row">
+              <input class="imp-input" [value]="importProjectId()"
+                     (input)="importProjectId.set($any($event.target).value)"
+                     spellcheck="false" />
+              <button class="imp-regen" title="Gerar outro ID" (click)="regenProjectId()">↻ Gerar</button>
+            </div>
+            <span class="imp-hint">As imagens e os quadros recebem novos IDs automaticamente.</span>
+          </div>
+
+          @if (importError()) {
+            <div class="imp-error">{{ importError() }}</div>
+          }
+        </div>
+
+        <div class="imp-foot">
+          <button class="btn-ghost" (click)="cancelImport()" [disabled]="importing()">Cancelar</button>
+          <button class="btn-accent" (click)="confirmImport()" [disabled]="importing()">
+            {{ importing() ? 'Importando…' : 'Importar' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
 
 </div>
