@@ -44,4 +44,5 @@ evals/reports/
 
 # Logs de debug gerados em runtime
 minimax_payload.log
+seedream_payload.log
 portrait_debug.log

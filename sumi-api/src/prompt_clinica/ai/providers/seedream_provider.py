@@ -7,6 +7,11 @@ no provider configurado em AI_TEXT_PROVIDER.
 """
 from __future__ import annotations
 
+import json
+import os
+from datetime import datetime
+from pathlib import Path
+
 import httpx
 
 from prompt_clinica.ai.types import (
@@ -15,6 +20,9 @@ from prompt_clinica.ai.types import (
     TextRequest,
     TextResponse,
 )
+
+# sumi-api/seedream_payload.log — registra cada payload enviado ao Seedream.
+_PAYLOAD_LOG = Path(__file__).resolve().parents[4] / "seedream_payload.log"
 
 # Dimensões 2K recomendadas pelo Seedream por razão de aspecto (ver tabela no
 # README). Enviamos a dimensão concreta — e não o tier "2K" — para preservar a
@@ -60,6 +68,26 @@ class SeedreamProvider:
             "Seedream é provider de imagem. Use AI_TEXT_PROVIDER para o texto."
         )
 
+    def _log_payload(self, payload: dict[str, object]) -> None:
+        if os.getenv("SEEDREAM_PAYLOAD_LOG", "true").strip().lower() not in ("1", "true", "yes", "on"):
+            return
+        # As referências base64 (data-URI) têm centenas de KB; gravamos só um
+        # resumo para o log não inchar. URLs públicas ficam como estão.
+        loggable = dict(payload)
+        refs = loggable.get("image")
+        if isinstance(refs, list):
+            loggable["image"] = [
+                ref if not ref.startswith("data:") else f"<data-uri {len(ref)} chars>"
+                for ref in refs
+            ]
+        try:
+            with _PAYLOAD_LOG.open("a", encoding="utf-8") as fh:
+                fh.write(f"\n=== {datetime.now().isoformat(timespec='seconds')} ===\n")
+                fh.write(json.dumps(loggable, ensure_ascii=False))
+                fh.write("\n")
+        except Exception:
+            pass
+
     def image(self, req: ImageRequest) -> ImageResponse:
         if not self._api_key:
             raise ValueError("BYTEPLUS_API_KEY não definida no ambiente.")
@@ -74,6 +102,8 @@ class SeedreamProvider:
         }
         if req.subject_reference:
             payload["image"] = req.subject_reference[:_MAX_REFERENCE_IMAGES]
+
+        self._log_payload(payload)
 
         resp = httpx.post(
             f"{self._base_url}/images/generations",
