@@ -4,6 +4,8 @@ from narration_voice import NarrationVoice
 from panel import Panel
 from project import Project
 from project_character import ProjectCharacter
+from project_scenario import ProjectScenario
+from scenario import Scenario
 from series import Series
 from series_project import SeriesProject
 from temp_portrait import TempPortrait
@@ -11,4 +13,4 @@ from user import PasswordResetToken, User, UserOAuth, UserSession
 from visual_style import VisualStyle
 from youtube_metadata import VideoMetadata
 
-__all__ = ["User", "UserOAuth", "PasswordResetToken", "UserSession", "Project", "Character", "ProjectCharacter", "Series", "SeriesProject", "VideoMetadata", "TempPortrait", "NarrationVoice", "VisualStyle"]
+__all__ = ["User", "UserOAuth", "PasswordResetToken", "UserSession", "Project", "Character", "ProjectCharacter", "Scenario", "ProjectScenario", "Series", "SeriesProject", "VideoMetadata", "TempPortrait", "NarrationVoice", "VisualStyle"]

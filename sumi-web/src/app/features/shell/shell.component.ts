@@ -16,6 +16,7 @@ const ICON_PATHS: Record<string, string> = {
   layout:   'M3 4h18v6H3zM3 12h8v8H3zM13 12h8v8h-8z',
   download: 'M12 4v12m0 0l-4-4m4 4l4-4M5 20h14',
   film:     'M4 4h16v16H4zM4 9h16M4 15h16M9 4v16M15 4v16',
+  image:    'M3 5h18v14H3zM3 16l5-5 4 4 3-3 5 5M9 9a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z',
   star:     'M12 3l2.6 6.3 6.4.5-5 4.3 1.6 6.5L12 17l-5.6 3.6L8 14.1l-5-4.3 6.4-.5L12 3z',
   search:   'M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16zM21 21l-4.3-4.3',
   mic:      'M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3',
@@ -25,6 +26,7 @@ const ICON_PATHS: Record<string, string> = {
 const STEPS = [
   { id: 'new',        label: 'Ideia',       icon: 'spark'    },
   { id: 'characters', label: 'Personagens', icon: 'users'    },
+  { id: 'scenarios',  label: 'Cenários',    icon: 'image'    },
   { id: 'script',     label: 'Roteiro',     icon: 'scroll'   },
   { id: 'review',     label: 'Revisão',     icon: 'eye'      },
   { id: 'editor',     label: 'Editor',      icon: 'layout'   },
@@ -71,6 +73,7 @@ export class ShellComponent {
     if (u.startsWith('/voice-test'))        return 'voice-test';
     if (u.endsWith('/new'))                 return 'new';
     if (u.endsWith('/characters'))          return 'characters';
+    if (u.endsWith('/scenarios'))           return 'scenarios';
     const m = u.match(/\/projects\/[^/]+\/(.+)/);
     return m?.[1] ?? '';
   });
@@ -106,7 +109,7 @@ export class ShellComponent {
   breadcrumbs = computed(() => {
     const s = this.section();
     const stepLabels: Record<string, string> = {
-      new: 'Ideia', characters: 'Personagens', script: 'Roteiro',
+      new: 'Ideia', characters: 'Personagens', scenarios: 'Cenários', script: 'Roteiro',
       review: 'Revisão', editor: 'Editor', final: 'Finalizar', video: 'Vídeo',
     };
     if (s === 'home')    return [{ label: 'Projetos',   route: '' }];
@@ -153,6 +156,13 @@ export class ShellComponent {
     if (stepId === 'characters') {
       if (pid) this.draft.projectId.set(pid);
       void this.router.navigate(['/projects/new/characters']);
+      this.closeSidebar();
+      return;
+    }
+
+    if (stepId === 'scenarios') {
+      if (pid) this.draft.projectId.set(pid);
+      void this.router.navigate(['/projects/new/scenarios']);
       this.closeSidebar();
       return;
     }

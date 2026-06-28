@@ -50,6 +50,11 @@ export const routes: Routes = [
           import('./features/projects/characters/characters-screen.component').then(m => m.CharactersScreenComponent),
       },
       {
+        path: 'projects/new/scenarios',
+        loadComponent: () =>
+          import('./features/projects/scenarios/scenarios-screen.component').then(m => m.ScenariosScreenComponent),
+      },
+      {
         path: 'projects/:id/script',
         loadComponent: () =>
           import('./features/projects/script/script.component').then(m => m.ScriptComponent),

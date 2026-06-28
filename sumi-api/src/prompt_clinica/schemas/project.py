@@ -6,6 +6,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field, field_serializer
 
 from prompt_clinica.schemas.character import CharacterOut
+from prompt_clinica.schemas.scenario import ScenarioOut
 from prompt_clinica.styles import DEFAULT_COLOR_MODE, DEFAULT_STYLE, ColorModeId, StyleId
 
 
@@ -37,6 +38,10 @@ class ProjectPatch(BaseModel):
 
 class CharacterIdsBody(BaseModel):
     character_ids: list[uuid.UUID]
+
+
+class ScenarioIdsBody(BaseModel):
+    scenario_ids: list[uuid.UUID]
 
 
 class ProjectOut(BaseModel):
@@ -72,3 +77,4 @@ class ProjectDetailOut(ProjectOut):
     premise: str | None
     synopsis: str | None
     characters: list[CharacterOut] = Field(default_factory=list)
+    scenarios: list[ScenarioOut] = Field(default_factory=list)

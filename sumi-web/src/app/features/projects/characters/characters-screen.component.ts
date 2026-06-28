@@ -287,8 +287,7 @@ export class CharactersScreenComponent implements OnInit {
     this.saving.set(true);
     this.projectService.setCharacters(projectId, [...this.selectedIds()]).subscribe({
       next: () => {
-        this.draftService.projectId.set(null);
-        void this.router.navigate(['/projects', projectId, 'script']);
+        void this.router.navigate(['/projects/new/scenarios']);
       },
       error: () => this.saving.set(false),
     });

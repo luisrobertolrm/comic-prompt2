@@ -29,6 +29,7 @@ from prompt_clinica.schemas.project import (
     ProjectDetailOut,
     ProjectOut,
     ProjectPatch,
+    ScenarioIdsBody,
 )
 from prompt_clinica.schemas.youtube_metadata import (
     VideoMetadataOut,
@@ -95,6 +96,16 @@ def set_characters(
     db: Session = Depends(get_db),
 ) -> None:
     project_service.set_characters(project_id, body.character_ids, user, db)
+
+
+@router.put("/{project_id}/scenarios", status_code=204)
+def set_scenarios(
+    project_id: uuid.UUID,
+    body: ScenarioIdsBody,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> None:
+    project_service.set_scenarios(project_id, body.scenario_ids, user, db)
 
 
 @router.get("/{project_id}/panels", response_model=list[PanelOut])

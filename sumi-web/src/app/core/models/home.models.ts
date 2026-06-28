@@ -33,6 +33,7 @@ export interface ProjectDetailOut extends ProjectOut {
   synopsis: string | null;
   narrator_voice_id: string | null;
   characters: CharacterOut[];
+  scenarios: ScenarioOut[];
 }
 
 export interface ProjectUpdate {
@@ -142,5 +143,59 @@ export interface PortraitJob {
   job_id: string;
   status: 'pending' | 'running' | 'done' | 'error';
   portraits: PortraitCandidate[];
+  detail: string;
+}
+
+export interface ScenarioOut {
+  id: string;
+  name: string;
+  kind: string;
+  summary: string | null;
+  location_type: string | null;
+  time_of_day: string | null;
+  weather: string | null;
+  atmosphere: string | null;
+  details: string | null;
+  style: string;
+  approved: boolean;
+  image_url: string | null;
+  project_count: number;
+}
+
+export interface ScenarioCreate {
+  name: string;
+  kind?: string;
+  summary?: string;
+  location_type?: string;
+  time_of_day?: string;
+  weather?: string;
+  atmosphere?: string;
+  details?: string;
+  style?: string;
+  image_url?: string;
+}
+
+export interface ScenarioUpdate {
+  name?: string;
+  kind?: string;
+  summary?: string | null;
+  location_type?: string | null;
+  time_of_day?: string | null;
+  weather?: string | null;
+  atmosphere?: string | null;
+  details?: string | null;
+  image_url?: string;
+}
+
+export interface SceneCandidate {
+  id: string;
+  url: string;
+  notes: string;
+}
+
+export interface SceneJob {
+  job_id: string;
+  status: 'pending' | 'running' | 'done' | 'error';
+  scenes: SceneCandidate[];
   detail: string;
 }

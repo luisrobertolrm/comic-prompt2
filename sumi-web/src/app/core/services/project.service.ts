@@ -53,6 +53,12 @@ export class ProjectService {
     });
   }
 
+  setScenarios(projectId: string, scenarioIds: string[]): Observable<void> {
+    return this.http.put<void>(`${this.base}/projects/${projectId}/scenarios`, {
+      scenario_ids: scenarioIds,
+    });
+  }
+
   getYtMeta(projectId: string): Observable<YtMeta> {
     return this.http.get<YtMeta>(`${this.base}/projects/${projectId}/youtube-metadata`);
   }

@@ -10,9 +10,12 @@ from sqlalchemy.orm import Session
 from character import Character
 from project import Project
 from project_character import ProjectCharacter
+from project_scenario import ProjectScenario
 from prompt_clinica.ai.synopsis import generate_synopsis as ai_generate_synopsis
 from prompt_clinica.schemas.character import CharacterOut
 from prompt_clinica.schemas.project import ProjectCreate, ProjectDetailOut, ProjectOut, ProjectPatch
+from prompt_clinica.schemas.scenario import ScenarioOut
+from scenario import Scenario
 from user import User
 
 _ACCENTS = ["accent", "mint", "peach", "blush", "lilac"]
@@ -42,11 +45,13 @@ def get_by_id(project_id: uuid.UUID, user: User, db: Session) -> ProjectDetailOu
         .filter(ProjectCharacter.project_id == project_id)
         .all()
     )
+    scenarios = _list_scenarios(project_id, db)
     return ProjectDetailOut(
         **ProjectOut.model_validate(project).model_dump(),
         premise=project.premise,
         synopsis=project.synopsis,
         characters=[CharacterOut.model_validate(c) for c in chars],
+        scenarios=[ScenarioOut.model_validate(s) for s in scenarios],
     )
 
 
@@ -143,11 +148,13 @@ def generate_synopsis(project_id: uuid.UUID, user: User, db: Session) -> Project
     project.synopsis = text[:6000]
     db.commit()
     db.refresh(project)
+    scenarios = _list_scenarios(project_id, db)
     return ProjectDetailOut(
         **ProjectOut.model_validate(project).model_dump(),
         premise=project.premise,
         synopsis=project.synopsis,
         characters=[CharacterOut.model_validate(c) for c in chars],
+        scenarios=[ScenarioOut.model_validate(s) for s in scenarios],
     )
 
 
@@ -167,4 +174,32 @@ def set_characters(
     db.query(ProjectCharacter).filter(ProjectCharacter.project_id == project_id).delete()
     for char_id in char_ids:
         db.add(ProjectCharacter(project_id=project_id, character_id=char_id))
+    db.commit()
+
+
+def _list_scenarios(project_id: uuid.UUID, db: Session) -> list[Scenario]:
+    return (
+        db.query(Scenario)
+        .join(ProjectScenario, ProjectScenario.scenario_id == Scenario.id)
+        .filter(ProjectScenario.project_id == project_id)
+        .all()
+    )
+
+
+def set_scenarios(
+    project_id: uuid.UUID,
+    scenario_ids: list[uuid.UUID],
+    user: User,
+    db: Session,
+) -> None:
+    project: Project | None = (
+        db.query(Project)
+        .filter(Project.id == project_id, Project.user_id == user.id)
+        .first()
+    )
+    if project is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Projeto não encontrado.")
+    db.query(ProjectScenario).filter(ProjectScenario.project_id == project_id).delete()
+    for scenario_id in scenario_ids:
+        db.add(ProjectScenario(project_id=project_id, scenario_id=scenario_id))
     db.commit()
