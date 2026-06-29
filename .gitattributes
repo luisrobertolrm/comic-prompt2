@@ -1,0 +1,8 @@
+# Scripts e arquivos usados em Linux/containers devem manter LF,
+# senao quebram no Debian/CasaOS (ex.: shebang vira "bash\r").
+*.sh            text eol=lf
+Dockerfile      text eol=lf
+*.yml           text eol=lf
+*.yaml          text eol=lf
+.env.example    text eol=lf
+*.env.example   text eol=lf
