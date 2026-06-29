@@ -12,7 +12,11 @@
 
 services:
   api:
-    build: .
+    build:
+      context: .
+      args:
+        # Prefixo do sub-path no build do Angular (ex.: /sumi/). Vazio/'/' = raiz.
+        BASE_HREF: ${BASE_HREF:-/}
     restart: unless-stopped
     env_file:
       - .env
@@ -22,6 +26,8 @@ services:
       IMAGES_DIR: /app/static/images
       APP_ENV: production
       APP_RELOAD: "false"
+      # Prefixo do sub-path no FastAPI (ex.: /sumi). Vazio = raiz. Deve casar com BASE_HREF.
+      ROOT_PATH: ${ROOT_PATH:-}
     ports:
       - "${APP_PORT:-8000}:8000"
     volumes:
