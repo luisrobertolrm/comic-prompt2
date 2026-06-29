@@ -6,6 +6,9 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-sumi}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sumi}
       POSTGRES_DB: ${POSTGRES_DB:-sumi_db}
+    ports:
+      # Expõe o Postgres no host para outras apps/clientes acessarem.
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
