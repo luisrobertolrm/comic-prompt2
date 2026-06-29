@@ -39,6 +39,7 @@ class Settings:
     railway_bucket_secret_key: str = field(default_factory=lambda: _optional("AWS_SECRET_ACCESS_KEY") or _optional("RAILWAY_BUCKET_SECRET_KEY"))
     railway_bucket_region: str = field(default_factory=lambda: _optional("AWS_DEFAULT_REGION") or _optional("RAILWAY_BUCKET_REGION") or "auto")
     railway_public_url: str = field(default_factory=lambda: _optional("RAILWAY_PUBLIC_URL"))
+    root_path: str = field(default_factory=lambda: _optional("ROOT_PATH", ""))
     app_env: str = field(default_factory=lambda: _optional("APP_ENV", "development"))
     app_host: str = field(default_factory=lambda: _optional("APP_HOST", "0.0.0.0"))
     app_port: int = field(

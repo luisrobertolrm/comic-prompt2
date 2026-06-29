@@ -33,6 +33,7 @@ logger = logging.getLogger("sumi.api")
 app = FastAPI(
     title="Sumi API",
     version="0.1.0",
+    root_path=settings.root_path,
     docs_url="/docs" if settings.is_development else None,
     redoc_url="/redoc" if settings.is_development else None,
 )

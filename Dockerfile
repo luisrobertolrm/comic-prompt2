@@ -1,10 +1,11 @@
 # ── Stage 1: Angular build ────────────────────────────────────────────────────
 FROM node:22-alpine AS frontend
+ARG BASE_HREF=/
 WORKDIR /app
 COPY sumi-web/package*.json ./
 RUN npm ci
 COPY sumi-web/ .
-RUN npm run build
+RUN npm run build -- --base-href ${BASE_HREF}
 
 # ── Stage 2: Python API ───────────────────────────────────────────────────────
 FROM python:3.13-slim
