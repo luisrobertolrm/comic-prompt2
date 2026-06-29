@@ -250,7 +250,7 @@ def import_project(
 
     video_bytes = read_asset(pdata)
     if video_bytes is not None:
-        url = storage.save(f"videos/{project.id}.mp4", video_bytes)
+        url = storage.save(f"videos/{project.id}/{uuid.uuid4().hex}.mp4", video_bytes)
         project.video_url = url
 
     # Personagens (+ vínculo ao projeto).

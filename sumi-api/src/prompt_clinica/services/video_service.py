@@ -320,6 +320,18 @@ def _voice_map(project: Project, db: Session) -> tuple[str | None, dict[str, str
 
 # ── Orquestração ─────────────────────────────────────────────────────
 
+def _url_to_key(url: str | None) -> str | None:
+    """Storage key a partir de um video_url salvo (ignora query string)."""
+    if not url:
+        return None
+    base = url.split("?", 1)[0]
+    for marker in ("/static/images/", "/storage/"):
+        idx = base.find(marker)
+        if idx != -1:
+            return base[idx + len(marker):]
+    return None
+
+
 def render(project_id: uuid.UUID, user_id: uuid.UUID, db: Session,
            progress: ProgressCb | None = None) -> str:
     def report(pct: int, label: str) -> None:
@@ -399,10 +411,17 @@ def render(project_id: uuid.UUID, user_id: uuid.UUID, db: Session,
         _concat_clips(clips, final)
 
         report(96, "Salvando…")
-        url = storage.save(f"videos/{project_id}.mp4", final.read_bytes())
+        # GUID por render: cada vídeo tem nome próprio, então a URL nova nunca
+        # referencia o arquivo anterior (sem precisar furar cache do browser).
+        new_key = f"videos/{project_id}/{uuid.uuid4().hex}.mp4"
+        url = storage.save(new_key, final.read_bytes())
 
+    old_key = _url_to_key(project.video_url)
     project.video_url = url
     db.commit()
+
+    if old_key and old_key != new_key:
+        storage.delete(old_key)
 
     report(100, "Pronto!")
     logger.info("Vídeo gerado: %s (%d cenas)", url, len(panels))

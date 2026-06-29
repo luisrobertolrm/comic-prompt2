@@ -223,7 +223,7 @@ export class VideoComponent implements OnInit, OnDestroy {
     }).subscribe({
       next: ({ panels, project, voices }) => {
         this.projectTitle.set(project.title);
-        if (project.video_url) this.videoUrl.set(`${this.baseUrl}${project.video_url}?t=${Date.now()}`);
+        if (project.video_url) this.videoUrl.set(`${this.baseUrl}${project.video_url}`);
         this.buildVoiceMaps(project.narrator_voice_id, project.characters, voices);
         this.panels.set(panels);
         this.initVoices(panels);
@@ -491,9 +491,7 @@ export class VideoComponent implements OnInit, OnDestroy {
         this.renderProgress.set(j.progress);
         this.renderStage.set(j.detail);
         if (j.status === 'done') {
-          // Cache-bust: a URL do vídeo é fixa (mesma key sobrescrita); sem isto o
-          // browser serviria o .mp4 antigo do cache após uma nova geração.
-          this.videoUrl.set(j.video_url ? `${this.baseUrl}${j.video_url}?t=${Date.now()}` : null);
+          this.videoUrl.set(j.video_url ? `${this.baseUrl}${j.video_url}` : null);
           this.rendering.set(false);
         } else if (j.status === 'error') {
           this.renderError.set(j.detail || 'Falha ao gerar o vídeo.');
