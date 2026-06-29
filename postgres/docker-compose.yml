@@ -1,0 +1,39 @@
+# Postgres independente — sobe sozinho, gerenciado separado da sumi.
+# Outras apps conectam nele pela rede 'shared-db' (interna) ou pela porta no host.
+#
+# Antes de subir pela primeira vez, crie a rede compartilhada (uma única vez):
+#   docker network create shared-db
+#
+# Depois:
+#   cd postgres
+#   cp .env.example .env   # defina uma senha forte
+#   docker compose up -d
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-sumi}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sumi}
+      POSTGRES_DB: ${POSTGRES_DB:-sumi_db}
+    ports:
+      # Acesso de clientes/apps no host e na rede (DBeaver, outra máquina, etc.)
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - shared-db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sumi} -d ${POSTGRES_DB:-sumi_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+networks:
+  shared-db:
+    external: true
+
+volumes:
+  pgdata:

@@ -1,30 +1,24 @@
-services:
-  db:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-sumi}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sumi}
-      POSTGRES_DB: ${POSTGRES_DB:-sumi_db}
-    ports:
-      # Expõe o Postgres no host para outras apps/clientes acessarem.
-      - "${POSTGRES_PORT:-5432}:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sumi} -d ${POSTGRES_DB:-sumi_db}"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+# Stack da sumi (API + app Angular servido pela API).
+# O Postgres NÃO sobe aqui — ele é uma stack separada em ./postgres.
+# A API conecta nele pela rede externa 'shared-db' (host 'postgres').
+#
+# Pré-requisitos (uma vez):
+#   docker network create shared-db
+#   cd postgres && cp .env.example .env && docker compose up -d
+#
+# Depois, na raiz:
+#   cp .env.production.example .env   # preencha POSTGRES_*, JWT, OPENAI
+#   docker compose up -d --build
 
+services:
   api:
     build: .
     restart: unless-stopped
     env_file:
       - .env
     environment:
-      # Sobrescreve a DATABASE_URL para apontar ao container do Postgres.
-      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-sumi}:${POSTGRES_PASSWORD:-sumi}@db:5432/${POSTGRES_DB:-sumi_db}
+      # Conecta no Postgres da stack separada (container 'postgres' na rede shared-db).
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-sumi}:${POSTGRES_PASSWORD:-sumi}@postgres:5432/${POSTGRES_DB:-sumi_db}
       IMAGES_DIR: /app/static/images
       APP_ENV: production
       APP_RELOAD: "false"
@@ -32,14 +26,17 @@ services:
       - "${APP_PORT:-8000}:8000"
     volumes:
       - images:/app/static/images
-    depends_on:
-      db:
-        condition: service_healthy
+    networks:
+      - shared-db
     # Roda as migrations antes de subir a API (Alembic não roda no build).
+    # Se o Postgres ainda não estiver pronto, o restart reattempta até conectar.
     command: >
       sh -c "alembic upgrade head &&
              uvicorn prompt_clinica.main:app --host 0.0.0.0 --port 8000"
 
+networks:
+  shared-db:
+    external: true
+
 volumes:
-  pgdata:
   images:
