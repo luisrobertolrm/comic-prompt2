@@ -1,5 +1,26 @@
 @use '../shared/chars-ui';
 
+.field-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tag-toggle {
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: var(--paper);
+  padding: 2px 10px;
+  font-size: 11px;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+
+.tag-toggle:hover {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
 .manual-grid {
   display: grid;
   grid-template-columns: 1fr 260px;

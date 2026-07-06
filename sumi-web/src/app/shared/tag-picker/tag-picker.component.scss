@@ -1,0 +1,115 @@
+.tag-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-sm, 6px);
+  background: var(--paper);
+}
+
+.tp-search { position: relative; }
+
+.tp-input {
+  width: 100%;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-sm, 6px);
+  background: var(--paper-2);
+  padding: 8px 10px;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.tp-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 10;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-sm, 6px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .12);
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.tp-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 6px 8px;
+  font-size: 13px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.tp-option--active,
+.tp-option:hover { background: var(--accent-soft); }
+
+.tp-count {
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+.tp-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tp-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  font-size: 12px;
+  color: var(--ink-2);
+  background: var(--paper-3);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+}
+
+.tp-chip-x {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+
+.tp-chip-x:hover { color: var(--ink); }
+
+.tp-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.tp-btn {
+  padding: 6px 14px;
+  font-size: 13px;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-sm, 6px);
+  background: var(--paper);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.tp-btn--ok {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.tp-btn:disabled {
+  opacity: .5;
+  cursor: default;
+}

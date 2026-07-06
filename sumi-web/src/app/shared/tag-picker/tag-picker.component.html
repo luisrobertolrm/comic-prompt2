@@ -1,0 +1,34 @@
+<div class="tag-picker">
+  <div class="tp-search">
+    <input class="tp-input" type="text" placeholder="Buscar tag em inglês… (ex: blue hair)"
+           [value]="query()" (input)="onInput($event)" (keydown)="onKeydown($event)">
+    @if (suggestions().length) {
+      <ul class="tp-dropdown">
+        @for (s of suggestions(); track s.name; let i = $index) {
+          <li class="tp-option" [class.tp-option--active]="active() === i"
+              (mousedown)="$event.preventDefault(); pick(s.name)">
+            <span>{{ s.name }}</span>
+            <span class="tp-count">{{ fmtCount(s.count) }}</span>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+
+  @if (selected().length) {
+    <div class="tp-chips">
+      @for (t of selected(); track t) {
+        <span class="tp-chip">
+          {{ t }}
+          <button class="tp-chip-x" type="button" (click)="remove(t)" title="Remover">×</button>
+        </span>
+      }
+    </div>
+  }
+
+  <div class="tp-actions">
+    <button class="tp-btn" type="button" (click)="onCancel()">Cancelar</button>
+    <button class="tp-btn tp-btn--ok" type="button" (click)="ok()"
+            [disabled]="!selected().length">OK</button>
+  </div>
+</div>

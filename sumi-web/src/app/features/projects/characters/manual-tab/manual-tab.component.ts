@@ -2,11 +2,13 @@ import { Component, DestroyRef, EventEmitter, Input, Output, computed, inject, s
 import type { CharacterCreate, CharacterOut } from '../../../../core/models/home.models';
 import { CharacterService } from '../../../../core/services/character.service';
 import type { SavedVoice } from '../../../../core/services/voice.service';
+import { TagPickerComponent } from '../../../../shared/tag-picker/tag-picker.component';
 import { AiCandidate, portraitStream, toCandidates } from '../shared/portrait-stream';
 
 @Component({
   selector: 'app-manual-tab',
   standalone: true,
+  imports: [TagPickerComponent],
   templateUrl: './manual-tab.component.html',
   styleUrl: './manual-tab.component.scss',
 })
@@ -35,6 +37,7 @@ export class ManualTabComponent {
   error = signal('');
   candidates = signal<AiCandidate[]>([]);
   picked = signal<string | null>(null);
+  tagPickerFor = signal<'summary' | 'outfit' | null>(null);
 
   complete = computed(() =>
     !!(this.name().trim() && this.role().trim() && this.gender() && this.age().trim()
@@ -43,6 +46,17 @@ export class ManualTabComponent {
 
   setField(sig: ReturnType<typeof signal<string>>, e: Event): void {
     sig.set((e.target as HTMLInputElement | HTMLTextAreaElement).value);
+  }
+
+  toggleTagPicker(field: 'summary' | 'outfit'): void {
+    this.tagPickerFor.update(cur => (cur === field ? null : field));
+  }
+
+  applyTags(tags: string[]): void {
+    const target = this.tagPickerFor() === 'outfit' ? this.outfit : this.summary;
+    const cur = target().trim().replace(/,$/, '');
+    target.set(cur ? `${cur}, ${tags.join(', ')}` : tags.join(', '));
+    this.tagPickerFor.set(null);
   }
 
   initial(name: string): string {

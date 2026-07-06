@@ -36,17 +36,29 @@
     </div>
 
     <div class="field">
-      <label class="field-label">Descrição visual</label>
+      <div class="field-label-row">
+        <label class="field-label">Descrição visual</label>
+        <button class="tag-toggle" type="button" (click)="toggleTagPicker('summary')">＋ Tags EN</button>
+      </div>
       <p class="field-hint">Cabelo, olhos, expressão — a IA usa para manter coerência entre quadros.</p>
       <textarea class="textarea" rows="3"
                 placeholder="Olhos grandes castanho-âmbar, franja reta, sempre carrega um caderno surrado…"
                 [value]="summary()" (input)="setField(summary, $event)"></textarea>
+      @if (tagPickerFor() === 'summary') {
+        <app-tag-picker (confirm)="applyTags($event)" (cancel)="tagPickerFor.set(null)" />
+      }
     </div>
 
     <div class="field">
-      <label class="field-label">Figurino padrão</label>
+      <div class="field-label-row">
+        <label class="field-label">Figurino padrão</label>
+        <button class="tag-toggle" type="button" (click)="toggleTagPicker('outfit')">＋ Tags EN</button>
+      </div>
       <input class="input" placeholder="Uniforme escolar, meia-calça preta"
              [value]="outfit()" (input)="setField(outfit, $event)">
+      @if (tagPickerFor() === 'outfit') {
+        <app-tag-picker (confirm)="applyTags($event)" (cancel)="tagPickerFor.set(null)" />
+      }
     </div>
 
     <div class="field">
