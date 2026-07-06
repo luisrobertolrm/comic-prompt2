@@ -62,6 +62,11 @@ class DeletePanelsBody(BaseModel):
 
 class GeneratePanelsBody(BaseModel):
     target_panels: int | None = None
+    use_local: bool = False
+
+
+class GeneratePanelBody(BaseModel):
+    use_local: bool = False
 
 
 class VideoJobOut(BaseModel):

@@ -43,6 +43,10 @@ export class ProjectService {
     return this.http.patch<ProjectOut>(`${this.base}/projects/${id}`, req);
   }
 
+  delete(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/projects/${id}`);
+  }
+
   generateSynopsis(id: string): Observable<ProjectDetailOut> {
     return this.http.post<ProjectDetailOut>(`${this.base}/projects/${id}/synopsis/generate`, {});
   }

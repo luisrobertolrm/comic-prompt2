@@ -1,0 +1,72 @@
+<div style="max-width:640px;margin:0 auto;padding:8px 0">
+
+  <div class="page-head" style="margin-bottom:24px">
+    <div>
+      <p class="eyebrow">CONFIGURAÇÕES</p>
+      <h1>IA local</h1>
+      <p class="lede">Aponte para um servidor Ollama (na sua máquina ou na rede) para gerar roteiros sem usar a nuvem.</p>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <p class="muted-sm">Carregando…</p>
+  } @else {
+    <div style="display:flex;flex-direction:column;gap:18px">
+
+      <label style="display:flex;flex-direction:column;gap:6px">
+        <span style="font-size:13px;font-weight:600">URL do servidor</span>
+        <span class="muted-sm">Ex.: http://localhost:11434 ou http://192.168.0.10:11434</span>
+        <input class="input" type="text" autocomplete="off" spellcheck="false"
+               placeholder="http://localhost:11434"
+               [value]="url()"
+               (input)="url.set($any($event.target).value)">
+      </label>
+
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn-ghost" (click)="fetchModels()" [disabled]="testing()">
+          {{ testing() ? 'Conectando…' : '↻ Buscar modelos' }}
+        </button>
+        @if (testOk()) {
+          <span class="muted-sm" style="color:var(--mint,#2e9e6b)">✓ Conectado ({{ models().length }} modelos)</span>
+        }
+      </div>
+
+      <label style="display:flex;flex-direction:column;gap:6px">
+        <span style="font-size:13px;font-weight:600">Modelo</span>
+        @if (models().length > 0) {
+          <select class="input" [value]="model()" (change)="model.set($any($event.target).value)">
+            @for (m of models(); track m) {
+              <option [value]="m" [selected]="m === model()">{{ m }}</option>
+            }
+          </select>
+        } @else {
+          <input class="input" type="text" autocomplete="off" spellcheck="false"
+                 placeholder="Busque os modelos ou digite o nome (ex.: llama3.1)"
+                 [value]="model()"
+                 (input)="model.set($any($event.target).value)">
+        }
+      </label>
+
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" [checked]="enabled()" (change)="enabled.set($any($event.target).checked)">
+        <span style="font-size:13px">Habilitar IA local (deixa o interruptor do Roteiro ligado por padrão)</span>
+      </label>
+
+      @if (error(); as err) {
+        <div role="alert"
+             style="padding:12px 14px;border:1px solid var(--error,#c0392b);border-radius:10px;color:var(--error,#c0392b);font-size:13px">
+          ⚠ {{ err }}
+        </div>
+      }
+
+      <div style="display:flex;gap:10px;align-items:center">
+        <button class="btn-primary" (click)="save()" [disabled]="saving()">
+          {{ saving() ? 'Salvando…' : 'Salvar' }}
+        </button>
+        @if (saved()) { <span class="muted-sm" style="color:var(--mint,#2e9e6b)">✓ Salvo</span> }
+      </div>
+
+    </div>
+  }
+
+</div>

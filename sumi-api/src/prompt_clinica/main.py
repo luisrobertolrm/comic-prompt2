@@ -22,6 +22,7 @@ from prompt_clinica.routers import (
     scenario_options,
     scenarios,
     series,
+    settings as settings_router,
     storage,
     styles,
     voice,
@@ -74,6 +75,7 @@ app.include_router(storage.router)
 app.include_router(voice.router)
 app.include_router(image_test.router)
 app.include_router(styles.router)
+app.include_router(settings_router.router)
 
 _static_root = Path("static")
 _static_root.mkdir(parents=True, exist_ok=True)

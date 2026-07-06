@@ -71,6 +71,19 @@ class _CompositeProvider:
         return self._image.image(req)
 
 
+def build_local_text_provider(base_url: str, model: str) -> AIProvider:
+    """Provider de TEXTO apontando para um servidor OpenAI-compat local (Ollama etc.).
+
+    `base_url` é a raiz do servidor (ex.: http://localhost:11434); o sufixo /v1
+    é acrescentado aqui. Ollama ignora a api_key, mas o SDK exige uma.
+    """
+    from prompt_clinica.ai.providers.openai_provider import OpenAIProvider
+
+    root = base_url.rstrip("/")
+    v1 = root if root.endswith("/v1") else f"{root}/v1"
+    return OpenAIProvider(api_key="local", text_model=model, base_url=v1)
+
+
 def _build_default() -> AIProvider:
     from prompt_clinica.config import settings
 
@@ -86,6 +99,7 @@ ai: AIProvider = _build_default()
 
 __all__ = [
     "ai",
+    "build_local_text_provider",
     "AIProvider",
     "Message",
     "TextRequest",

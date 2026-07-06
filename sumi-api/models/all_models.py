@@ -10,7 +10,8 @@ from series import Series
 from series_project import SeriesProject
 from temp_portrait import TempPortrait
 from user import PasswordResetToken, User, UserOAuth, UserSession
+from user_settings import UserSettings
 from visual_style import VisualStyle
 from youtube_metadata import VideoMetadata
 
-__all__ = ["User", "UserOAuth", "PasswordResetToken", "UserSession", "Project", "Character", "ProjectCharacter", "Scenario", "ProjectScenario", "Series", "SeriesProject", "VideoMetadata", "TempPortrait", "NarrationVoice", "VisualStyle"]
+__all__ = ["User", "UserOAuth", "PasswordResetToken", "UserSession", "UserSettings", "Project", "Character", "ProjectCharacter", "Scenario", "ProjectScenario", "Series", "SeriesProject", "VideoMetadata", "TempPortrait", "NarrationVoice", "VisualStyle"]

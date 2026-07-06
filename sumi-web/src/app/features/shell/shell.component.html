@@ -62,6 +62,15 @@
       Teste de imagem
     </button>
 
+    <button class="nav-item" [class.active]="isActive('settings')" (click)="navigateTo('/settings')">
+      <span class="glyph">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path [attr.d]="iconPath('gear')"></path>
+        </svg>
+      </span>
+      Configurações
+    </button>
+
     <!-- Em produção -->
     @if (inCreation()) {
       <div class="nav-section-label" style="margin-top:8px">Em produção</div>
@@ -80,6 +89,17 @@
                 @if (isDone(i)) { ✓ } @else { {{ i + 1 }} }
               </span>
               {{ step.label }}
+            </button>
+          }
+
+          @if (canDeleteProject()) {
+            <button class="step-item step-item--danger" (click)="openDelete()">
+              <span class="step-num">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M10 11v6M14 11v6"></path>
+                </svg>
+              </span>
+              Excluir projeto
             </button>
           }
         </div>
@@ -171,4 +191,49 @@
     </div>
 
   </div>
+
+  <!-- ══════════════ MODAL: EXCLUIR PROJETO ══════════════ -->
+  @if (deleteOpen()) {
+    <div class="del-backdrop" (click)="closeDelete()"></div>
+    <div class="del-modal" role="dialog" aria-modal="true" aria-labelledby="del-title">
+      <div class="del-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01"></path>
+        </svg>
+      </div>
+
+      <h2 id="del-title" class="del-title">Excluir projeto</h2>
+
+      <p class="del-warn">
+        Esta ação é <b>permanente</b>. O projeto
+        <b>“{{ draft.currentProjectTitle() || 'sem título' }}”</b> e
+        <b>todas as imagens</b> geradas serão apagados e <b>não poderão ser recuperados</b>.
+      </p>
+
+      <p class="del-instruction">
+        Para confirmar, digite o código abaixo:
+      </p>
+
+      <div class="del-code">{{ deleteCode() }}</div>
+
+      <input class="del-field"
+             type="text"
+             autocomplete="off"
+             spellcheck="false"
+             placeholder="Digite o código"
+             [value]="deleteInput()"
+             (input)="onDeleteInput($any($event.target).value)" />
+
+      <div class="del-actions">
+        <button class="del-btn del-btn--ghost" (click)="closeDelete()" [disabled]="deleting()">
+          Cancelar
+        </button>
+        <button class="del-btn del-btn--danger"
+                (click)="confirmDelete()"
+                [disabled]="!canConfirmDelete()">
+          {{ deleting() ? 'Excluindo…' : 'Excluir definitivamente' }}
+        </button>
+      </div>
+    </div>
+  }
 </div>

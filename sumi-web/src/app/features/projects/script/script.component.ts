@@ -7,6 +7,7 @@ import type { PanelOut } from '../../../core/models/panel.models';
 import { PanelService } from '../../../core/services/panel.service';
 import { ProjectService } from '../../../core/services/project.service';
 import { ProjectDraftService } from '../../../core/services/project-draft.service';
+import { SettingsService } from '../../../core/services/settings.service';
 import { StyleService, StyleOption } from '../../../core/services/style.service';
 import { MangaPanelComponent } from '../manga-panel/manga-panel.component';
 import { SynopsisPanelComponent, SynopsisSelection, SynopsisRange } from './synopsis-panel/synopsis-panel.component';
@@ -26,9 +27,13 @@ export class ScriptComponent implements OnInit {
   private panelService = inject(PanelService);
   private draft = inject(ProjectDraftService);
   private styleService = inject(StyleService);
+  private settingsService = inject(SettingsService);
 
   styles = signal<StyleOption[]>([]);
   colorModes = signal<StyleOption[]>([]);
+
+  useLocalAi = signal(false);
+  localAiConfigured = signal(false);
 
   projectId = signal('');
   project = signal<ProjectDetailOut | null>(null);
@@ -74,6 +79,12 @@ export class ScriptComponent implements OnInit {
     this.styleService.catalog().subscribe({
       next: c => { this.styles.set(c.styles); this.colorModes.set(c.color_modes); },
     });
+    this.settingsService.get().subscribe({
+      next: s => {
+        this.localAiConfigured.set(!!s.local_ai_url && !!s.local_ai_model);
+        this.useLocalAi.set(s.local_ai_enabled && this.localAiConfigured());
+      },
+    });
     this.loadPanels(id);
   }
 
@@ -97,18 +108,23 @@ export class ScriptComponent implements OnInit {
     this.generateError.set(null);
     this.panels.set([]);
     // Passo 1: a IA divide o roteiro inteiro em quadros 'pending' (retorno rápido).
-    this.panelService.generate(this.projectId(), this.targetPanels()).subscribe({
+    this.panelService.generate(this.projectId(), this.targetPanels(), this.useLocalAi()).subscribe({
       next: slots => {
         this.panels.set(slots);
         this.targetPanels.set(slots.length);
         this.generating.set(false);
         this.fillPanelsContent(slots);
       },
-      error: () => {
+      error: err => {
         this.generating.set(false);
-        this.generateError.set('Não foi possível gerar os quadros agora. Tente novamente.');
+        this.generateError.set(this.errorMessage(err));
       },
     });
+  }
+
+  private errorMessage(err: unknown): string {
+    const detail = (err as { error?: { detail?: string } })?.error?.detail;
+    return detail || 'Não foi possível gerar os quadros agora. Tente novamente.';
   }
 
   /** Passo 2: gera o conteúdo de cada quadro individualmente, em paralelo. */
@@ -117,7 +133,7 @@ export class ScriptComponent implements OnInit {
     this.generatingContentIds.set(new Set(slots.map(p => p.id)));
     from(slots).pipe(
       mergeMap(
-        panel => this.panelService.generateContent(panel.id).pipe(
+        panel => this.panelService.generateContent(panel.id, this.useLocalAi()).pipe(
           map(updated => ({ id: panel.id, updated: updated as PanelOut | null })),
           catchError(() => of({ id: panel.id, updated: null as PanelOut | null })),
         ),
@@ -134,12 +150,15 @@ export class ScriptComponent implements OnInit {
   generateContent(panel: PanelOut): void {
     if (this.generatingContentIds().has(panel.id)) return;
     this.generatingContentIds.update(s => new Set(s).add(panel.id));
-    this.panelService.generateContent(panel.id).subscribe({
+    this.panelService.generateContent(panel.id, this.useLocalAi()).subscribe({
       next: updated => {
         this.panels.update(list => list.map(p => p.id === updated.id ? updated : p));
         this.generatingContentIds.update(s => { const n = new Set(s); n.delete(panel.id); return n; });
       },
-      error: () => this.generatingContentIds.update(s => { const n = new Set(s); n.delete(panel.id); return n; }),
+      error: err => {
+        this.generateError.set(this.errorMessage(err));
+        this.generatingContentIds.update(s => { const n = new Set(s); n.delete(panel.id); return n; });
+      },
     });
   }
 

@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from prompt_clinica.database import get_db
 from prompt_clinica.deps import get_current_user
-from prompt_clinica.schemas.panel import PanelOut, PanelPatch
+from prompt_clinica.schemas.panel import GeneratePanelBody, PanelOut, PanelPatch
 from prompt_clinica.services import panel_service
 from user import User
 
@@ -34,10 +34,11 @@ def delete_panel(
 @router.post("/panels/{panel_id}/generate", response_model=PanelOut)
 def generate_panel_content(
     panel_id: uuid.UUID,
+    body: GeneratePanelBody = GeneratePanelBody(),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> PanelOut:
-    return panel_service.generate_one(panel_id, user, db)
+    return panel_service.generate_one(panel_id, user, db, use_local=body.use_local)
 
 
 @router.post("/panels/{panel_id}/image", response_model=PanelOut)

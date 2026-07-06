@@ -13,10 +13,10 @@ export class PanelService {
     return this.http.get<PanelOut[]>(`${this.base}/projects/${projectId}/panels`);
   }
 
-  generate(projectId: string, targetPanels?: number | null): Observable<PanelOut[]> {
+  generate(projectId: string, targetPanels?: number | null, useLocal = false): Observable<PanelOut[]> {
     return this.http.post<PanelOut[]>(
       `${this.base}/projects/${projectId}/panels/generate`,
-      { target_panels: targetPanels ?? null },
+      { target_panels: targetPanels ?? null, use_local: useLocal },
     );
   }
 
@@ -40,8 +40,8 @@ export class PanelService {
     return this.http.put<void>(`${this.base}/projects/${projectId}/panels/order`, { panel_ids: panelIds });
   }
 
-  generateContent(panelId: string): Observable<PanelOut> {
-    return this.http.post<PanelOut>(`${this.base}/panels/${panelId}/generate`, {});
+  generateContent(panelId: string, useLocal = false): Observable<PanelOut> {
+    return this.http.post<PanelOut>(`${this.base}/panels/${panelId}/generate`, { use_local: useLocal });
   }
 
   generateImage(panelId: string): Observable<PanelOut> {

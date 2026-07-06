@@ -79,6 +79,15 @@ def update_project(
     return ProjectOut.model_validate(project_service.update(project_id, patch, user, db))
 
 
+@router.delete("/{project_id}", status_code=204)
+def delete_project(
+    project_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> None:
+    project_service.delete(project_id, user, db)
+
+
 @router.post("/{project_id}/synopsis/generate", response_model=ProjectDetailOut)
 def generate_synopsis(
     project_id: uuid.UUID,
@@ -124,7 +133,9 @@ def generate_panels(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> list[PanelOut]:
-    return panel_service.generate(project_id, user, db, target_panels=body.target_panels)
+    return panel_service.generate(
+        project_id, user, db, target_panels=body.target_panels, use_local=body.use_local
+    )
 
 
 @router.post("/{project_id}/panels", status_code=201, response_model=PanelOut)

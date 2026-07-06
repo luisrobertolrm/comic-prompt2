@@ -40,6 +40,11 @@ export const routes: Routes = [
           import('./features/image-test/image-test.component').then(m => m.ImageTestComponent),
       },
       {
+        path: 'settings',
+        loadComponent: () =>
+          import('./features/settings/settings.component').then(m => m.SettingsComponent),
+      },
+      {
         path: 'projects/new',
         loadComponent: () =>
           import('./features/projects/new/new-project.component').then(m => m.NewProjectComponent),

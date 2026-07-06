@@ -19,8 +19,9 @@ from sqlalchemy.orm import Session
 
 import prompt_clinica._paths  # noqa: F401
 from prompt_clinica import styles
-from prompt_clinica.ai import ImageRequest, Message, TextRequest, ai
+from prompt_clinica.ai import AIProvider, ImageRequest, Message, TextRequest, ai
 from prompt_clinica.ai.roteiro import generate_outline, generate_panel
+from prompt_clinica.services import settings_service
 
 _BUBBLES_SYSTEM = """\
 Você é roteirista de mangá shojo. Gere balões de diálogo para um quadro específico.
@@ -295,6 +296,7 @@ def generate(
     user: User,
     db: Session,
     target_panels: int | None = None,
+    use_local: bool = False,
 ) -> list[PanelOut]:
     """Passo 1 do storyboard: a IA divide o roteiro inteiro em quadros 'pending'.
 
@@ -302,10 +304,14 @@ def generate(
     (em torno de target_panels). O conteúdo de cada quadro é gerado depois,
     individualmente, via generate_one (chamada assíncrona por quadro no front).
     Levanta 503 se a IA não retornar quadros — não há recorte determinístico.
+    `use_local` roteia a geração para a IA local configurada pelo usuário.
     """
     project = _check_project(project_id, user, db)
     char_names = _get_char_names(project_id, db)
     source_text = project.synopsis or project.premise or project.title
+    provider: AIProvider | None = (
+        settings_service.resolve_local_provider(user, db) if use_local else None
+    )
 
     outline = generate_outline(
         premise=source_text,
@@ -315,6 +321,7 @@ def generate(
         character_names=char_names,
         target_panels=target_panels,
         temperature=project.panels_temperature,
+        provider=provider,
     )
 
     items: list[dict[str, Any]] = outline.get("panels") or []  # type: ignore[assignment]
@@ -337,11 +344,12 @@ def generate(
     return [panel_to_out(p) for p in panels]
 
 
-def generate_one(panel_id: uuid.UUID, user: User, db: Session) -> PanelOut:
+def generate_one(panel_id: uuid.UUID, user: User, db: Session, use_local: bool = False) -> PanelOut:
     """Gera (via IA) o conteúdo de um único quadro, ancorado no trecho vinculado.
 
     Usado para preencher quadros inseridos manualmente sem regerar o storyboard
     inteiro. Mantém o vínculo de sinopse existente; substitui os demais campos.
+    `use_local` roteia a geração para a IA local configurada pelo usuário.
     """
     panel: Panel | None = (
         db.query(Panel)
@@ -363,6 +371,7 @@ def generate_one(panel_id: uuid.UUID, user: User, db: Session) -> PanelOut:
         e = max(s, min(panel.synopsis_end, len(source_text)))
         excerpt = source_text[s:e]
 
+    provider = settings_service.resolve_local_provider(user, db) if use_local else None
     data = generate_panel(
         excerpt=excerpt,
         synopsis=source_text,
@@ -372,6 +381,7 @@ def generate_one(panel_id: uuid.UUID, user: User, db: Session) -> PanelOut:
         style=project.style,
         color_mode=project.color_mode,
         temperature=project.panels_temperature,
+        provider=provider,
     )
     if not data:
         raise HTTPException(

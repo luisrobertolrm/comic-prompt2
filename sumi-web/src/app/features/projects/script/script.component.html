@@ -38,6 +38,14 @@
                  (change)="setPanelsTemperature($any($event.target).value)"
                  [disabled]="generating() || generatingImages()">
         </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)"
+               [title]="localAiConfigured() ? 'Gerar usando a IA local configurada' : 'Configure a IA local em Configurações'">
+          <input type="checkbox"
+                 [checked]="useLocalAi()"
+                 (change)="useLocalAi.set($any($event.target).checked)"
+                 [disabled]="!localAiConfigured() || generating() || generatingImages()">
+          IA local
+        </label>
         <button class="btn-ghost" (click)="runGenerate()" [disabled]="generating() || generatingImages()">
           ↻ Gerar tudo
         </button>
@@ -164,6 +172,14 @@
                      [value]="panelsTemperature()"
                      (change)="setPanelsTemperature($any($event.target).value)"
                      [disabled]="generating()">
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)"
+                   [title]="localAiConfigured() ? 'Gerar usando a IA local configurada' : 'Configure a IA local em Configurações'">
+              <input type="checkbox"
+                     [checked]="useLocalAi()"
+                     (change)="useLocalAi.set($any($event.target).checked)"
+                     [disabled]="!localAiConfigured() || generating()">
+              IA local
             </label>
             <button class="btn-primary" (click)="runGenerate()">✦ Gerar quadros</button>
           </div>

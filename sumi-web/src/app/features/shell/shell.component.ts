@@ -21,6 +21,7 @@ const ICON_PATHS: Record<string, string> = {
   search:   'M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16zM21 21l-4.3-4.3',
   mic:      'M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3',
   logout:   'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9',
+  gear:     'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z',
 };
 
 const STEPS = [
@@ -52,6 +53,10 @@ export class ShellComponent {
   readonly steps = STEPS;
   popoverOpen    = signal(false);
   sidebarOpen    = signal(false);
+  deleteOpen     = signal(false);
+  deleteCode     = signal('');
+  deleteInput    = signal('');
+  deleting       = signal(false);
   private lastFetchedId = '';
 
   // URL reativa — atualiza em cada navegação
@@ -71,6 +76,7 @@ export class ShellComponent {
     if (u.startsWith('/library'))           return 'library';
     if (u.startsWith('/series'))            return 'series';
     if (u.startsWith('/voice-test'))        return 'voice-test';
+    if (u.startsWith('/settings'))          return 'settings';
     if (u.endsWith('/new'))                 return 'new';
     if (u.endsWith('/characters'))          return 'characters';
     if (u.endsWith('/scenarios'))           return 'scenarios';
@@ -180,4 +186,45 @@ export class ShellComponent {
   togglePopover(): void { this.popoverOpen.update(v => !v); }
 
   closePopover(): void { this.popoverOpen.set(false); }
+
+  canDeleteProject = computed(() => !!this.projectId());
+
+  canConfirmDelete = computed(
+    () => this.deleteInput().trim().toUpperCase() === this.deleteCode() && !this.deleting(),
+  );
+
+  openDelete(): void {
+    if (!this.projectId()) return;
+    const code = Array.from({ length: 6 }, () =>
+      'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random() * 32)],
+    ).join('');
+    this.deleteCode.set(code);
+    this.deleteInput.set('');
+    this.deleting.set(false);
+    this.deleteOpen.set(true);
+  }
+
+  closeDelete(): void {
+    if (this.deleting()) return;
+    this.deleteOpen.set(false);
+  }
+
+  onDeleteInput(value: string): void { this.deleteInput.set(value); }
+
+  confirmDelete(): void {
+    const id = this.projectId();
+    if (!id || !this.canConfirmDelete()) return;
+    this.deleting.set(true);
+    this.projectService.delete(id).subscribe({
+      next: () => {
+        this.deleteOpen.set(false);
+        this.deleting.set(false);
+        if (this.draft.projectId() === id) this.draft.projectId.set(null);
+        this.draft.currentProjectTitle.set('');
+        this.closeSidebar();
+        void this.router.navigate(['/home']);
+      },
+      error: () => { this.deleting.set(false); },
+    });
+  }
 }

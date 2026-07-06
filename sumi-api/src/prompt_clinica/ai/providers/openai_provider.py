@@ -23,14 +23,18 @@ class OpenAIProvider:
         api_key: str,
         text_model: str = "gpt-4o-mini",
         image_model: str = "gpt-image-1",
+        base_url: str | None = None,
     ) -> None:
-        self._client = OpenAI(api_key=api_key)
+        # base_url permite apontar para um servidor OpenAI-compat local (Ollama,
+        # LM Studio, vLLM). None = API oficial da OpenAI.
+        self._client = OpenAI(api_key=api_key, base_url=base_url) if base_url else OpenAI(api_key=api_key)
         self._text_model = text_model
         self._image_model = image_model
+        self._name = "openai-local" if base_url else "openai"
 
     @property
     def name(self) -> str:
-        return "openai"
+        return self._name
 
     def text(self, req: TextRequest) -> TextResponse:
         model = req.model or self._text_model

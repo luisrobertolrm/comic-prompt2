@@ -8,6 +8,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from character import Character
+from panel import Panel
 from project import Project
 from project_character import ProjectCharacter
 from project_scenario import ProjectScenario
@@ -15,6 +16,7 @@ from prompt_clinica.ai.synopsis import generate_synopsis as ai_generate_synopsis
 from prompt_clinica.schemas.character import CharacterOut
 from prompt_clinica.schemas.project import ProjectCreate, ProjectDetailOut, ProjectOut, ProjectPatch
 from prompt_clinica.schemas.scenario import ScenarioOut
+from prompt_clinica.storage import get_storage
 from scenario import Scenario
 from user import User
 
@@ -114,6 +116,38 @@ def update(project_id: uuid.UUID, patch: ProjectPatch, user: User, db: Session) 
     db.commit()
     db.refresh(project)
     return project
+
+
+def _storage_key_from_url(url: str | None) -> str | None:
+    if not url:
+        return None
+    clean = url.split("?", 1)[0]
+    for marker in ("/static/images/", "/storage/"):
+        if marker in clean:
+            return clean.split(marker, 1)[1]
+    return None
+
+
+def delete(project_id: uuid.UUID, user: User, db: Session) -> None:
+    project: Project | None = (
+        db.query(Project)
+        .filter(Project.id == project_id, Project.user_id == user.id)
+        .first()
+    )
+    if project is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Projeto não encontrado.")
+
+    storage = get_storage()
+    panels = db.query(Panel).filter(Panel.project_id == project_id).all()
+    for p in panels:
+        if p.image_url:
+            storage.delete(f"{p.id}.png")
+    video_key = _storage_key_from_url(project.video_url)
+    if video_key:
+        storage.delete(video_key)
+
+    db.delete(project)
+    db.commit()
 
 
 def generate_synopsis(project_id: uuid.UUID, user: User, db: Session) -> ProjectDetailOut:

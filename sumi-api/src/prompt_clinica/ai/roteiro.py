@@ -6,11 +6,29 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 
 from prompt_clinica import styles
-from prompt_clinica.ai import Message, TextRequest, ai
+from prompt_clinica.ai import AIProvider, Message, TextRequest, ai
 
 logger = logging.getLogger(__name__)
+
+
+def _loads_object(content: str) -> dict[str, object]:
+    """Faz parse de um objeto JSON tolerando sujeira (cercas markdown, texto ao redor).
+
+    Modelos locais (Ollama) nem sempre respeitam json_mode e podem devolver o JSON
+    embrulhado em ```json ... ``` ou com texto antes/depois. Tenta o parse direto e,
+    se falhar, extrai o primeiro objeto {...} do texto.
+    """
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError:
+        pass
+    m = re.search(r"\{.*\}", content, re.DOTALL)
+    if not m:
+        raise ValueError("Nenhum objeto JSON na resposta.")
+    return json.loads(m.group())
 
 _SYSTEM = """\
 Você é roteirista de mangá. Gere um storyboard estruturado.
@@ -140,12 +158,14 @@ def generate_outline(
     character_names: list[str],
     target_panels: int | None = None,
     temperature: float = 0.4,
+    provider: AIProvider | None = None,
 ) -> dict[str, object]:
     """Recorta a sinopse em quadros (só excerpt + personagem), sem conteúdo pesado.
 
     Passo leve do storyboard: o conteúdo de cada quadro (framing, prompt, balões)
     é gerado depois, individualmente, por `generate_panel`. Retorna
     {"panels": [{"excerpt", "character_name"}]} ou {} se falhar.
+    `provider` permite usar uma IA específica (ex.: local); None usa o padrão.
     """
     chars = ", ".join(character_names) if character_names else "nenhum definido ainda"
 
@@ -176,7 +196,7 @@ def generate_outline(
     )
 
     try:
-        resp = ai.text(TextRequest(
+        resp = (provider or ai).text(TextRequest(
             messages=[
                 Message(role="system", content=_OUTLINE_SYSTEM),
                 Message(role="user", content=user_msg),
@@ -185,7 +205,7 @@ def generate_outline(
             max_tokens=budget,
             json_mode=True,
         ))
-        data: dict[str, object] = json.loads(resp.content)
+        data: dict[str, object] = _loads_object(resp.content)
         if "panels" not in data or not isinstance(data["panels"], list):
             raise ValueError("JSON sem chave 'panels'")
         data["panels"] = data["panels"][:MAX_PANELS]  # type: ignore[index]
@@ -227,10 +247,12 @@ def generate_panel(
     style: str | None = None,
     color_mode: str | None = None,
     temperature: float = 0.4,
+    provider: AIProvider | None = None,
 ) -> dict[str, object]:
     """Gera o conteúdo de UM quadro ancorado em `excerpt` (ou na sinopse inteira).
 
     Retorna o dict do quadro ({} em caso de falha).
+    `provider` permite usar uma IA específica (ex.: local); None usa o padrão.
     """
     chars = ", ".join(character_names) if character_names else "nenhum definido ainda"
     vs = styles.resolve(style)
@@ -248,7 +270,7 @@ def generate_panel(
     )
 
     try:
-        resp = ai.text(TextRequest(
+        resp = (provider or ai).text(TextRequest(
             messages=[
                 Message(role="system", content=_PANEL_SYSTEM),
                 Message(role="user", content=user_msg),
@@ -260,7 +282,7 @@ def generate_panel(
             max_tokens=2500,
             json_mode=True,
         ))
-        data: dict[str, object] = json.loads(resp.content)
+        data: dict[str, object] = _loads_object(resp.content)
         if not isinstance(data, dict):
             raise ValueError("Resposta não é um objeto JSON")
         logger.info("Quadro gerado: %d tokens out.", resp.output_tokens)
