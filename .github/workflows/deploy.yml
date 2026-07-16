@@ -1,0 +1,18 @@
+name: Deploy sumi
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, Linux, sumi]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build e sobe containers
+        working-directory: /DATA/comic-prompt2
+        run: |
+          git pull
+          docker compose up -d --build
