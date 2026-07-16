@@ -1,18 +1,15 @@
 name: Deploy sumi
-
 on:
   push:
     branches: [main]
-
 jobs:
   deploy:
     runs-on: self-hosted
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Build e sobe containers
-        working-directory: /DATA/comic-prompt2
+      - name: Sync e build
         run: |
-          git pull
+          rsync -av --exclude='.env' $GITHUB_WORKSPACE/ /DATA/comic-prompt2/
+          cd /DATA/comic-prompt2
           docker compose up -d --build
