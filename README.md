@@ -72,7 +72,6 @@ comic-prompt/                   ← raiz do repositório
 ```
 
 
-
 > **Por que separados?** O Angular tem toolchain próprio (`npm`, `ng`), ciclo de build independente e pode ser hospedado em CDN. Manter os dois na raiz do mesmo repositório (monorepo simples) facilita PRs que afetam os dois lados sem precisar de submódulos.
 
 ---
