@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel, EmailStr, field_validator, model_validator
 
 
@@ -42,10 +44,6 @@ class LoginRequest(BaseModel):
     remember: bool = False
 
 
-class OAuthGuestRequest(BaseModel):
-    pass
-
-
 class PasswordResetRequest(BaseModel):
     email: EmailStr
 
@@ -55,6 +53,8 @@ class UserOut(BaseModel):
     name: str
     email: str | None
     plan: str
+    group: str
+    approved: bool
 
     model_config = {"from_attributes": True}
 
@@ -63,3 +63,14 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserOut
+
+
+class RegisterResponse(BaseModel):
+    detail: str
+
+
+class PendingUserOut(BaseModel):
+    id: str
+    name: str
+    email: str | None
+    created_at: datetime

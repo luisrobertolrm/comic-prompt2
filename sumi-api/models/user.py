@@ -14,6 +14,20 @@ def _utcnow() -> datetime:
     return datetime.now(UTC)
 
 
+class Group(Base):
+    __tablename__ = "groups"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        server_default=func.gen_random_uuid(),
+    )
+    type: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -39,6 +53,12 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default="true"
     )
+    group_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("groups.id"), nullable=False
+    )
+    approved: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="false"
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -49,6 +69,7 @@ class User(Base):
         onupdate=_utcnow,
     )
 
+    group: Mapped[Group] = relationship(lazy="joined")
     oauth_providers: Mapped[list[UserOAuth]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )

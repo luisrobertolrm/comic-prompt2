@@ -1,11 +1,12 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, tap, catchError, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import type {
   LoginRequest,
   RegisterRequest,
+  RegisterResponse,
   TokenResponse,
   UserOut,
 } from '../models/auth.models';
@@ -20,6 +21,7 @@ export class AuthService {
   private base   = environment.apiUrl;
 
   currentUser = signal<UserOut | null>(this.loadStoredUser());
+  isAdmin = computed(() => this.currentUser()?.group === 'admin');
 
   login(req: LoginRequest): Observable<TokenResponse> {
     return this.http.post<TokenResponse>(`${this.base}/auth/login`, req).pipe(
@@ -28,18 +30,10 @@ export class AuthService {
     );
   }
 
-  register(req: RegisterRequest): Observable<TokenResponse> {
-    return this.http.post<TokenResponse>(`${this.base}/auth/register`, req).pipe(
-      tap((res) => this.persist(res)),
-      catchError(this.handleError),
-    );
-  }
-
-  loginAsGuest(): Observable<TokenResponse> {
-    return this.http.post<TokenResponse>(`${this.base}/auth/oauth/guest`, {}).pipe(
-      tap((res) => this.persist(res)),
-      catchError(this.handleError),
-    );
+  register(req: RegisterRequest): Observable<RegisterResponse> {
+    return this.http
+      .post<RegisterResponse>(`${this.base}/auth/register`, req)
+      .pipe(catchError(this.handleError));
   }
 
   requestPasswordReset(email: string): Observable<{ detail: string }> {
@@ -84,7 +78,14 @@ export class AuthService {
         return null;
       }
       const stored = localStorage.getItem(USER_KEY);
-      return stored ? (JSON.parse(stored) as UserOut) : null;
+      const user = stored ? (JSON.parse(stored) as UserOut) : null;
+      // UserOut antigo (antes dos grupos) não tem `group` — força re-login
+      if (user && !('group' in user)) {
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(USER_KEY);
+        return null;
+      }
+      return user;
     } catch {
       return null;
     }

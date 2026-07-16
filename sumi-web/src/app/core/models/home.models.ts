@@ -48,6 +48,24 @@ export interface ProjectUpdate {
   narrator_voice_id?: string | null;
   synopsis_temperature?: number;
   panels_temperature?: number;
+  status?: 'Rascunho' | 'Público';
+}
+
+export interface PublicProjectOut {
+  id: string;
+  title: string;
+  subtitle: string;
+  genre: string;
+  style: string;
+  cover_accent: string;
+  cover_tone: string;
+  video_url: string | null;
+  author_name: string;
+  updated_at: string;
+  quantidade_positiva: number;
+  quantidade_negativa: number;
+  tamanho: number;
+  cover_image_url: string | null;
 }
 
 export interface SeriesOut {

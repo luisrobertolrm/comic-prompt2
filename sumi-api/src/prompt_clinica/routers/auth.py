@@ -6,6 +6,7 @@ from prompt_clinica.schemas.auth import (
     LoginRequest,
     PasswordResetRequest,
     RegisterRequest,
+    RegisterResponse,
     TokenResponse,
 )
 from prompt_clinica.services import auth_service
@@ -13,19 +14,14 @@ from prompt_clinica.services import auth_service
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-@router.post("/register", status_code=201, response_model=TokenResponse)
-def register(req: RegisterRequest, db: Session = Depends(get_db)) -> TokenResponse:
+@router.post("/register", status_code=201, response_model=RegisterResponse)
+def register(req: RegisterRequest, db: Session = Depends(get_db)) -> RegisterResponse:
     return auth_service.register(req, db)
 
 
 @router.post("/login", response_model=TokenResponse)
 def login(req: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse:
     return auth_service.login(req, db)
-
-
-@router.post("/oauth/guest", response_model=TokenResponse)
-def oauth_guest(db: Session = Depends(get_db)) -> TokenResponse:
-    return auth_service.oauth_guest(db)
 
 
 @router.post("/password-reset/request", status_code=202)

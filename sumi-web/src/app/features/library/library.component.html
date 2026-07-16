@@ -47,10 +47,14 @@
 
           <!-- Retrato -->
           <div class="portrait" [style.--accent]="'var(--' + accentOf(c.name) + '-soft)'">
-            <div class="portrait-pattern"></div>
-            <div class="portrait-avatar" [style.background]="'var(--' + accentOf(c.name) + ')'">
-              {{ initial(c.name) }}
-            </div>
+            @if (c.image_url) {
+              <img class="portrait-img" [src]="c.image_url" [alt]="c.name">
+            } @else {
+              <div class="portrait-pattern"></div>
+              <div class="portrait-avatar" [style.background]="'var(--' + accentOf(c.name) + ')'">
+                {{ initial(c.name) }}
+              </div>
+            }
             <span class="portrait-role">{{ c.role.toUpperCase() }}</span>
           </div>
 

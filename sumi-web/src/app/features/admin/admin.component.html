@@ -1,0 +1,39 @@
+<div class="admin-layout">
+
+  <div class="page-head">
+    <div>
+      <p class="eyebrow">ADMINISTRAÇÃO</p>
+      <h1>Aprovação de novos usuários.</h1>
+      <p class="lede">Contas recém-criadas só entram no estúdio depois da sua aprovação.</p>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <p class="hint">Carregando…</p>
+  }
+
+  @if (!loading() && pending().length === 0) {
+    <div class="empty-state">
+      <p>Nenhum usuário aguardando aprovação.</p>
+    </div>
+  }
+
+  @if (!loading() && pending().length > 0) {
+    <div class="user-list">
+      @for (u of pending(); track u.id) {
+        <div class="user-row">
+          <div class="user-info">
+            <span class="user-name">{{ u.name }}</span>
+            <span class="user-email">{{ u.email ?? '—' }}</span>
+            <span class="user-date">pediu acesso em {{ u.created_at | date:'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+          <div class="user-actions">
+            <button class="btn-approve" [disabled]="busyId() === u.id" (click)="approve(u)">Aprovar</button>
+            <button class="btn-reject" [disabled]="busyId() === u.id" (click)="reject(u)">Recusar</button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+</div>

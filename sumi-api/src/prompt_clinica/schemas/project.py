@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field, field_serializer
 
 from prompt_clinica.schemas.character import CharacterOut
+from prompt_clinica.schemas.panel import PanelOut
 from prompt_clinica.schemas.scenario import ScenarioOut
 from prompt_clinica.styles import DEFAULT_COLOR_MODE, DEFAULT_STYLE, ColorModeId, StyleId
 
@@ -34,6 +36,7 @@ class ProjectPatch(BaseModel):
     narrator_voice_id: uuid.UUID | None = None
     synopsis_temperature: float | None = Field(default=None, ge=0, le=2)
     panels_temperature: float | None = Field(default=None, ge=0, le=2)
+    status: Literal["Rascunho", "Público"] | None = None
 
 
 class CharacterIdsBody(BaseModel):
@@ -78,3 +81,35 @@ class ProjectDetailOut(ProjectOut):
     synopsis: str | None
     characters: list[CharacterOut] = Field(default_factory=list)
     scenarios: list[ScenarioOut] = Field(default_factory=list)
+
+
+class PublicProjectOut(BaseModel):
+    id: str
+    title: str
+    subtitle: str
+    genre: str
+    style: str
+    cover_accent: str
+    cover_tone: str
+    video_url: str | None
+    author_name: str
+    updated_at: datetime
+    quantidade_positiva: int = 0
+    quantidade_negativa: int = 0
+    tamanho: int = 1
+    cover_image_url: str | None = None
+
+
+class PublicProjectDetailOut(PublicProjectOut):
+    panels: list[PanelOut] = Field(default_factory=list)
+    minha_reacao: bool | None = None
+
+
+class ReactionIn(BaseModel):
+    positivo: bool
+
+
+class ReactionOut(BaseModel):
+    quantidade_positiva: int
+    quantidade_negativa: int
+    minha_reacao: bool | None

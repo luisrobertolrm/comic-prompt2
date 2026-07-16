@@ -3,6 +3,19 @@ export interface UserOut {
   name: string;
   email: string | null;
   plan: string;
+  group: string;
+  approved: boolean;
+}
+
+export interface RegisterResponse {
+  detail: string;
+}
+
+export interface PendingUserOut {
+  id: string;
+  name: string;
+  email: string | null;
+  created_at: string;
 }
 
 export interface TokenResponse {

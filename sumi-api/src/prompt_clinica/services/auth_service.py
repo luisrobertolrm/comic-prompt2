@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import sys
-import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -12,6 +11,7 @@ from prompt_clinica.config import settings
 from prompt_clinica.schemas.auth import (
     LoginRequest,
     RegisterRequest,
+    RegisterResponse,
     TokenResponse,
     UserOut,
 )
@@ -25,7 +25,7 @@ _models_dir = str(Path(__file__).resolve().parents[3] / "models")
 if _models_dir not in sys.path:
     sys.path.insert(0, _models_dir)
 
-from user import User, UserOAuth  # noqa: E402 — models/user.py
+from user import Group, User  # noqa: E402 — models/user.py
 
 
 def _user_out(user: User) -> UserOut:
@@ -34,10 +34,12 @@ def _user_out(user: User) -> UserOut:
         name=user.name,
         email=user.email,
         plan=user.plan,
+        group=user.group.type,
+        approved=user.approved,
     )
 
 
-def register(req: RegisterRequest, db: Session) -> TokenResponse:
+def register(req: RegisterRequest, db: Session) -> RegisterResponse:
     existing = db.query(User).filter(User.email == req.email.lower()).first()
     if existing is not None:
         raise HTTPException(
@@ -45,19 +47,20 @@ def register(req: RegisterRequest, db: Session) -> TokenResponse:
             detail="Este e-mail já está em uso.",
         )
 
+    padrao = db.query(Group).filter(Group.type == "padrao").first()
     user = User(
         name=req.name,
         email=req.email.lower(),
         password_hash=hash_password(req.password),
         terms_accepted_at=datetime.now(UTC),
+        group_id=padrao.id,
+        approved=False,
     )
     db.add(user)
     db.commit()
-    db.refresh(user)
 
-    return TokenResponse(
-        access_token=create_access_token(str(user.id)),
-        user=_user_out(user),
+    return RegisterResponse(
+        detail="Conta criada! Aguarde a aprovação do administrador para entrar."
     )
 
 
@@ -79,31 +82,15 @@ def login(req: LoginRequest, db: Session) -> TokenResponse:
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Conta desativada.",
         )
+    if not user.approved:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Sua conta ainda não foi aprovada pelo administrador.",
+        )
 
     expires = settings.jwt_remember_expire_minutes if req.remember else None
     return TokenResponse(
         access_token=create_access_token(str(user.id), expires),
-        user=_user_out(user),
-    )
-
-
-def oauth_guest(db: Session) -> TokenResponse:
-    guest_uid = str(uuid.uuid4())
-    user = User(
-        name="Convidado",
-        email=None,
-        password_hash=None,
-    )
-    db.add(user)
-    db.flush()
-
-    oauth = UserOAuth(user_id=user.id, provider="guest", provider_uid=guest_uid)
-    db.add(oauth)
-    db.commit()
-    db.refresh(user)
-
-    return TokenResponse(
-        access_token=create_access_token(str(user.id)),
         user=_user_out(user),
     )
 

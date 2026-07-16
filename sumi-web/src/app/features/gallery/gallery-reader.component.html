@@ -1,0 +1,87 @@
+<div class="reader-page">
+
+  @if (loading()) {
+    <div class="loading-state">Carregando história…</div>
+  }
+
+  @if (notFound()) {
+    <div class="empty-state">
+      <p>História não encontrada — pode ter voltado a ser privada.</p>
+      <a routerLink="/">← Voltar à galeria</a>
+    </div>
+  }
+
+  @if (!loading() && project(); as proj) {
+
+    <!-- ── Topo ── -->
+    <header class="topbar">
+      <a class="back-link" routerLink="/">← voltar</a>
+      <span class="book-title">{{ proj.title }}</span>
+      <span class="page-info">página {{ page() + 1 }} de {{ totalPages() }}</span>
+    </header>
+
+    <!-- ── Formatos ── -->
+    <div class="layout-bar">
+      <span class="layout-label">formato</span>
+      @for (f of formats; track f.key) {
+        <button type="button" class="chip" [class.active]="format() === f.key" (click)="setFormat(f.key)">
+          {{ f.label }}
+        </button>
+      }
+    </div>
+
+    <!-- ── Leitura ── -->
+    <div class="reader-area">
+      <button type="button" class="nav-btn" [disabled]="page() === 0" (click)="prevPage()">‹</button>
+
+      <div class="stage" [class]="'stage fmt-' + format()">
+        <div class="halftone"></div>
+        @for (p of currentPanels(); track p.id; let i = $index) {
+          <div class="panel-slot" [class]="'panel-slot s' + (i + 1)">
+            <app-manga-panel
+              [index]="p.index_order"
+              [label]="p.label"
+              [aspect]="p.aspect"
+              [tone]="p.tone"
+              [characterName]="p.character_name"
+              [bubbles]="p.bubbles"
+              [imageUrl]="p.image_url" />
+            <span class="panel-num">{{ panelNumber(i) }}</span>
+          </div>
+        }
+        <div class="dots">
+          @for (d of dots(); track d) {
+            <span class="dot" [class.active]="d === page()"></span>
+          }
+        </div>
+      </div>
+
+      <button type="button" class="nav-btn" [disabled]="page() === totalPages() - 1" (click)="nextPage()">›</button>
+    </div>
+
+    <!-- ── Ações ── -->
+    <div class="action-bar">
+      <button type="button" class="react-btn" [class.active]="minhaReacao() === true" (click)="react(true)">
+        <span>👍</span> Gostei @if (positivas() > 0) { ({{ positivas() }}) }
+      </button>
+      <button type="button" class="react-btn" [class.active]="minhaReacao() === false" (click)="react(false)">
+        <span>👎</span> Não gostei @if (negativas() > 0) { ({{ negativas() }}) }
+      </button>
+      <button type="button" class="share-btn" (click)="share()">
+        <span>🔗</span> Compartilhar
+      </button>
+
+      @if (toast()) {
+        <span class="toast">{{ toast() }}</span>
+      }
+
+      @if (loginPrompt()) {
+        <div class="login-prompt">
+          <span>Faça login para avaliar esta história.</span>
+          <button type="button" class="login-btn" (click)="goLogin()">Entrar</button>
+          <button type="button" class="close-btn" (click)="dismissLoginPrompt()">×</button>
+        </div>
+      }
+    </div>
+  }
+</div>

@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { adminGuard } from './core/guards/admin.guard';
 import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
@@ -7,13 +8,24 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/auth/auth-screen/auth-screen.component').then(m => m.AuthScreenComponent),
   },
+  // Galeria pública — tela padrão, sem shell/menu lateral
+  {
+    path: '',
+    pathMatch: 'full',
+    loadComponent: () =>
+      import('./features/gallery/gallery.component').then(m => m.GalleryComponent),
+  },
+  {
+    path: 'p/:id',
+    loadComponent: () =>
+      import('./features/gallery/gallery-reader.component').then(m => m.GalleryReaderComponent),
+  },
   {
     path: '',
     canActivate: [authGuard],
     loadComponent: () =>
       import('./features/shell/shell.component').then(m => m.ShellComponent),
     children: [
-      { path: '', redirectTo: 'home', pathMatch: 'full' },
       {
         path: 'home',
         loadComponent: () =>
@@ -43,6 +55,12 @@ export const routes: Routes = [
         path: 'settings',
         loadComponent: () =>
           import('./features/settings/settings.component').then(m => m.SettingsComponent),
+      },
+      {
+        path: 'admin',
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import('./features/admin/admin.component').then(m => m.AdminComponent),
       },
       {
         path: 'projects/new',

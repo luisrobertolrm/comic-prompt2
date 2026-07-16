@@ -23,7 +23,7 @@ sumi-api/
 │   ├── schemas/
 │   │   └── auth.py             # Pydantic schemas: RegisterRequest, LoginRequest, TokenResponse…
 │   ├── services/
-│   │   └── auth_service.py     # Lógica de negócio: register, login, oauth_guest, reset de senha
+│   │   └── auth_service.py     # Lógica de negócio: register, login, reset de senha
 │   └── utils/
 │       └── security.py         # bcrypt (hash/verify) + JWT (create/decode)
 ├── .env.example                # Variáveis necessárias — copie para .env e preencha

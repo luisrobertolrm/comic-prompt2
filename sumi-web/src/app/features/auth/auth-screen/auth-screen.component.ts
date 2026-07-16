@@ -7,7 +7,7 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 
 function passwordsMatch(group: AbstractControl): ValidationErrors | null {
@@ -21,18 +21,22 @@ type Mode = 'login' | 'register';
 @Component({
   selector: 'app-auth-screen',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './auth-screen.component.html',
   styleUrl: './auth-screen.component.scss',
 })
 export class AuthScreenComponent {
   private authService = inject(AuthService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   mode = signal<Mode>('login');
   loading = signal(false);
   serverError = signal('');
+  successMessage = signal('');
   resetSent = signal(false);
+  flipping = signal(false);
+  private flipTimer: ReturnType<typeof setTimeout> | null = null;
 
   loginForm = new FormGroup({
     email: new FormControl('', [Validators.required, Validators.email]),
@@ -54,8 +58,19 @@ export class AuthScreenComponent {
   setMode(m: Mode): void {
     this.mode.set(m);
     this.serverError.set('');
+    this.successMessage.set('');
     this.loginForm.reset({ remember: true });
     this.registerForm.reset();
+  }
+
+  flip(): void {
+    this.setMode(this.mode() === 'login' ? 'register' : 'login');
+    this.flipping.set(false);
+    if (this.flipTimer) clearTimeout(this.flipTimer);
+    requestAnimationFrame(() => {
+      this.flipping.set(true);
+      this.flipTimer = setTimeout(() => this.flipping.set(false), 600);
+    });
   }
 
   submitLogin(): void {
@@ -71,7 +86,8 @@ export class AuthScreenComponent {
       .login({ email: email!, password: password!, remember: remember ?? false })
       .subscribe({
         next: () => {
-          void this.router.navigate(['/home']);
+          const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+          void this.router.navigateByUrl(returnUrl ?? '/home');
           this.loading.set(false);
         },
         error: (err: Error) => {
@@ -99,26 +115,19 @@ export class AuthScreenComponent {
         terms_accepted: terms!,
       })
       .subscribe({
-        next: () => {
-          void this.router.navigate(['/home']);
+        next: (res) => {
           this.loading.set(false);
+          this.mode.set('login');
+          this.loginForm.reset({ remember: true });
+          this.registerForm.reset();
+          this.serverError.set('');
+          this.successMessage.set(res.detail);
         },
         error: (err: Error) => {
           this.serverError.set(err.message);
           this.loading.set(false);
         },
       });
-  }
-
-  loginAsGuest(): void {
-    this.loading.set(true);
-    this.authService.loginAsGuest().subscribe({
-      next: () => { void this.router.navigate(['/home']); },
-      error: (err: Error) => {
-        this.serverError.set(err.message);
-        this.loading.set(false);
-      },
-    });
   }
 
   requestReset(): void {

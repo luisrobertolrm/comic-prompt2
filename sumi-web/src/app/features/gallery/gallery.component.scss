@@ -1,0 +1,222 @@
+$ink: #14100c;
+$cream: #FBF1DE;
+$red: #FF4B4B;
+$rust: #B3372A;
+$sand: #E7DCC8;
+$muted: #8A7B6A;
+
+.gallery-page {
+  min-height: 100vh;
+  background: $ink;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  padding: 2px 8px;
+
+  .brand {
+    font-family: 'Permanent Marker', cursive;
+    font-size: 19px;
+    color: $cream;
+  }
+}
+
+.reader-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: 110px;
+  grid-auto-rows: 210px;
+  gap: 12px;
+}
+
+.opening-panel {
+  grid-column: 1 / -1;
+  position: relative;
+  background: $cream;
+  border: 4px solid $ink;
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, .55);
+  overflow: hidden;
+  padding: 14px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+
+  .halftone {
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle, rgba(20, 16, 12, .14) 1px, transparent 1.4px);
+    background-size: 9px 9px;
+    opacity: .6;
+    pointer-events: none;
+  }
+
+  .login-link {
+    position: absolute;
+    top: 14px;
+    right: 18px;
+    z-index: 2;
+    font-family: 'Bangers', cursive;
+    font-size: 15px;
+    letter-spacing: .03em;
+    color: $rust;
+    text-decoration: none;
+
+    &:hover { text-decoration: underline; }
+  }
+
+  .opening-copy {
+    position: relative;
+    z-index: 1;
+
+    .eyebrow {
+      display: block;
+      font-size: 10px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: $muted;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      font-family: 'Bangers', cursive;
+      font-weight: 400;
+      font-size: clamp(26px, 3vw, 38px);
+      line-height: 1;
+      color: $ink;
+      margin: 0;
+      text-shadow: 2px 2px 0 $red;
+    }
+  }
+
+  .cta {
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+    font-family: 'Bangers', cursive;
+    font-size: 16px;
+    letter-spacing: .03em;
+    color: #fff;
+    background: $red;
+    border: 2.5px solid $ink;
+    border-radius: 8px;
+    padding: 11px 20px;
+    box-shadow: 3px 3px 0 $ink;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+}
+
+.comic-card {
+  position: relative;
+  border: 4px solid $ink;
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, .55);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform .12s ease;
+
+  &:hover { transform: translate(-2px, -2px); }
+
+  &.t2 { grid-column: span 2; }
+
+  &.t3 {
+    grid-column: span 2;
+    grid-row: span 2;
+  }
+
+  .cover-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .card-shade {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(20, 16, 12, .88) 0%, rgba(20, 16, 12, .15) 55%, transparent 75%);
+    pointer-events: none;
+  }
+
+  .likes-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 2;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    color: $cream;
+    background: rgba(20, 16, 12, .72);
+    padding: 3px 9px;
+    border-radius: 999px;
+  }
+
+  .card-copy {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 12px 14px;
+    pointer-events: none;
+
+    .card-title {
+      display: block;
+      font-family: 'Permanent Marker', cursive;
+      font-size: 15px;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+
+    .card-desc {
+      display: block;
+      font-size: 11.5px;
+      line-height: 1.4;
+      color: $sand;
+    }
+  }
+
+  &.t2 .card-copy {
+    .card-title { font-size: 18px; }
+    .card-desc { font-size: 12.5px; }
+  }
+
+  &.t3 .card-copy {
+    .card-title { font-size: 24px; }
+    .card-desc { font-size: 14px; }
+  }
+
+  &.skeleton {
+    background: rgba(251, 241, 222, .12);
+    cursor: default;
+
+    &:hover { transform: none; }
+  }
+}
+
+.empty-state {
+  grid-column: 1 / -1;
+  display: grid;
+  place-items: center;
+  color: $sand;
+  font-size: 15px;
+  padding: 40px 0;
+}
+
+@media (max-width: 900px) {
+  .reader-grid { grid-template-columns: repeat(2, 1fr); }
+
+  .opening-panel {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+  }
+}

@@ -107,6 +107,13 @@
             <button class="export-btn">
               <span class="export-icon">↗</span> Compartilhar link
             </button>
+            <button class="export-btn" [disabled]="togglingPublic()" (click)="togglePublic()">
+              <span class="export-icon">{{ isPublic() ? '🔒' : '🌐' }}</span>
+              {{ togglingPublic() ? 'Aguarde…' : (isPublic() ? 'Tornar privado' : 'Tornar público') }}
+            </button>
+            @if (isPublic()) {
+              <p class="public-hint">Visível na galeria pública para qualquer visitante.</p>
+            }
           </div>
         </div>
 

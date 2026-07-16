@@ -1,0 +1,54 @@
+<div class="gallery-page">
+
+  <header class="topbar">
+    <span class="brand">Sumi</span>
+  </header>
+
+  <div class="reader-grid">
+
+    <!-- ── Painel de abertura ── -->
+    <div class="opening-panel">
+      <div class="halftone"></div>
+      @if (auth.currentUser(); as user) {
+        <a class="login-link" routerLink="/home">{{ user.name }} →</a>
+      } @else {
+        <a class="login-link" routerLink="/auth">Login</a>
+      }
+      <div class="opening-copy">
+        <span class="eyebrow">quadrinhos com ia</span>
+        <h1>HISTÓRIAS PRA VIRAR PÁGINA.</h1>
+      </div>
+      <button type="button" class="cta" (click)="scrollToGrid()">Começar a ler</button>
+    </div>
+
+    @if (loading()) {
+      @for (i of [1, 2, 3, 4]; track i) {
+        <div class="comic-card skeleton"></div>
+      }
+    }
+
+    @if (!loading() && projects().length === 0) {
+      <div class="empty-state">Nenhuma história publicada ainda. Volte em breve!</div>
+    }
+
+    @for (p of projects(); track p.id) {
+      <div class="comic-card"
+           [class.t2]="p.tamanho === 2"
+           [class.t3]="p.tamanho === 3"
+           [style.background]="cardBg(p)"
+           (click)="open(p)">
+        @if (coverUrl(p)) {
+          <img class="cover-img" [src]="coverUrl(p)" [alt]="p.title" loading="lazy">
+        }
+        <div class="card-shade"></div>
+        @if (p.quantidade_positiva > 0) {
+          <span class="likes-badge">👍 {{ p.quantidade_positiva }}</span>
+        }
+        <div class="card-copy">
+          <span class="card-title">{{ p.title }}</span>
+          <span class="card-desc">{{ p.genre }}@if (p.subtitle) { · {{ p.subtitle }}}</span>
+        </div>
+      </div>
+    }
+  </div>
+</div>

@@ -77,6 +77,7 @@ export class ShellComponent {
     if (u.startsWith('/series'))            return 'series';
     if (u.startsWith('/voice-test'))        return 'voice-test';
     if (u.startsWith('/settings'))          return 'settings';
+    if (u.startsWith('/admin'))             return 'admin';
     if (u.endsWith('/new'))                 return 'new';
     if (u.endsWith('/characters'))          return 'characters';
     if (u.endsWith('/scenarios'))           return 'scenarios';
@@ -118,9 +119,10 @@ export class ShellComponent {
       new: 'Ideia', characters: 'Personagens', scenarios: 'Cenários', script: 'Roteiro',
       review: 'Revisão', editor: 'Editor', final: 'Finalizar', video: 'Vídeo',
     };
-    if (s === 'home')    return [{ label: 'Projetos',   route: '' }];
-    if (s === 'library') return [{ label: 'Biblioteca', route: '' }];
-    if (s === 'series')  return [{ label: 'Séries',     route: '' }];
+    if (s === 'home')    return [{ label: 'Projetos',      route: '' }];
+    if (s === 'library') return [{ label: 'Biblioteca',    route: '' }];
+    if (s === 'series')  return [{ label: 'Séries',        route: '' }];
+    if (s === 'admin')   return [{ label: 'Administração', route: '' }];
     const title = this.draft.currentProjectTitle() || 'Projeto';
     return [
       { label: 'Projetos', route: '/home' },
@@ -138,6 +140,7 @@ export class ShellComponent {
   }
 
   user = computed(() => this.auth.currentUser());
+  isAdmin = this.auth.isAdmin;
 
   initial = computed(() => {
     const name = this.user()?.name ?? 'U';

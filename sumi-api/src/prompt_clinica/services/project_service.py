@@ -110,6 +110,8 @@ def update(project_id: uuid.UUID, patch: ProjectPatch, user: User, db: Session) 
         project.synopsis_temperature = patch.synopsis_temperature
     if patch.panels_temperature is not None:
         project.panels_temperature = patch.panels_temperature
+    if patch.status is not None:
+        project.status = patch.status
     if patch.genre is not None or patch.pages is not None:
         g = project.genre
         project.subtitle = f"{g.lower()} · {project.pages * 3}–{project.pages * 4} quadros"

@@ -39,6 +39,8 @@ export class FinalComponent implements OnInit {
   approvedCount = computed(() => this.panels().filter(p => p.status === 'approved').length);
   styleLabel = computed(() =>
     this.styleOptions().find(s => s.id === this.project()?.style)?.label ?? '—');
+  isPublic = computed(() => this.project()?.status === 'Público');
+  togglingPublic = signal(false);
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id') ?? '';
@@ -51,6 +53,20 @@ export class FinalComponent implements OnInit {
   }
 
   padNum(n: number): string { return String(n).padStart(2, '0'); }
+
+  togglePublic(): void {
+    const proj = this.project();
+    if (!proj || this.togglingPublic()) return;
+    const status = this.isPublic() ? 'Rascunho' : 'Público';
+    this.togglingPublic.set(true);
+    this.projectService.update(this.projectId(), { status }).subscribe({
+      next: res => {
+        this.project.update(p => p ? { ...p, status: res.status } : p);
+        this.togglingPublic.set(false);
+      },
+      error: () => this.togglingPublic.set(false),
+    });
+  }
 
   goEditor(): void { void this.router.navigate(['/projects', this.projectId(), 'editor']); }
   goHome(): void { void this.router.navigate(['/home']); }

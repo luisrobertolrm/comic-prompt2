@@ -1,192 +1,168 @@
-<div class="auth-layout">
+<div class="auth-page">
+  <div class="comic-grid">
 
-  <!-- ── Painel esquerdo: brand hero ── -->
-  <div class="hero-panel">
-    <div class="hero-dots"></div>
-
-    <div class="hero-content">
-      <div class="brand">
-        <div class="brand-mark">墨</div>
-        <span class="brand-name">Sumi</span>
+    <!-- ── Painel hero ── -->
+    <div class="panel hero-panel">
+      <div class="halftone"></div>
+      <div class="hero-top">
+        <a class="brand" routerLink="/">Sumi</a>
+        <span class="tagline">estúdio de hq com ia</span>
       </div>
-
       <div class="hero-body">
-        <p class="eyebrow">ESTÚDIO DE HQ COM IA</p>
-        <h1>Da primeira faísca à página pronta.</h1>
-        <p class="hero-lede">
-          Dê uma ideia, crie seus personagens, e deixe a IA propor o roteiro,
-          os quadros e a narração. Você aprova cada passo.
+        <h1>SUA HISTÓRIA.<br>SEU TRAÇO.<br>SUA IA.</h1>
+        <p class="lede">
+          Toda HQ incrível começa com um "e se...". Solte a ideia, escolha seus personagens
+          e deixe a IA rabiscar o roteiro com você.
         </p>
-
-        <div class="mini-cards">
-          <div class="mini-card mini-card--dots">
-            <div class="mini-card__avatar">Y</div>
-          </div>
-          <div class="mini-card mini-card--diag">
-            <div class="mini-card__avatar">R</div>
-          </div>
-          <div class="mini-card mini-card--dense"></div>
+      </div>
+      <div class="hero-bottom">
+        <div class="bubble bubble-float">
+          <span>"E se a gente virasse os leitores em autores?"</span>
         </div>
+        <span class="frame-num">quadro 00</span>
       </div>
-
-      <p class="hero-footer">© 2026 Sumi Studio · feito para criadores de mangá</p>
     </div>
-  </div>
 
-  <!-- ── Painel direito: formulário ── -->
-  <div class="form-panel">
-    <div class="form-inner">
+    <!-- ── Quadro 01 ── -->
+    <div class="panel panel-b">
+      <div class="pattern-diag"></div>
+      <span class="frame-label">quadro 01 — a faísca</span>
+      <div class="bubble bubble-small"><span>Você tem a ideia.</span></div>
+    </div>
 
-      <!-- Tabs -->
-      <div class="tabs">
-        <button class="tab" [class.tab--active]="mode() === 'login'"
-                (click)="setMode('login')">
-          Entrar
-        </button>
-        <button class="tab" [class.tab--active]="mode() === 'register'"
-                (click)="setMode('register')">
-          Criar conta
-        </button>
+    <!-- ── Quadro 02 ── -->
+    <div class="panel panel-c">
+      <div class="pattern-dense"></div>
+      <span class="frame-label">quadro 02 — o roteiro</span>
+      <div class="bubble bubble-small bubble-right"><span>A IA escreve os quadros com você.</span></div>
+    </div>
+
+    <!-- ── Quadro 03 ── -->
+    <div class="panel panel-d">
+      <div class="pattern-diag-neg"></div>
+      <div>
+        <span class="frame-label">quadro 03 — os personagens</span>
+        <span class="handwritten">Seus personagens ganham vida.</span>
       </div>
+      <span class="sumi-shout">SUMI!</span>
+    </div>
 
-      <!-- Cabeçalho dinâmico -->
-      @if (mode() === 'login') {
-        <h2>Bem-vinda de volta.</h2>
-        <p class="form-sub">Continue de onde parou no seu estúdio.</p>
-      } @else {
-        <h2>Crie sua conta.</h2>
-        <p class="form-sub">Leva menos de um minuto — e o primeiro projeto é grátis.</p>
-      }
+    <!-- ── Painel do formulário ── -->
+    <div class="panel form-panel">
+      <div class="glow"></div>
+      <div class="flip-surface" [class.flipping]="flipping()">
 
-      <!-- ── Formulário de Login ── -->
-      @if (mode() === 'login') {
-        <form [formGroup]="loginForm" (ngSubmit)="submitLogin()" class="form" novalidate>
+        <div class="tabs">
+          <button type="button" class="tab" [class.active]="mode() === 'login'" (click)="setMode('login')">Entrar</button>
+          <button type="button" class="tab" [class.active]="mode() === 'register'" (click)="setMode('register')">Criar conta</button>
+        </div>
 
-          <div class="field">
-            <label class="field-label">E-mail</label>
-            <input class="input" type="email" formControlName="email"
-                   autocomplete="email" placeholder="voce@exemplo.com">
-            @if (loginError('email')) {
-              <span class="field-error">{{ loginError('email') }}</span>
-            }
-          </div>
-
-          <div class="field">
-            <label class="field-label">Senha</label>
-            <input class="input" type="password" formControlName="password"
-                   autocomplete="current-password" placeholder="••••••••">
-            @if (loginError('password')) {
-              <span class="field-error">{{ loginError('password') }}</span>
-            }
-          </div>
-
-          <div class="options-row">
-            <label class="checkbox-label">
-              <button type="button" class="checkbox"
-                      [class.checkbox--on]="loginForm.get('remember')?.value"
-                      (click)="loginForm.get('remember')?.setValue(!loginForm.get('remember')?.value)">
-                @if (loginForm.get('remember')?.value) { ✓ }
-              </button>
-              <span>Lembrar de mim</span>
-            </label>
-            <button type="button" class="link" (click)="requestReset()">
-              Esqueceu a senha?
-            </button>
-          </div>
-
-          @if (resetSent()) {
-            <p class="info-msg">Instruções enviadas, verifique seu e-mail.</p>
-          }
-
-          @if (serverError()) {
-            <p class="server-error">{{ serverError() }}</p>
-          }
-
-          <button type="submit" class="btn-primary" [disabled]="loading()">
-            {{ loading() ? 'Aguarde…' : 'Entrar no estúdio' }}
-          </button>
-        </form>
-      }
-
-      <!-- ── Formulário de Cadastro ── -->
-      @if (mode() === 'register') {
-        <form [formGroup]="registerForm" (ngSubmit)="submitRegister()" class="form" novalidate>
-
-          <div class="field">
-            <label class="field-label">Nome</label>
-            <input class="input" type="text" formControlName="name"
-                   autocomplete="name" placeholder="Seu nome ou pseudônimo">
-            @if (registerError('name')) {
-              <span class="field-error">{{ registerError('name') }}</span>
-            }
-          </div>
-
-          <div class="field">
-            <label class="field-label">E-mail</label>
-            <input class="input" type="email" formControlName="email"
-                   autocomplete="email" placeholder="voce@exemplo.com">
-            @if (registerError('email')) {
-              <span class="field-error">{{ registerError('email') }}</span>
-            }
-          </div>
-
-          <div class="field">
-            <label class="field-label">Senha</label>
-            <input class="input" type="password" formControlName="password"
-                   autocomplete="new-password" placeholder="••••••••">
-            @if (registerError('password')) {
-              <span class="field-error">{{ registerError('password') }}</span>
-            }
-          </div>
-
-          <div class="field">
-            <label class="field-label">Confirmar senha</label>
-            <input class="input" type="password" formControlName="confirm"
-                   autocomplete="new-password" placeholder="••••••••">
-            @if (registerError('confirm') || confirmError) {
-              <span class="field-error">{{ registerError('confirm') || confirmError }}</span>
-            }
-          </div>
-
-          <div class="terms-row">
-            <button type="button" class="checkbox"
-                    [class.checkbox--on]="registerForm.get('terms')?.value"
-                    (click)="registerForm.get('terms')?.setValue(!registerForm.get('terms')?.value); registerForm.get('terms')?.markAsTouched()">
-              @if (registerForm.get('terms')?.value) { ✓ }
-            </button>
-            <span class="terms-text">
-              Li e aceito os <a href="#" class="link-inline" (click)="$event.preventDefault()">Termos</a>
-              e a <a href="#" class="link-inline" (click)="$event.preventDefault()">Política de Privacidade</a>.
-            </span>
-          </div>
-          @if (registerError('terms')) {
-            <span class="field-error">{{ registerError('terms') }}</span>
-          }
-
-          @if (serverError()) {
-            <p class="server-error">{{ serverError() }}</p>
-          }
-
-          <button type="submit" class="btn-primary" [disabled]="loading()">
-            {{ loading() ? 'Aguarde…' : 'Criar conta e começar' }}
-          </button>
-        </form>
-      }
-
-      <!-- acesso como convidado desabilitado temporariamente -->
-
-      <!-- Rodapé -->
-      <p class="form-footer">
         @if (mode() === 'login') {
-          Ainda não tem conta?
-          <button type="button" class="link" (click)="setMode('register')">Crie agora</button>
-        } @else {
-          Já tem conta?
-          <button type="button" class="link" (click)="setMode('login')">Entrar</button>
-        }
-      </p>
+          <h2>ENTRE NA HISTÓRIA</h2>
+          <p class="form-sub">Continue de onde parou no seu estúdio de HQ.</p>
 
+          <form [formGroup]="loginForm" (ngSubmit)="submitLogin()" novalidate>
+            <div class="field">
+              <label>E-mail</label>
+              <input type="email" formControlName="email" autocomplete="email" placeholder="voce@exemplo.com">
+              @if (loginError('email')) { <span class="field-error">{{ loginError('email') }}</span> }
+            </div>
+
+            <div class="field">
+              <label>Senha</label>
+              <input type="password" formControlName="password" autocomplete="current-password" placeholder="••••••••">
+              @if (loginError('password')) { <span class="field-error">{{ loginError('password') }}</span> }
+            </div>
+
+            <div class="options-row">
+              <label class="checkbox-label">
+                <button type="button" class="checkbox"
+                        [class.on]="loginForm.get('remember')?.value"
+                        (click)="loginForm.get('remember')?.setValue(!loginForm.get('remember')?.value)">
+                  @if (loginForm.get('remember')?.value) { ✓ }
+                </button>
+                Lembrar de mim
+              </label>
+              <button type="button" class="link" (click)="requestReset()">Esqueceu a senha?</button>
+            </div>
+
+            @if (resetSent()) { <p class="info-msg">Instruções enviadas, verifique seu e-mail.</p> }
+            @if (successMessage()) { <p class="info-msg">{{ successMessage() }}</p> }
+            @if (serverError()) { <p class="server-error">{{ serverError() }}</p> }
+
+            <button type="submit" class="btn-primary" [disabled]="loading()">
+              {{ loading() ? 'Aguarde…' : 'Entrar no estúdio' }}
+            </button>
+          </form>
+
+          <p class="form-footer">
+            Ainda não faz parte?
+            <button type="button" class="link" (click)="setMode('register')">Crie sua conta</button>
+          </p>
+        }
+
+        @if (mode() === 'register') {
+          <h2>COMECE SUA HISTÓRIA</h2>
+          <p class="form-sub">Leva menos de um minuto — o primeiro quadro é por nossa conta.</p>
+
+          <form [formGroup]="registerForm" (ngSubmit)="submitRegister()" novalidate>
+            <div class="field">
+              <label>Nome ou pseudônimo</label>
+              <input type="text" formControlName="name" autocomplete="name" placeholder="Como te chamam nos créditos?">
+              @if (registerError('name')) { <span class="field-error">{{ registerError('name') }}</span> }
+            </div>
+
+            <div class="field">
+              <label>E-mail</label>
+              <input type="email" formControlName="email" autocomplete="email" placeholder="voce@exemplo.com">
+              @if (registerError('email')) { <span class="field-error">{{ registerError('email') }}</span> }
+            </div>
+
+            <div class="field">
+              <label>Senha</label>
+              <input type="password" formControlName="password" autocomplete="new-password" placeholder="••••••••">
+              @if (registerError('password')) { <span class="field-error">{{ registerError('password') }}</span> }
+            </div>
+
+            <div class="field">
+              <label>Confirmar senha</label>
+              <input type="password" formControlName="confirm" autocomplete="new-password" placeholder="••••••••">
+              @if (registerError('confirm') || confirmError) {
+                <span class="field-error">{{ registerError('confirm') || confirmError }}</span>
+              }
+            </div>
+
+            <div class="terms-row">
+              <button type="button" class="checkbox"
+                      [class.on]="registerForm.get('terms')?.value"
+                      (click)="registerForm.get('terms')?.setValue(!registerForm.get('terms')?.value); registerForm.get('terms')?.markAsTouched()">
+                @if (registerForm.get('terms')?.value) { ✓ }
+              </button>
+              <span class="terms-text">
+                Li e aceito os <a href="#" (click)="$event.preventDefault()">Termos</a>
+                e a <a href="#" (click)="$event.preventDefault()">Política de Privacidade</a>.
+              </span>
+            </div>
+            @if (registerError('terms')) { <span class="field-error">{{ registerError('terms') }}</span> }
+
+            @if (serverError()) { <p class="server-error">{{ serverError() }}</p> }
+
+            <button type="submit" class="btn-primary" [disabled]="loading()">
+              {{ loading() ? 'Aguarde…' : 'Criar conta e começar' }}
+            </button>
+          </form>
+
+          <p class="form-footer">
+            Já tem conta?
+            <button type="button" class="link" (click)="setMode('login')">Entrar</button>
+          </p>
+        }
+      </div>
     </div>
   </div>
 
+  <!-- ── Dobra de página ── -->
+  <button type="button" class="page-corner" title="vire a página" (click)="flip()">
+    <span>vire a página ↷</span>
+  </button>
 </div>
