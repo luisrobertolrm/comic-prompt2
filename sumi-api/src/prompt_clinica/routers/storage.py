@@ -12,5 +12,13 @@ def serve_file(key: str) -> Response:
     if data is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Arquivo não encontrado.")
     suffix = key.rsplit(".", 1)[-1].lower()
-    media_type = "image/png" if suffix == "png" else "image/jpeg" if suffix in ("jpg", "jpeg") else "application/octet-stream"
+    media_type = {
+        "png": "image/png",
+        "jpg": "image/jpeg",
+        "jpeg": "image/jpeg",
+        "webp": "image/webp",
+        "gif": "image/gif",
+        "mp4": "video/mp4",
+        "webm": "video/webm",
+    }.get(suffix, "application/octet-stream")
     return Response(content=data, media_type=media_type)

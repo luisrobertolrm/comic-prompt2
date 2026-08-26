@@ -17,46 +17,63 @@
     <header class="topbar">
       <a class="back-link" routerLink="/">← voltar</a>
       <span class="book-title">{{ proj.title }}</span>
-      <span class="page-info">página {{ page() + 1 }} de {{ totalPages() }}</span>
+      @if (watchingVideo()) {
+        <span class="page-info">vídeo narrado</span>
+      } @else {
+        <span class="page-info">página {{ page() + 1 }} de {{ totalPages() }}</span>
+      }
     </header>
 
     <!-- ── Formatos ── -->
     <div class="layout-bar">
       <span class="layout-label">formato</span>
       @for (f of formats; track f.key) {
-        <button type="button" class="chip" [class.active]="format() === f.key" (click)="setFormat(f.key)">
+        <button type="button" class="chip" [class.active]="!watchingVideo() && format() === f.key" (click)="setFormat(f.key)">
           {{ f.label }}
+        </button>
+      }
+      @if (videoSrc()) {
+        <button type="button" class="chip" [class.active]="watchingVideo()" (click)="watchVideo()">
+          Vídeo
         </button>
       }
     </div>
 
     <!-- ── Leitura ── -->
     <div class="reader-area">
-      <button type="button" class="nav-btn" [disabled]="page() === 0" (click)="prevPage()">‹</button>
+      @if (!watchingVideo()) {
+        <button type="button" class="nav-btn" [disabled]="page() === 0" (click)="prevPage()">‹</button>
+      }
 
-      <div class="stage" [class]="'stage fmt-' + format()">
+      <div class="stage" [class]="'stage fmt-' + (watchingVideo() ? 'video' : format())">
         <div class="halftone"></div>
-        @for (p of currentPanels(); track p.id; let i = $index) {
-          <div class="panel-slot" [class]="'panel-slot s' + (i + 1)">
-            <app-manga-panel
-              [index]="p.index_order"
-              [label]="p.label"
-              [aspect]="p.aspect"
-              [tone]="p.tone"
-              [characterName]="p.character_name"
-              [bubbles]="p.bubbles"
-              [imageUrl]="p.image_url" />
-            <span class="panel-num">{{ panelNumber(i) }}</span>
-          </div>
-        }
-        <div class="dots">
-          @for (d of dots(); track d) {
-            <span class="dot" [class.active]="d === page()"></span>
+        @if (watchingVideo() && videoSrc()) {
+          <video #player class="reader-video" [src]="videoSrc()!" controls playsinline preload="metadata"></video>
+        } @else {
+          @for (p of currentPanels(); track p.id; let i = $index) {
+            <div class="panel-slot" [class]="'panel-slot s' + (i + 1)">
+              <app-manga-panel
+                [index]="p.index_order"
+                [label]="p.label"
+                [aspect]="p.aspect"
+                [tone]="p.tone"
+                [characterName]="p.character_name"
+                [bubbles]="p.bubbles"
+                [imageUrl]="p.image_url" />
+              <span class="panel-num">{{ panelNumber(i) }}</span>
+            </div>
           }
-        </div>
+          <div class="dots">
+            @for (d of dots(); track d) {
+              <span class="dot" [class.active]="d === page()"></span>
+            }
+          }
+        }
       </div>
 
-      <button type="button" class="nav-btn" [disabled]="page() === totalPages() - 1" (click)="nextPage()">›</button>
+      @if (!watchingVideo()) {
+        <button type="button" class="nav-btn" [disabled]="page() === totalPages() - 1" (click)="nextPage()">›</button>
+      }
     </div>
 
     <!-- ── Ações ── -->

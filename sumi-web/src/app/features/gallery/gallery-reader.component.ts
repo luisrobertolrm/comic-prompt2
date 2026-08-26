@@ -1,5 +1,6 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { environment } from '../../../environments/environment';
 import type { PanelOut } from '../../core/models/panel.models';
 import { AuthService } from '../../core/services/auth.service';
 import { PublicService, type PublicProjectDetailOut } from '../../core/services/public.service';
@@ -35,6 +36,8 @@ export class GalleryReaderComponent implements OnInit {
 
   format = signal<ReaderFormat>('manga-v');
   page = signal(0);
+  watchingVideo = signal(false);
+  private player = viewChild<ElementRef<HTMLVideoElement>>('player');
 
   positivas = signal(0);
   negativas = signal(0);
@@ -57,6 +60,12 @@ export class GalleryReaderComponent implements OnInit {
   currentPanels = computed(() => this.pages()[this.page()] ?? []);
   dots = computed(() => Array.from({ length: this.totalPages() }, (_, i) => i));
 
+  videoSrc = computed(() => {
+    const url = this.project()?.video_url;
+    if (!url) return null;
+    return url.startsWith('http') ? url : `${environment.apiUrl}${url}`;
+  });
+
   ngOnInit(): void {
     this.id = this.route.snapshot.paramMap.get('id') ?? '';
     this.publicService.get(this.id).subscribe({
@@ -72,8 +81,18 @@ export class GalleryReaderComponent implements OnInit {
   }
 
   setFormat(f: ReaderFormat): void {
+    this.pauseVideo();
+    this.watchingVideo.set(false);
     this.format.set(f);
     this.page.set(0);
+  }
+
+  watchVideo(): void {
+    this.watchingVideo.set(true);
+  }
+
+  private pauseVideo(): void {
+    this.player()?.nativeElement.pause();
   }
 
   prevPage(): void { this.page.update(p => Math.max(0, p - 1)); }
