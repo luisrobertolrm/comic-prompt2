@@ -40,7 +40,12 @@ class OpenAIProvider:
         model = req.model or self._text_model
         extra: dict[str, object] = {}
         if req.max_tokens:
-            extra["max_tokens"] = req.max_tokens
+            # gpt-5 / o-series rejeitam max_tokens. Ollama e outros OpenAI-compat
+            # locais ainda usam o nome antigo.
+            if self._name == "openai-local":
+                extra["max_tokens"] = req.max_tokens
+            else:
+                extra["max_completion_tokens"] = req.max_tokens
         if req.json_mode:
             extra["response_format"] = {"type": "json_object"}
         response = self._client.chat.completions.create(
