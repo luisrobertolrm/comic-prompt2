@@ -1,7 +1,7 @@
 """
 História trabalhada por IA a partir da ideia do escritor.
 Desenvolve a ideia em uma narrativa criativa com início, meio e fim.
-Retorna o texto puro ou "" em caso de falha (o serviço decide o fallback).
+Levanta exceção em caso de falha — o serviço mapeia para HTTP 503.
 """
 from __future__ import annotations
 
@@ -40,20 +40,16 @@ def generate_synopsis(
         "Desenvolva a história."
     )
 
-    try:
-        resp = ai.text(TextRequest(
-            messages=[
-                Message(role="system", content=_SYSTEM),
-                Message(role="user", content=user_msg),
-            ],
-            temperature=temperature,
-            max_tokens=3000,
-        ))
-        text = resp.content.strip()
-        if not text:
-            raise ValueError("Resposta vazia")
-        logger.info("Sinopse gerada: %d chars, %d tokens out.", len(text), resp.output_tokens)
-        return text
-    except Exception as exc:
-        logger.warning("generate_synopsis falhou (%s).", exc)
-        return ""
+    resp = ai.text(TextRequest(
+        messages=[
+            Message(role="system", content=_SYSTEM),
+            Message(role="user", content=user_msg),
+        ],
+        temperature=temperature,
+        max_tokens=3000,
+    ))
+    text = resp.content.strip()
+    if not text:
+        raise ValueError("A IA devolveu a sinopse vazia.")
+    logger.info("Sinopse gerada: %d chars, %d tokens out.", len(text), resp.output_tokens)
+    return text

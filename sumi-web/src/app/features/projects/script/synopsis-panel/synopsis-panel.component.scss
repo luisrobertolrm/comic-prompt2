@@ -39,6 +39,15 @@
 .muted-sm { font-size: 13px; color: var(--ink-3); }
 .hint { margin: 0; }
 
+.error-msg {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--error, #c0392b);
+  border-radius: var(--r-sm);
+  color: var(--error, #c0392b);
+  font-size: 13px;
+}
+
 .synopsis-text {
   font-family: var(--serif);
   font-size: 18px;

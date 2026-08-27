@@ -24,6 +24,10 @@
   <p class="muted-sm hint">Ainda é a sua ideia original — clique em "Trabalhar com IA" para gerar a sinopse.</p>
 }
 
+@if (error) {
+  <p class="error-msg" role="alert">⚠ {{ error }}</p>
+}
+
 @if (editing()) {
   <textarea class="synopsis-textarea" rows="4" [value]="draft()"
             (input)="draft.set($any($event.target).value)"

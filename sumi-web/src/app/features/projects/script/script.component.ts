@@ -50,6 +50,7 @@ export class ScriptComponent implements OnInit {
   private readonly CONTENT_CONCURRENCY = 3;
   skeletons = [1, 2, 3, 4, 5, 6, 7];
   generatingSynopsis = signal(false);
+  synopsisError = signal<string | null>(null);
   selectedTrecho = signal<SynopsisSelection | null>(null);
   trechoHighlight = signal<SynopsisRange | null>(null);
 
@@ -324,14 +325,23 @@ export class ScriptComponent implements OnInit {
   regenSynopsis(): void {
     if (this.generatingSynopsis()) return;
     this.generatingSynopsis.set(true);
+    this.synopsisError.set(null);
     this.projectService.generateSynopsis(this.projectId()).subscribe({
       next: p => {
         this.project.set(p);
         this.selectedTrecho.set(null);
         this.generatingSynopsis.set(false);
       },
-      error: () => this.generatingSynopsis.set(false),
+      error: err => {
+        this.generatingSynopsis.set(false);
+        this.synopsisError.set(this.synopsisErrorMessage(err));
+      },
     });
+  }
+
+  private synopsisErrorMessage(err: unknown): string {
+    const detail = (err as { error?: { detail?: string } })?.error?.detail;
+    return detail || 'Não foi possível gerar a sinopse. Tente novamente.';
   }
 
   onTrechoSelected(sel: SynopsisSelection | null): void {

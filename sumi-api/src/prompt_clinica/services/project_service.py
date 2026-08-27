@@ -168,13 +168,19 @@ def generate_synopsis(project_id: uuid.UUID, user: User, db: Session) -> Project
         .all()
     )
 
-    text = ai_generate_synopsis(
-        premise=project.premise or project.title,
-        genre=project.genre,
-        tone=project.tone,
-        character_names=[c.name for c in chars],
-        temperature=project.synopsis_temperature,
-    )
+    try:
+        text = ai_generate_synopsis(
+            premise=project.premise or project.title,
+            genre=project.genre,
+            tone=project.tone,
+            character_names=[c.name for c in chars],
+            temperature=project.synopsis_temperature,
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc) or "Geração de sinopse falhou.",
+        ) from exc
     if not text:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

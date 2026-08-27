@@ -63,6 +63,7 @@
           [generating]="generatingSynopsis()"
           [highlight]="trechoHighlight()"
           [temperature]="synopsisTemperature()"
+          [error]="synopsisError()"
           (textChange)="saveSynopsis($event)"
           (regen)="regenSynopsis()"
           (temperatureChange)="setSynopsisTemperature($event)"

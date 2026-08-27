@@ -24,6 +24,7 @@ export class SynopsisPanelComponent {
   @Input() hasSynopsis = false;
   @Input() generating = false;
   @Input() temperature = 0.8;
+  @Input() error: string | null = null;
 
   /** Trecho a destacar (ex.: o quadro vinculado sob o mouse). */
   @Input() set highlight(value: SynopsisRange | null) {
