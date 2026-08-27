@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from openai import OpenAI
+from openai import BadRequestError, OpenAI
 
 from prompt_clinica.ai.types import (
     ImageRequest,
@@ -8,6 +8,12 @@ from prompt_clinica.ai.types import (
     TextRequest,
     TextResponse,
 )
+
+
+def _fixed_temperature(model: str) -> bool:
+    """gpt-5 e o-series só aceitam temperature padrão (1); omitir o parâmetro."""
+    m = model.lower()
+    return m.startswith(("o1", "o3", "o4", "gpt-5"))
 
 
 class OpenAIProvider:
@@ -48,12 +54,22 @@ class OpenAIProvider:
                 extra["max_completion_tokens"] = req.max_tokens
         if req.json_mode:
             extra["response_format"] = {"type": "json_object"}
-        response = self._client.chat.completions.create(
-            model=model,
-            messages=[{"role": m.role, "content": m.content} for m in req.messages],
-            temperature=req.temperature,
+        payload: dict[str, object] = {
+            "model": model,
+            "messages": [{"role": m.role, "content": m.content} for m in req.messages],
             **extra,
-        )
+        }
+        send_temp = self._name == "openai-local" or not _fixed_temperature(model)
+        if send_temp:
+            payload["temperature"] = req.temperature
+        try:
+            response = self._client.chat.completions.create(**payload)  # type: ignore[arg-type]
+        except BadRequestError as exc:
+            if send_temp and "temperature" in str(exc).lower():
+                payload.pop("temperature", None)
+                response = self._client.chat.completions.create(**payload)  # type: ignore[arg-type]
+            else:
+                raise
         choice = response.choices[0]
         usage = response.usage
         return TextResponse(
