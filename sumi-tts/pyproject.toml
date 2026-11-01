@@ -1,0 +1,33 @@
+[project]
+name = "sumi-tts"
+version = "0.1.0"
+description = "Servidor local de voz (TTS) do Sumi: OmniVoice e Chatterbox Multilingual."
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "fastapi[standard]>=0.135.3",
+    "uvicorn>=0.44.0",
+    "torch==2.11.*",
+    "torchaudio==2.11.*",
+    "omnivoice>=0.2.1",
+    "chatterbox-tts>=0.1.7",
+    "soundfile>=0.13",
+    "imageio-ffmpeg>=0.5.1",
+]
+
+[tool.uv]
+# chatterbox-tts fixa torch==2.6 (sem suporte à RTX 50xx) e transformers==5.2,
+# que conflita com o omnivoice (>=5.3).
+override-dependencies = [
+    "torch==2.11.*",
+    "torchaudio==2.11.*",
+    "transformers>=5.3.0",
+]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu130" }
+torchaudio = { index = "pytorch-cu130" }
+
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true

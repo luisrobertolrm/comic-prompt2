@@ -2,7 +2,7 @@
 
 Pipeline (por quadro, em ordem):
   1. Sintetiza o áudio de cada "beat" (caption = voz do narrador; cada balão = voz
-     do personagem em cena) via MiniMax.
+     do personagem em cena) via MiniMax ou sumi-tts local (TTS_BASE_URL).
   2. Compõe um frame 1920x1080: imagem do quadro (letterbox) + balões desenhados
      reproduzindo o estilo da prévia (say/thought/shout/whisper/narration + cauda).
   3. Gera um clipe ffmpeg (imagem estática + áudio do quadro).
@@ -22,6 +22,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+import httpx
 import imageio_ffmpeg
 from character import Character
 from narration_voice import NarrationVoice
@@ -32,7 +33,8 @@ from project_character import ProjectCharacter
 from sqlalchemy.orm import Session
 
 import prompt_clinica._paths  # noqa: F401
-from prompt_clinica.ai.minimax import MinimaxConfig, MinimaxError, MinimaxVoiceClient
+from prompt_clinica.ai import tts_server
+from prompt_clinica.ai.minimax import MinimaxConfig, MinimaxError
 from prompt_clinica.storage import get_storage
 
 logger = logging.getLogger(__name__)
@@ -106,11 +108,6 @@ def _media_duration(path: Path) -> float:
         return 0.0
     hh, mm, ss = int(m.group(1)), int(m.group(2)), float(m.group(3))
     return hh * 3600 + mm * 60 + ss
-
-
-def _synthesize(client: MinimaxVoiceClient, text: str, voice_id: str) -> bytes:
-    result = client.synthesize(text, voice_id=voice_id)
-    return result.audio
 
 
 # ── Composição do frame ──────────────────────────────────────────────
@@ -357,7 +354,6 @@ def render(project_id: uuid.UUID, user_id: uuid.UUID, db: Session,
 
     narrator_voice, char_voices = _voice_map(project, db)
     default_voice = MinimaxConfig().voice.voice_id
-    client = MinimaxVoiceClient(MinimaxConfig())
     storage = get_storage()
 
     with tempfile.TemporaryDirectory(prefix="sumi-video-") as tmp:
@@ -390,8 +386,8 @@ def render(project_id: uuid.UUID, user_id: uuid.UUID, db: Session,
             beat_files: list[Path] = []
             for j, (text, vid) in enumerate(beats):
                 try:
-                    audio = _synthesize(client, text, vid)
-                except (MinimaxError, ValueError) as exc:
+                    audio = tts_server.synthesize(text, vid)
+                except (MinimaxError, ValueError, httpx.HTTPError) as exc:
                     logger.warning("TTS falhou (cena %d beat %d): %s", i, j, exc)
                     continue
                 bf = tmpdir / f"beat_{i:03d}_{j:02d}.mp3"

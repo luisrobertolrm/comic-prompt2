@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Permanent+Marker&family=DM+Sans:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: #14100c; }
+    body { font-family: 'DM Sans', -apple-system, sans-serif; }
+    ::selection { background: #ffc93c; color: #14100c; }
+    input::placeholder { color: #a9927a; }
+    @keyframes pageflip {
+      0% { transform: perspective(1600px) rotateY(0deg); }
+      45% { transform: perspective(1600px) rotateY(-14deg); }
+      100% { transform: perspective(1600px) rotateY(0deg); }
+    }
+    @keyframes floatBubble {
+      0%, 100% { transform: translateY(0) rotate(var(--rot, 0deg)); }
+      50% { transform: translateY(-6px) rotate(var(--rot, 0deg)); }
+    }
+    @media (max-width: 720px) {
+      .comic-grid {
+        grid-template-columns: 1fr !important;
+        grid-template-rows: auto !important;
+        grid-template-areas: "hero" "panelB" "panelC" "panelD" "form" !important;
+      }
+    }
+  </style>
+</helmet>
+
+<div data-screen-label="Auth — Comic" style="min-height:100vh; background:#14100c; padding:14px; display:flex; align-items:stretch;">
+  <div class="comic-grid" style="flex:1; display:grid; grid-template-columns: 1.15fr 0.95fr 1.35fr; grid-template-rows: 1fr 1fr 1fr; grid-template-areas: 'hero hero form' 'panelB panelC form' 'panelD panelD form'; gap:12px; min-height: calc(100vh - 28px);">
+
+    <!-- ── HERO PANEL ── -->
+    <div style="grid-area:hero; position:relative; background:#FBF1DE; border:4px solid #14100c; box-shadow:6px 6px 0 rgba(0,0,0,.55); overflow:hidden; padding:26px 30px; display:flex; flex-direction:column; justify-content:space-between;">
+      <div style="position:absolute; inset:0; background-image:radial-gradient(circle, rgba(20,16,12,.14) 1px, transparent 1.4px); background-size:9px 9px; opacity:.6; pointer-events:none;"></div>
+
+      <div style="position:relative; z-index:1; display:flex; align-items:center; justify-content:space-between;">
+        <a href="#" style="font-family:'Permanent Marker', cursive; font-size:20px; color:#14100c; text-decoration:none;" style-hover="text-decoration:underline;">Sumi</a>
+        <span style="font-family:'DM Sans'; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#8A7B6A;">estúdio de hq com ia</span>
+      </div>
+
+      <div style="position:relative; z-index:1; max-width:520px;">
+        <h1 style="font-family:'Bangers', cursive; font-weight:400; letter-spacing:.02em; font-size:clamp(40px,4.6vw,64px); line-height:.95; color:#14100c; margin:0 0 14px; text-shadow: 3px 3px 0 #FF4B4B;">
+          SUA HISTÓRIA.<br>SEU TRAÇO.<br>SUA IA.
+        </h1>
+        <p style="font-size:16px; line-height:1.55; color:#4A4034; max-width:44ch; margin:0;">
+          Toda HQ incrível começa com um "e se...". Solte a ideia, escolha seus personagens
+          e deixe a IA rabiscar o roteiro com você.
+        </p>
+      </div>
+
+      <div style="position:relative; z-index:1; display:flex; align-items:flex-end; justify-content:space-between;">
+        <div style="--rot:-4deg; animation: floatBubble 4.5s ease-in-out infinite; background:#fff; border:3px solid #14100c; border-radius:22px 22px 22px 4px; padding:12px 16px; max-width:260px; box-shadow:4px 4px 0 rgba(0,0,0,.35);">
+          <span style="font-family:'Permanent Marker', cursive; font-size:15px; color:#14100c;">"E se a gente virasse os leitores em autores?"</span>
+        </div>
+        <span style="font-family:'DM Sans'; font-size:11px; color:#8A7B6A;">quadro 00</span>
+      </div>
+    </div>
+
+    <!-- ── PANEL B ── -->
+    <div style="grid-area:panelB; position:relative; background:#EFE3C8; border:4px solid #14100c; box-shadow:6px 6px 0 rgba(0,0,0,.55); overflow:hidden; padding:16px; display:flex; flex-direction:column; justify-content:flex-end;">
+      <div style="position:absolute; inset:0; background-image:repeating-linear-gradient(45deg, rgba(20,16,12,.16) 0 1.5px, transparent 1.5px 8px); pointer-events:none;"></div>
+      <span style="position:relative; z-index:1; font-family:'DM Sans'; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:#6d6250; margin-bottom:8px;">quadro 01 — a faísca</span>
+      <div style="position:relative; z-index:1; align-self:flex-start; background:#fff; border:3px solid #14100c; border-radius:18px 18px 18px 3px; padding:9px 13px; box-shadow:3px 3px 0 rgba(0,0,0,.3);">
+        <span style="font-family:'Permanent Marker', cursive; font-size:13px; color:#14100c;">Você tem a ideia.</span>
+      </div>
+    </div>
+
+    <!-- ── PANEL C ── -->
+    <div style="grid-area:panelC; position:relative; background:#F4D9DA; border:4px solid #14100c; box-shadow:6px 6px 0 rgba(0,0,0,.55); overflow:hidden; padding:16px; display:flex; flex-direction:column; justify-content:flex-end;">
+      <div style="position:absolute; inset:0; background-image:radial-gradient(circle, rgba(20,16,12,.2) .8px, transparent 1.2px); background-size:5px 5px; pointer-events:none;"></div>
+      <span style="position:relative; z-index:1; font-family:'DM Sans'; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:#7a5458; margin-bottom:8px;">quadro 02 — o roteiro</span>
+      <div style="position:relative; z-index:1; align-self:flex-start; background:#fff; border:3px solid #14100c; border-radius:18px 3px 18px 18px; padding:9px 13px; box-shadow:3px 3px 0 rgba(0,0,0,.3);">
+        <span style="font-family:'Permanent Marker', cursive; font-size:13px; color:#14100c;">A IA escreve os quadros com você.</span>
+      </div>
+    </div>
+
+    <!-- ── PANEL D (story strip) ── -->
+    <div style="grid-area:panelD; position:relative; background:#DCEADF; border:4px solid #14100c; box-shadow:6px 6px 0 rgba(0,0,0,.55); overflow:hidden; padding:18px 22px; display:flex; align-items:center; justify-content:space-between; gap:16px;">
+      <div style="position:absolute; inset:0; background-image:repeating-linear-gradient(-45deg, rgba(20,16,12,.14) 0 1.5px, transparent 1.5px 9px); pointer-events:none;"></div>
+      <div style="position:relative; z-index:1;">
+        <span style="display:block; font-family:'DM Sans'; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:#4d6b55; margin-bottom:6px;">quadro 03 — os personagens</span>
+        <span style="font-family:'Permanent Marker', cursive; font-size:15px; color:#14100c;">Seus personagens ganham vida.</span>
+      </div>
+      <span style="position:relative; z-index:1; font-family:'Bangers', cursive; font-size:34px; color:#fff; -webkit-text-stroke:2px #14100c; letter-spacing:.03em; transform:rotate(-6deg); white-space:nowrap;">SUMI!</span>
+    </div>
+
+    <!-- ── FORM PANEL (final panel) ── -->
+    <div style="grid-area:form; position:relative; background:#FFFBEF; border:4px solid #14100c; box-shadow:8px 8px 0 rgba(0,0,0,.55); padding:34px 38px; display:flex; flex-direction:column; justify-content:center; overflow:hidden;">
+      <div style="position:absolute; top:-40px; right:-40px; width:160px; height:160px; border-radius:50%; background:#FFC93C; opacity:.5; filter:blur(2px);"></div>
+
+      <div id="flip-surface" style="position:relative; z-index:1; width:100%; max-width:380px; margin:0 auto; transform-style:preserve-3d;">
+
+        <div style="display:inline-flex; gap:4px; background:#F1E7CE; border:2.5px solid #14100c; border-radius:999px; padding:4px; margin-bottom:26px;">
+          <button type="button" style="padding:9px 18px; border:none; border-radius:999px; font-family:'DM Sans'; font-size:13.5px; font-weight:700; cursor:pointer; background:{{ loginTabBg }}; color:#14100c;" onclick="{{ goLogin }}">Entrar</button>
+          <button type="button" style="padding:9px 18px; border:none; border-radius:999px; font-family:'DM Sans'; font-size:13.5px; font-weight:700; cursor:pointer; background:{{ registerTabBg }}; color:#14100c;" onclick="{{ goRegister }}">Criar conta</button>
+        </div>
+
+        <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ true }}">
+          <h2 style="font-family:'Bangers', cursive; font-weight:400; font-size:36px; letter-spacing:.02em; margin:0 0 6px; color:#14100c;">ENTRE NA HISTÓRIA</h2>
+          <p style="font-size:14px; color:#6d6250; margin:0 0 24px; line-height:1.5;">Continue de onde parou no seu estúdio de HQ.</p>
+        </sc-if>
+        <sc-if value="{{ isRegister }}" hint-placeholder-val="{{ false }}">
+          <h2 style="font-family:'Bangers', cursive; font-weight:400; font-size:36px; letter-spacing:.02em; margin:0 0 6px; color:#14100c;">COMECE SUA HISTÓRIA</h2>
+          <p style="font-size:14px; color:#6d6250; margin:0 0 24px; line-height:1.5;">Leva menos de um minuto — o primeiro quadro é por nossa conta.</p>
+        </sc-if>
+
+        <sc-if value="{{ isRegister }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex; flex-direction:column; gap:4px; margin-bottom:16px;">
+            <label style="font-size:12.5px; font-weight:700; color:#4A4034;">Nome ou pseudônimo</label>
+            <input type="text" value="{{ name }}" oninput="{{ onName }}" placeholder="Como te chamam nos créditos?" style="height:42px; padding:0 13px; border:2.5px solid #14100c; border-radius:8px; background:#fff; font-size:14px; font-family:'DM Sans'; outline:none;" style-focus="border-color:#FF4B4B;">
+          </div>
+        </sc-if>
+
+        <div style="display:flex; flex-direction:column; gap:4px; margin-bottom:16px;">
+          <label style="font-size:12.5px; font-weight:700; color:#4A4034;">E-mail</label>
+          <input type="email" value="{{ email }}" oninput="{{ onEmail }}" placeholder="voce@exemplo.com" style="height:42px; padding:0 13px; border:2.5px solid #14100c; border-radius:8px; background:#fff; font-size:14px; font-family:'DM Sans'; outline:none;" style-focus="border-color:#FF4B4B;">
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:4px; margin-bottom:16px;">
+          <label style="font-size:12.5px; font-weight:700; color:#4A4034;">Senha</label>
+          <input type="password" value="{{ password }}" oninput="{{ onPassword }}" placeholder="••••••••" style="height:42px; padding:0 13px; border:2.5px solid #14100c; border-radius:8px; background:#fff; font-size:14px; font-family:'DM Sans'; outline:none;" style-focus="border-color:#FF4B4B;">
+        </div>
+
+        <sc-if value="{{ isRegister }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex; flex-direction:column; gap:4px; margin-bottom:16px;">
+            <label style="font-size:12.5px; font-weight:700; color:#4A4034;">Confirmar senha</label>
+            <input type="password" value="{{ confirm }}" oninput="{{ onConfirm }}" placeholder="••••••••" style="height:42px; padding:0 13px; border:2.5px solid #14100c; border-radius:8px; background:#fff; font-size:14px; font-family:'DM Sans'; outline:none;" style-focus="border-color:#FF4B4B;">
+          </div>
+          <div style="display:flex; align-items:flex-start; gap:9px; margin-bottom:8px;">
+            <button type="button" onclick="{{ toggleTerms }}" style="width:22px; height:22px; flex-shrink:0; border-radius:6px; border:2.5px solid #14100c; background:{{ termsBg }}; display:grid; place-items:center; cursor:pointer; padding:0; margin-top:1px;">
+              <sc-if value="{{ terms }}" hint-placeholder-val="{{ false }}"><span style="font-family:'Permanent Marker', cursive; font-size:13px; color:#14100c;">✓</span></sc-if>
+            </button>
+            <span style="font-size:13px; line-height:1.4; color:#4A4034;">Li e aceito os <a href="#" onclick="event.preventDefault()" style="color:#B3372A; font-weight:700; text-decoration:none;" style-hover="text-decoration:underline;">Termos</a> e a Política de Privacidade.</span>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+            <label style="display:flex; align-items:center; gap:8px; font-size:13.5px; color:#4A4034; cursor:pointer;">
+              <button type="button" onclick="{{ toggleRemember }}" style="width:20px; height:20px; border-radius:5px; border:2.5px solid #14100c; background:{{ rememberBg }}; display:grid; place-items:center; cursor:pointer; padding:0;">
+                <sc-if value="{{ remember }}" hint-placeholder-val="{{ true }}"><span style="font-family:'Permanent Marker', cursive; font-size:12px;">✓</span></sc-if>
+              </button>
+              Lembrar de mim
+            </label>
+            <a href="#" onclick="event.preventDefault()" style="font-size:13px; color:#B3372A; font-weight:700; text-decoration:none;" style-hover="text-decoration:underline;">Esqueceu a senha?</a>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ showMessage }}" hint-placeholder-val="{{ false }}">
+          <p style="font-size:13px; color:#2d7a50; background:#DBEADF; border:2px solid #A9CDB6; border-radius:8px; padding:9px 12px; margin:10px 0 0;">{{ message }}</p>
+        </sc-if>
+
+        <button type="button" onclick="{{ submit }}" style="width:100%; margin-top:18px; padding:14px; background:#FF4B4B; color:#fff; border:3px solid #14100c; border-radius:10px; font-family:'Bangers', cursive; font-size:19px; letter-spacing:.03em; cursor:pointer; box-shadow:4px 4px 0 #14100c;" style-hover="transform:translate(1px,1px); box-shadow:3px 3px 0 #14100c;" style-active="transform:translate(4px,4px); box-shadow:0 0 0 #14100c;">
+          {{ submitLabel }}
+        </button>
+
+        <p style="text-align:center; font-size:13.5px; color:#6d6250; margin-top:20px;">
+          <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ true }}">
+            Ainda não faz parte? <a href="#" onclick="{{ goRegisterEv }}" style="color:#B3372A; font-weight:700; text-decoration:none; cursor:pointer;" style-hover="text-decoration:underline;">Crie sua conta</a>
+          </sc-if>
+          <sc-if value="{{ isRegister }}" hint-placeholder-val="{{ false }}">
+            Já tem conta? <a href="#" onclick="{{ goLoginEv }}" style="color:#B3372A; font-weight:700; text-decoration:none; cursor:pointer;" style-hover="text-decoration:underline;">Entrar</a>
+          </sc-if>
+        </p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── PAGE-CORNER FOLD ── -->
+  <div onclick="{{ flipPage }}" title="vire a página" style="position:fixed; right:0; bottom:0; width:118px; height:118px; cursor:pointer; z-index:50; clip-path:polygon(100% 0, 100% 100%, 0 100%); background:linear-gradient(135deg, #FFC93C 45%, #e0ab1f 100%); box-shadow:-6px -6px 14px rgba(0,0,0,.35) inset;">
+    <span style="position:absolute; right:16px; bottom:30px; transform:rotate(-45deg); font-family:'Permanent Marker', cursive; font-size:12.5px; color:#14100c; white-space:nowrap;">vire a página ↷</span>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    mode: 'login',
+    name: '', email: '', password: '', confirm: '',
+    remember: true, terms: false,
+    message: '', loading: false,
+  };
+
+  renderVals() {
+    const isLogin = this.state.mode === 'login';
+    return {
+      isLogin,
+      isRegister: !isLogin,
+      loginTabBg: isLogin ? '#FFFFFF' : 'transparent',
+      registerTabBg: !isLogin ? '#FFFFFF' : 'transparent',
+      name: this.state.name,
+      email: this.state.email,
+      password: this.state.password,
+      confirm: this.state.confirm,
+      remember: this.state.remember,
+      terms: this.state.terms,
+      rememberBg: this.state.remember ? '#FFC93C' : '#fff',
+      termsBg: this.state.terms ? '#FFC93C' : '#fff',
+      showMessage: !!this.state.message,
+      message: this.state.message,
+      submitLabel: this.state.loading ? 'Aguarde…' : (isLogin ? 'Entrar no estúdio' : 'Criar conta e começar'),
+      onName: (e) => this.setState({ name: e.target.value }),
+      onEmail: (e) => this.setState({ email: e.target.value }),
+      onPassword: (e) => this.setState({ password: e.target.value }),
+      onConfirm: (e) => this.setState({ confirm: e.target.value }),
+      toggleRemember: () => this.setState((s) => ({ remember: !s.remember })),
+      toggleTerms: () => this.setState((s) => ({ terms: !s.terms })),
+      goLogin: () => this.setMode('login'),
+      goRegister: () => this.setMode('register'),
+      goLoginEv: (e) => { e.preventDefault(); this.setMode('login'); },
+      goRegisterEv: (e) => { e.preventDefault(); this.setMode('register'); },
+      flipPage: () => this.flip(),
+      submit: () => this.submit(),
+    };
+  }
+
+  setMode(m) {
+    if (m === this.state.mode) return;
+    this.setState({ mode: m, message: '' });
+  }
+
+  flip() {
+    const el = document.getElementById('flip-surface');
+    if (el) {
+      el.style.animation = 'none';
+      void el.offsetWidth;
+      el.style.animation = 'pageflip .6s ease';
+    }
+    this.setMode(this.state.mode === 'login' ? 'register' : 'login');
+  }
+
+  submit() {
+    this.setState({ loading: true, message: '' });
+    setTimeout(() => {
+      const isLogin = this.state.mode === 'login';
+      this.setState({
+        loading: false,
+        message: isLogin ? 'Bem-vinda de volta ao seu estúdio!' : 'Conta criada — bora desenhar sua primeira HQ!',
+      });
+    }, 700);
+  }
+}
+
+</script>
+</body>
+</html>

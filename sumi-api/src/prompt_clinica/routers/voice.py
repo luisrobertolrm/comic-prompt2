@@ -1,5 +1,7 @@
-"""Endpoint de teste de voz MiniMax (t2a_v2) e catálogo de vozes de narração."""
+"""Endpoint de teste de voz (MiniMax ou sumi-tts local) e catálogo de vozes de narração."""
 import uuid
+
+import httpx
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import Response
@@ -7,7 +9,8 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from user import User
 
-from prompt_clinica.ai.minimax import MinimaxConfig, MinimaxError, MinimaxVoiceClient
+from prompt_clinica.ai import tts_server
+from prompt_clinica.ai.minimax import MinimaxError
 from prompt_clinica.database import get_db
 from prompt_clinica.deps import get_current_user
 from prompt_clinica.schemas.voice import VoiceCreate, VoiceOut, VoiceUpdate
@@ -30,12 +33,12 @@ def test_voice(
     if not text:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Texto vazio.")
     try:
-        result = MinimaxVoiceClient(MinimaxConfig()).synthesize(text, voice_id=body.voice_id)
-    except (MinimaxError, ValueError) as exc:
+        audio = tts_server.synthesize(text, body.voice_id)
+    except (MinimaxError, ValueError, httpx.HTTPError) as exc:
         raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=f"MiniMax: {exc}"
+            status_code=status.HTTP_502_BAD_GATEWAY, detail=f"Voz: {exc}"
         ) from exc
-    return Response(content=result.audio, media_type="audio/mpeg")
+    return Response(content=audio, media_type="audio/mpeg")
 
 
 @router.get("", response_model=list[VoiceOut])

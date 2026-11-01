@@ -43,6 +43,15 @@ _ASPECT_TO_SIZE = {
 _DEFAULT_SIZE = "2048x2048"
 
 _MAX_REFERENCE_IMAGES = 10  # limite do Seedream 4.0
+_IMAGES_PATH = "/images/generations"
+
+
+def _images_endpoint(base_url: str) -> str:
+    """BYTEPLUS_BASE_URL deve ser a raiz /api/v3. Se colarem o endpoint completo, não duplica."""
+    root = base_url.rstrip("/")
+    if root.endswith(_IMAGES_PATH):
+        return root
+    return f"{root}{_IMAGES_PATH}"
 
 
 def _resolve_size(req: ImageRequest) -> str:
@@ -106,7 +115,7 @@ class SeedreamProvider:
         self._log_payload(payload)
 
         resp = httpx.post(
-            f"{self._base_url}/images/generations",
+            _images_endpoint(self._base_url),
             headers={
                 "Authorization": f"Bearer {self._api_key}",
                 "Content-Type": "application/json",

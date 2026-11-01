@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Permanent+Marker&family=DM+Sans:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: #14100c; }
+    body { font-family: 'DM Sans', -apple-system, sans-serif; }
+    ::selection { background: #ffc93c; color: #14100c; }
+    a { color: #B3372A; }
+    a:hover { text-decoration: underline; }
+    @keyframes toastIn {
+      0% { opacity: 0; transform: translate(-50%, 8px); }
+      100% { opacity: 1; transform: translate(-50%, 0); }
+    }
+  </style>
+</helmet>
+
+<div data-screen-label="Leitor — HQ" style="height:100vh; overflow:hidden; background:#14100c; padding:10px 14px; display:flex; flex-direction:column; gap:6px;">
+
+  <!-- ── TOP BAR ── -->
+  <div style="flex-shrink:0; display:flex; align-items:center; justify-content:space-between; padding:1px 8px;">
+    <a href="Leitura HQ.dc.html" style="font-family:'DM Sans'; font-weight:700; font-size:13px; color:#E7DCC8; text-decoration:none; display:flex; align-items:center; gap:6px;">← voltar</a>
+    <span style="font-family:'Permanent Marker', cursive; font-size:16px; color:#FBF1DE;">Carta para Amanhã</span>
+    <span style="font-family:'DM Sans'; font-size:12px; color:#8A7B6A;">página {{ pageNumber }} de {{ totalPages }}</span>
+  </div>
+
+  <!-- ── LAYOUT BAR ── -->
+  <div style="flex-shrink:0; display:flex; align-items:center; gap:8px; padding:0 8px;">
+    <span style="font-family:'DM Sans'; font-weight:700; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:#8A7B6A; margin-right:2px;">formato</span>
+    <sc-for list="{{ layoutOptions }}" as="opt" hint-placeholder-count="3">
+      <button onclick="{{ opt.select }}" style="{{ opt.chipStyle }}">{{ opt.label }}</button>
+    </sc-for>
+  </div>
+
+  <!-- ── READER AREA ── -->
+  <div style="flex:1 1 auto; position:relative; display:flex; align-items:stretch; justify-content:center; min-height:0; overflow:hidden; gap:10px;">
+
+    <button onclick="{{ prevPage }}" disabled="{{ isFirstPage }}" style="flex-shrink:0; align-self:center; z-index:6; width:38px; height:38px; border-radius:50%; border:1.5px solid rgba(251,241,222,.25); background:#14100c; cursor:pointer; display:flex; align-items:center; justify-content:center;"><span style="color:#FBF1DE; font-size:18px; line-height:1; opacity:{{ prevOpacity }};">‹</span></button>
+
+    <div style="{{ stageStyle }}">
+
+      <div style="position:absolute; inset:0; background-image:radial-gradient(circle, rgba(20,16,12,.10) 1px, transparent 1.4px); background-size:9px 9px; pointer-events:none; z-index:1;"></div>
+
+      <sc-for list="{{ visiblePanels }}" as="panel" hint-placeholder-count="4">
+        <div style="{{ panel.slotStyle }}">
+          <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="panel-{{ panel.id }}" shape="rect" placeholder="quadro {{ panel.n }}" src="{{ panel.url }}" style="width:100%;height:100%;" hint-size="100%,100%"></x-import>
+          <span style="position:absolute; left:7px; bottom:7px; z-index:2; font-family:'DM Sans'; font-weight:700; font-size:10px; color:#FBF1DE; background:rgba(20,16,12,.72); padding:2px 7px; border-radius:5px; pointer-events:none;">{{ panel.numLabel }}</span>
+        </div>
+      </sc-for>
+
+      <!-- page dots -->
+      <div style="position:absolute; left:50%; bottom:10px; transform:translateX(-50%); z-index:6; display:flex; gap:5px; background:rgba(20,16,12,.4); padding:5px 9px; border-radius:999px;">
+        <sc-for list="{{ pageDots }}" as="dot" hint-placeholder-count="3">
+          <span style="{{ dot.style }}"></span>
+        </sc-for>
+      </div>
+    </div>
+
+    <button onclick="{{ nextPage }}" disabled="{{ isLastPage }}" style="flex-shrink:0; align-self:center; z-index:6; width:38px; height:38px; border-radius:50%; border:1.5px solid rgba(251,241,222,.25); background:#14100c; cursor:pointer; display:flex; align-items:center; justify-content:center;"><span style="color:#FBF1DE; font-size:18px; line-height:1; opacity:{{ nextOpacity }};">›</span></button>
+  </div>
+
+  <!-- ── ACTION BAR ── -->
+  <div style="position:relative; flex-shrink:0; display:flex; align-items:center; justify-content:center; gap:12px; padding:6px 0 0;">
+
+    <button onclick="{{ setLike }}" style="display:flex; align-items:center; gap:7px; padding:9px 16px; border:2.5px solid #14100c; border-radius:10px; background:{{ likeBg }}; color:{{ likeColor }}; font-family:'Bangers', cursive; font-size:14px; letter-spacing:.02em; cursor:pointer; box-shadow:3px 3px 0 rgba(0,0,0,.5);">
+      <span>👍</span> Gostei
+    </button>
+
+    <button onclick="{{ setDislike }}" style="display:flex; align-items:center; gap:7px; padding:9px 16px; border:2.5px solid #14100c; border-radius:10px; background:{{ dislikeBg }}; color:{{ dislikeColor }}; font-family:'Bangers', cursive; font-size:14px; letter-spacing:.02em; cursor:pointer; box-shadow:3px 3px 0 rgba(0,0,0,.5);">
+      <span>👎</span> Não gostei
+    </button>
+
+    <button onclick="{{ share }}" style="display:flex; align-items:center; gap:7px; padding:9px 16px; border:2.5px solid #14100c; border-radius:10px; background:#FF4B4B; color:#fff; font-family:'Bangers', cursive; font-size:14px; letter-spacing:.02em; cursor:pointer; box-shadow:3px 3px 0 #14100c;">
+      <span>🔗</span> Compartilhar
+    </button>
+
+    <sc-if value="{{ showToast }}" hint-placeholder-val="{{ false }}">
+      <span style="position:absolute; top:-6px; left:50%; animation: toastIn .18s ease; background:#14100c; color:#FBF1DE; font-family:'DM Sans'; font-size:12.5px; font-weight:600; padding:7px 14px; border-radius:999px; white-space:nowrap;">{{ toastText }}</span>
+    </sc-if>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const LAYOUTS = {
+  'manga-vertical': {
+    label: 'Mangá vertical', cols: '1fr', rows: '1.1fr 0.9fr 1fr 1.1fr',
+    gap: '8px', aspect: '5/8',
+    slots: [
+      { gridColumn: '1', gridRow: '1' }, { gridColumn: '1', gridRow: '2' },
+      { gridColumn: '1', gridRow: '3' }, { gridColumn: '1', gridRow: '4' },
+    ],
+  },
+  'grid': {
+    label: 'Grade ocidental', cols: '1fr 1fr', rows: '1fr 1fr 1fr',
+    gap: '8px', aspect: '5/7',
+    slots: [
+      { gridColumn: '1 / span 2', gridRow: '1' }, { gridColumn: '1', gridRow: '2' },
+      { gridColumn: '2', gridRow: '2' }, { gridColumn: '1', gridRow: '3' },
+      { gridColumn: '2', gridRow: '3' },
+    ],
+  },
+  'dynamic': {
+    label: 'Dinâmico mangá', cols: '2fr 1fr 1.4fr', rows: '1.2fr 1fr 1fr',
+    gap: '8px', aspect: '5/7',
+    slots: [
+      { gridColumn: '1 / span 2', gridRow: '1' }, { gridColumn: '3', gridRow: '1 / span 2' },
+      { gridColumn: '1', gridRow: '2 / span 2' }, { gridColumn: '2', gridRow: '2' },
+      { gridColumn: '2 / span 2', gridRow: '3' },
+    ],
+  },
+};
+
+const LAYOUT_KEYS = Object.keys(LAYOUTS);
+
+class Component extends DCLogic {
+  state = {
+    layout: 'manga-vertical',
+    currentPage: 0,
+    reaction: null,
+    toast: '',
+  };
+
+  totalPanelsCount = 12;
+
+  renderVals() {
+    const layoutKey = this.state.layout;
+    const l = LAYOUTS[layoutKey];
+    const slotsPerPage = l.slots.length;
+    const totalPanels = this.totalPanelsCount;
+    const totalPages = Math.max(1, Math.ceil(totalPanels / slotsPerPage));
+    const cur = Math.min(this.state.currentPage, totalPages - 1);
+
+    const start = cur * slotsPerPage;
+    const visiblePanels = [];
+    for (let i = 0; i < slotsPerPage; i++) {
+      const n = start + i;
+      if (n >= totalPanels) break;
+      const slot = l.slots[i];
+      visiblePanels.push({
+        id: n,
+        n: n + 1,
+        numLabel: String(n + 1).padStart(2, '0'),
+        url: '',
+        slotStyle: `position:relative; grid-column:${slot.gridColumn}; grid-row:${slot.gridRow}; border:3px solid #14100c; background:#FBF1DE; overflow:hidden;`,
+      });
+    }
+
+    const stageStyle = `position:relative; height:100%; width:100%; flex:1 1 auto; min-width:0; background:#FBF1DE; border:5px solid #14100c; box-shadow:10px 10px 0 rgba(0,0,0,.4); overflow:hidden; padding:12px; display:grid; grid-template-columns:${l.cols}; grid-template-rows:${l.rows}; gap:${l.gap};`;
+
+    const pageDots = Array.from({ length: totalPages }, (_, i) => ({
+      style: `width:${i === cur ? 16 : 6}px; height:6px; border-radius:999px; background:${i === cur ? '#FFC93C' : 'rgba(251,241,222,.5)'}; transition:width .15s;`,
+    }));
+
+    const layoutOptions = LAYOUT_KEYS.map((key) => {
+      const active = key === layoutKey;
+      return {
+        key,
+        label: LAYOUTS[key].label,
+        select: () => this.setState({ layout: key, currentPage: 0 }),
+        chipStyle: `padding:7px 14px; border:2.5px solid #14100c; border-radius:8px; background:${active ? '#FFC93C' : '#FBF1DE'}; color:#14100c; font-family:'Bangers', cursive; font-size:13px; letter-spacing:.02em; cursor:pointer; box-shadow:${active ? '2px 2px 0 rgba(0,0,0,.5)' : 'none'};`,
+      };
+    });
+
+    return {
+      layoutOptions,
+      visiblePanels,
+      pageDots,
+      pageNumber: cur + 1,
+      totalPages,
+      isFirstPage: cur === 0,
+      isLastPage: cur === totalPages - 1,
+      prevOpacity: cur === 0 ? 0.35 : 1,
+      nextOpacity: cur === totalPages - 1 ? 0.35 : 1,
+      prevPage: () => this.setState((s) => ({ currentPage: Math.max(0, s.currentPage - 1) })),
+      nextPage: () => this.setState((s) => ({ currentPage: Math.min(totalPages - 1, s.currentPage + 1) })),
+      stageStyle,
+      likeBg: this.state.reaction === 'like' ? '#FFC93C' : '#FBF1DE',
+      likeColor: '#14100c',
+      dislikeBg: this.state.reaction === 'dislike' ? '#E7DCC8' : '#FBF1DE',
+      dislikeColor: '#14100c',
+      setLike: () => this.setState((s) => ({ reaction: s.reaction === 'like' ? null : 'like' })),
+      setDislike: () => this.setState((s) => ({ reaction: s.reaction === 'dislike' ? null : 'dislike' })),
+      share: () => this.share(),
+      showToast: !!this.state.toast,
+      toastText: this.state.toast,
+    };
+  }
+
+  share() {
+    const url = window.location.href;
+    const done = () => {
+      this.setState({ toast: 'Link copiado!' });
+      clearTimeout(this._t);
+      this._t = setTimeout(() => this.setState({ toast: '' }), 1800);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(done).catch(done);
+    } else {
+      done();
+    }
+  }
+}
+
+</script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Permanent+Marker&family=DM+Sans:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: #14100c; }
+    body { font-family: 'DM Sans', -apple-system, sans-serif; }
+    ::selection { background: #ffc93c; color: #14100c; }
+    a { color: #B3372A; }
+    a:hover { text-decoration: underline; }
+    @keyframes floatBubble {
+      0%, 100% { transform: translateY(0) rotate(var(--rot, 0deg)); }
+      50% { transform: translateY(-6px) rotate(var(--rot, 0deg)); }
+    }
+    @media (max-width: 900px) {
+      .reader-grid { grid-template-columns: repeat(2, 1fr) !important; }
+    }
+  </style>
+</helmet>
+
+<div data-screen-label="Leitura — Home" style="min-height:100vh; background:#14100c; padding:14px; display:flex; flex-direction:column; gap:12px;">
+
+  <!-- ── TOP BAR ── -->
+  <div style="display:flex; align-items:center; padding:2px 8px;">
+    <a href="#" style="font-family:'Permanent Marker', cursive; font-size:19px; color:#FBF1DE; text-decoration:none;">Sumi</a>
+  </div>
+
+  <!-- ── COMIC GRID ── -->
+  <div class="reader-grid" style="flex:1; display:grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: 110px; grid-auto-rows: 210px; gap:12px;">
+
+    <!-- OPENING PANEL — full width, top of the grid, login tucked top-right -->
+    <div style="grid-column: 1 / -1; grid-row: span 1; position:relative; background:#FBF1DE; border:4px solid #14100c; box-shadow:6px 6px 0 rgba(0,0,0,.55); overflow:hidden; padding:14px 28px; display:flex; align-items:center; justify-content:space-between; gap:20px;">
+      <div style="position:absolute; inset:0; background-image:radial-gradient(circle, rgba(20,16,12,.14) 1px, transparent 1.4px); background-size:9px 9px; opacity:.6; pointer-events:none;"></div>
+
+      <a href="Auth Screen Comic.dc.html" style="position:absolute; top:14px; right:18px; z-index:2; font-family:'Bangers', cursive; font-size:15px; letter-spacing:.03em; color:#B3372A; text-decoration:none;">Login</a>
+
+      <div style="position:relative; z-index:1;">
+        <span style="display:block; font-family:'DM Sans'; font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:#8A7B6A; margin-bottom:8px;">quadrinhos com ia</span>
+        <h1 style="font-family:'Bangers', cursive; font-weight:400; font-size:clamp(26px,3vw,38px); line-height:1; color:#14100c; margin:0; text-shadow:2px 2px 0 #FF4B4B;">
+          HISTÓRIAS PRA VIRAR PÁGINA.
+        </h1>
+      </div>
+
+      <a href="#" style="position:relative; z-index:1; flex-shrink:0; font-family:'Bangers', cursive; font-size:16px; letter-spacing:.03em; color:#fff; background:#FF4B4B; border:2.5px solid #14100c; border-radius:8px; padding:11px 20px; text-decoration:none; box-shadow:3px 3px 0 #14100c; white-space:nowrap;">Começar a ler</a>
+    </div>
+
+    <!-- STORY CARDS (from comics array) -->
+    <sc-for list="{{ comics }}" as="comic" hint-placeholder-count="7">
+      <div style="grid-column: span {{ comic.colSpan }}; grid-row: span {{ comic.rowSpan }}; position:relative; border:4px solid #14100c; box-shadow:6px 6px 0 rgba(0,0,0,.55); overflow:hidden; background:{{ comic.bg }};">
+        <div style="position:absolute; inset:0; background:{{ comic.bg }};">
+          <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="cover-{{ $index }}" shape="rect" placeholder="capa: {{ comic.titulo }}" src="{{ comic.imagem.url }}" style="width:100%;height:100%;" hint-size="100%,100%"></x-import>
+        </div>
+        <div style="position:absolute; inset:0; background:linear-gradient(to top, rgba(20,16,12,.88) 0%, rgba(20,16,12,.15) 55%, transparent 75%); pointer-events:none;"></div>
+        <div style="position:absolute; left:0; right:0; bottom:0; padding:12px 14px; pointer-events:none;">
+          <span style="display:block; font-family:'Permanent Marker', cursive; font-size:{{ comic.titleSize }}px; color:#fff; margin-bottom:4px;">{{ comic.titulo }}</span>
+          <span style="display:block; font-family:'DM Sans'; font-size:{{ comic.descSize }}px; line-height:1.4; color:#E7DCC8;">{{ comic.descricao }}</span>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  comics = [
+    { titulo: 'Carta para Amanhã', descricao: 'Romance · em alta', imagem: { url: '' }, bg: '#F4D9DA', tamanho: 3 },
+    { titulo: 'Neon & Cinza', descricao: 'Cyberpunk', imagem: { url: '' }, bg: '#E1D8EC', tamanho: 3 },
+    { titulo: 'Sussurros de Kyoto', descricao: 'Mistério', imagem: { url: '' }, bg: '#D8E2EC', tamanho: 2 },
+    { titulo: 'Maré Vermelha', descricao: 'Suspense', imagem: { url: '' }, bg: '#F6DEC2', tamanho: 2 },
+    { titulo: 'O Último Farol', descricao: 'Aventura · novo', imagem: { url: '' }, bg: '#DCEADF', tamanho: 1 },
+    { titulo: 'Garoto de Lata', descricao: 'Ficção científica', imagem: { url: '' }, bg: '#FBF1DE', tamanho: 1 },
+    { titulo: 'Jardim de Vidro', descricao: 'Drama', imagem: { url: '' }, bg: '#F4D9DA', tamanho: 1 },
+    { titulo: 'Véu de Papel', descricao: 'Fantasia', imagem: { url: '' }, bg: '#DCEADF', tamanho: 1 },
+  ];
+
+  static SIZE_MAP = {
+    1: { colSpan: 1, rowSpan: 1, titleSize: 15, descSize: 11.5 },
+    2: { colSpan: 2, rowSpan: 1, titleSize: 18, descSize: 12.5 },
+    3: { colSpan: 2, rowSpan: 2, titleSize: 24, descSize: 14 },
+  };
+
+  renderVals() {
+    const comics = this.comics.map((c) => {
+      const s = Component.SIZE_MAP[c.tamanho] || Component.SIZE_MAP[1];
+      return { ...c, colSpan: s.colSpan, rowSpan: s.rowSpan, titleSize: s.titleSize, descSize: s.descSize };
+    });
+    return { comics };
+  }
+}
+
+</script>
+</body>
+</html>
