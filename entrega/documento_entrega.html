@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Entrega Sistematização - Sumi - HQ com IA</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 20mm;
+    }
+    @page:first {
+      margin: 12mm 15mm 15mm 15mm;
+    }
+
+    body {
+      font-family: 'Calibri', 'Segoe UI', Helvetica, Arial, sans-serif;
+      font-size: 10.5pt;
+      line-height: 1.4;
+      color: #222222;
+      background-color: #ffffff;
+      margin: 0;
+      padding: 0;
+      text-align: justify;
+    }
+
+    .capa-container {
+      box-sizing: border-box;
+      width: 100%;
+      height: 260mm;
+      border: 3px double #1F2A44;
+      padding: 24mm 18mm 18mm 18mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      page-break-after: always;
+      text-align: center;
+    }
+    .capa-topo { margin-top: 5mm; }
+    .capa-instituicao {
+      font-family: 'Georgia', 'Cambria', serif;
+      font-size: 19pt;
+      font-weight: bold;
+      color: #111111;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 2mm;
+    }
+    .capa-sigla {
+      font-family: 'Georgia', 'Cambria', serif;
+      font-size: 13pt;
+      letter-spacing: 5px;
+      color: #333333;
+      margin-bottom: 4mm;
+    }
+    .capa-curso { font-size: 12pt; color: #444444; margin-bottom: 6mm; }
+    .capa-divisoria-dupla {
+      border-top: 1.5px solid #1F2A44;
+      border-bottom: 0.5px solid #1F2A44;
+      height: 2px;
+      width: 80%;
+      margin: 0 auto 12mm auto;
+    }
+    .capa-centro { margin: auto 0; padding: 0 10mm; }
+    .capa-categoria {
+      font-size: 10pt;
+      text-transform: uppercase;
+      letter-spacing: 2.5px;
+      color: #555555;
+      font-weight: 600;
+      margin-bottom: 6mm;
+    }
+    .capa-titulo {
+      font-family: 'Georgia', 'Cambria', serif;
+      font-size: 27pt;
+      font-weight: bold;
+      color: #1F2A44;
+      line-height: 1.2;
+      margin-bottom: 6mm;
+    }
+    .capa-subtitulo {
+      font-family: 'Georgia', 'Cambria', serif;
+      font-size: 12.5pt;
+      font-style: italic;
+      color: #333333;
+      line-height: 1.4;
+      margin-bottom: 8mm;
+    }
+    .capa-divisoria-simples { border-top: 0.8px solid #888888; width: 40%; margin: 0 auto; }
+    .capa-rodape { margin-bottom: 5mm; }
+    .capa-metadados {
+      text-align: right;
+      font-size: 11pt;
+      margin-bottom: 12mm;
+      padding-right: 5mm;
+      line-height: 1.4;
+    }
+    .capa-metadados .rotulo { font-size: 10pt; color: #666666; }
+    .capa-metadados .nome { font-weight: bold; color: #1F2A44; }
+    .capa-local-ano {
+      font-size: 11pt;
+      letter-spacing: 2px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .parte {
+      font-family: 'Georgia', 'Cambria', serif;
+      font-size: 18pt;
+      font-weight: bold;
+      color: #ffffff;
+      background-color: #1F2A44;
+      padding: 8pt 14pt;
+      margin: 0 0 6pt 0;
+      border-radius: 4px;
+    }
+    .parte-sub { font-size: 10pt; color: #555555; margin-bottom: 12pt; font-style: italic; }
+
+    h1 {
+      font-size: 15pt;
+      font-weight: bold;
+      color: #1F2A44;
+      border-bottom: 2px solid #1F2A44;
+      padding-bottom: 4px;
+      margin-top: 20pt;
+      margin-bottom: 9pt;
+      page-break-after: avoid;
+    }
+    h2 {
+      font-size: 12.5pt;
+      font-weight: bold;
+      color: #2E3B55;
+      margin-top: 14pt;
+      margin-bottom: 6pt;
+      page-break-after: avoid;
+    }
+    h3 {
+      font-size: 11.5pt;
+      font-weight: bold;
+      color: #1F4D78;
+      margin-top: 12pt;
+      margin-bottom: 5pt;
+      page-break-after: avoid;
+    }
+    p { margin-top: 0; margin-bottom: 7pt; }
+    ul, ol { margin-top: 0; margin-bottom: 7pt; padding-left: 22px; }
+    li { margin-bottom: 3pt; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8pt;
+      margin-bottom: 12pt;
+      font-size: 9.5pt;
+      text-align: left;
+    }
+    tr { page-break-inside: avoid; }
+    th {
+      background-color: #1F2A44;
+      color: #ffffff;
+      font-weight: bold;
+      padding: 6px 9px;
+      border: 1px solid #1F2A44;
+    }
+    td { padding: 5px 9px; border: 1px solid #d0d7de; vertical-align: top; }
+    tr:nth-child(even) { background-color: #f8fafc; }
+
+    .card-destaque, .card-meta, .card-alerta {
+      padding: 9pt 13pt;
+      margin: 9pt 0 12pt 0;
+      border-radius: 0 5px 5px 0;
+      font-size: 10.5pt;
+      page-break-inside: avoid;
+    }
+    .card-destaque { background-color: #f0f4f9; border-left: 4.5px solid #1F2A44; }
+    .card-meta { background-color: #f0fdf4; border-left: 4.5px solid #16a34a; }
+    .card-alerta { background-color: #fffbeb; border-left: 4.5px solid #d97706; }
+
+    code {
+      font-family: 'Consolas', 'Courier New', monospace;
+      background-color: #f1f5f9;
+      padding: 1px 4px;
+      border-radius: 3px;
+      font-size: 9.3pt;
+      color: #0f172a;
+    }
+
+    .figura { text-align: center; margin: 12pt 0 14pt 0; page-break-inside: avoid; }
+    .figura svg { width: 100%; height: auto; border: 1px solid #d0d7de; border-radius: 6px; }
+    .legenda { font-size: 9pt; font-style: italic; color: #555555; margin-top: 4pt; }
+
+    .sumario-container { page-break-after: always; }
+    .sumario-linha { font-size: 10pt; margin-bottom: 3pt; color: #333333; }
+    .sumario-linha.nivel0 { margin-top: 10pt; font-weight: bold; color: #ffffff; background: #1F2A44; padding: 3pt 8pt; border-radius: 3px; }
+    .sumario-linha.nivel1 { margin-top: 5pt; font-weight: bold; color: #1F2A44; }
+    .sumario-linha.nivel2 { padding-left: 18pt; }
+
+    .quebra-pagina { page-break-after: always; }
+
+    .tag-status {
+      display: inline-block;
+      padding: 1px 6px;
+      font-size: 8pt;
+      font-weight: bold;
+      border-radius: 3px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .status-ok { background-color: #dcfce7; color: #15803d; }
+    .status-meta { background-color: #dbeafe; color: #1e40af; }
+    .status-limite { background-color: #fef3c7; color: #92400e; }
+
+    .preencher { background-color: #fef3c7; color: #92400e; font-weight: bold; padding: 0 4px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+  <!-- CAPA -->
+  <div class="capa-container">
+    <div class="capa-topo">
+      <div class="capa-instituicao">Centro Universitário de Brasília</div>
+      <div class="capa-sigla">C E U B</div>
+      <div class="capa-curso"><span class="preencher">[Código e nome da disciplina]</span></div>
+      <div class="capa-divisoria-dupla"></div>
+    </div>
+
+    <div class="capa-centro">
+      <div class="capa-categoria">Sistematização — Planejamento de Solução Computacional com Inteligência Artificial</div>
+      <div class="capa-titulo">Sumi — HQ com IA</div>
+      <div class="capa-subtitulo">Plataforma Web Conteinerizada para Criação Assistida de Histórias em Quadrinhos e Motion Comics Narrados com Modelos de Linguagem, Geração de Imagem e Síntese de Voz</div>
+      <div class="capa-divisoria-simples"></div>
+    </div>
+
+    <div class="capa-rodape">
+      <div class="capa-metadados">
+        <div><span class="rotulo">Aluno:</span> <span class="nome">Luis Roberto de Moraes</span></div>
+        <div><span class="rotulo">Professor:</span> <span class="nome">Ricardo Neiva</span></div>
+        <div><span class="rotulo">Disciplina:</span> <span class="nome"><span class="preencher">[Nome da disciplina]</span></span></div>
+        <div><span class="rotulo">Repositório:</span> <span class="nome">github.com/luisrobertolrm/comic-prompt2</span></div>
+        <div><span class="rotulo">Vídeo (Parte 3):</span> <span class="nome"><span class="preencher">[Link do Google Drive]</span></span></div>
+      </div>
+      <div class="capa-local-ano">Brasília<br>2026</div>
+    </div>
+  </div>
+
+  <!-- SUMÁRIO -->
+  <div class="sumario-container">
+    <h1>Sumário</h1>
+    <div class="sumario-linha nivel0">PARTE 1 — Pesquisa e Definição da Solução</div>
+    <div class="sumario-linha nivel1">1. Identificação do Projeto</div>
+    <div class="sumario-linha nivel1">2. Descrição do Problema e Contexto</div>
+    <div class="sumario-linha nivel1">3. Justificativa e Benefícios Esperados</div>
+    <div class="sumario-linha nivel1">4. Objetivo da Aplicação</div>
+    <div class="sumario-linha nivel1">5. Público-Alvo e Beneficiários</div>
+    <div class="sumario-linha nivel1">6. Funcionalidades Principais</div>
+    <div class="sumario-linha nivel1">7. Fundamentação Científica</div>
+    <div class="sumario-linha nivel2">7.1 Artigo selecionado</div>
+    <div class="sumario-linha nivel2">7.2 Objetivos e contribuições do artigo</div>
+    <div class="sumario-linha nivel2">7.3 Relação com a solução proposta</div>
+
+    <div class="sumario-linha nivel0">PARTE 2 — Arquitetura e Planejamento Técnico</div>
+    <div class="sumario-linha nivel1">8. Arquitetura da Aplicação</div>
+    <div class="sumario-linha nivel2">8.1 Diagrama de componentes</div>
+    <div class="sumario-linha nivel2">8.2 Responsabilidades e comunicações</div>
+    <div class="sumario-linha nivel2">8.3 Justificativa do estilo arquitetural</div>
+    <div class="sumario-linha nivel1">9. Integração de Machine Learning</div>
+    <div class="sumario-linha nivel1">10. Computação em Nuvem e Contêineres</div>
+    <div class="sumario-linha nivel1">11. DevOps e Integração/Entrega Contínua (CI/CD)</div>
+    <div class="sumario-linha nivel1">12. Qualidade, Confiabilidade e Governança de Dados</div>
+    <div class="sumario-linha nivel2">12.1 Qualidade e consistência dos dados</div>
+    <div class="sumario-linha nivel2">12.2 Segurança e privacidade</div>
+    <div class="sumario-linha nivel2">12.3 Disponibilidade e confiabilidade</div>
+    <div class="sumario-linha nivel2">12.4 Monitoramento e identificação de falhas</div>
+    <div class="sumario-linha nivel2">12.5 Tratamento de erros e recuperação de serviços</div>
+
+    <div class="sumario-linha nivel0">PARTE 3 — Apresentação e Análise Crítica</div>
+    <div class="sumario-linha nivel1">13. Vídeo de Apresentação e Roteiro</div>
+    <div class="sumario-linha nivel1">14. Desafios, Riscos, Limitações e Evolução</div>
+    <div class="sumario-linha nivel1">15. Referências</div>
+  </div>
+
+  <!-- ===================== PARTE 1 ===================== -->
+  <div class="parte">PARTE 1 — Pesquisa e Definição da Solução</div>
+  <div class="parte-sub">Problema, proposta e fundamentação científica.</div>
+
+  <h1>1. Identificação do Projeto</h1>
+  <div class="card-destaque">
+    <strong>Projeto:</strong> Sumi — HQ com IA<br>
+    <strong>Aluno:</strong> Luis Roberto de Moraes<br>
+    <strong>Instituição:</strong> Centro Universitário de Brasília (CEUB)<br>
+    <strong>Professor:</strong> Ricardo Neiva<br>
+    <strong>Repositório GitHub:</strong> <a href="https://github.com/luisrobertolrm/comic-prompt2">https://github.com/luisrobertolrm/comic-prompt2</a><br>
+    <strong>Código:</strong> monorepo com backend Python 3.13 (FastAPI, SQLAlchemy 2, Alembic), frontend Angular 21 e implantação em contêineres Docker.<br>
+    <strong>Vídeo de apresentação:</strong> <span class="preencher">[Link do Google Drive com permissão de visualização]</span>
+  </div>
+
+  <h1>2. Descrição do Problema e Contexto</h1>
+  <p>Produzir uma história em quadrinhos exige um conjunto amplo de competências: roteiro, criação de personagens, desenho, colorização, diagramação de página e letreiramento dos balões. Transformar essa HQ em um <em>motion comic</em> narrado acrescenta ainda edição de vídeo, dublagem e trilha sonora. Para criadores independentes, professores e pequenos estúdios, esse processo leva semanas de trabalho e depende de várias pessoas, o que torna inviável a produção frequente de conteúdo.</p>
+  <p>Os modelos generativos (LLMs, difusão text-to-image e síntese de voz) reduziram muito o custo de cada uma dessas etapas isoladamente. O uso direto dessas ferramentas, porém, traz três problemas práticos:</p>
+  <ul>
+    <li><strong>Falta de coerência narrativa:</strong> pedir uma história inteira a um LLM em uma única chamada gera tramas inconsistentes, sem estrutura de quadros e difíceis de editar.</li>
+    <li><strong>Inconsistência visual dos personagens:</strong> cada imagem gerada isoladamente produz um rosto, figurino e paleta diferentes, quebrando a identidade do personagem de um quadro para outro.</li>
+    <li><strong>Fluxo fragmentado:</strong> o criador alterna entre um chat de texto, um gerador de imagens, um editor gráfico e um editor de vídeo, copiando prompts e arquivos manualmente, sem controle de versão nem reaproveitamento.</li>
+  </ul>
+  <p>O contexto é a economia criativa digital: vídeos curtos e webtoons demandam produção contínua de narrativas visuais, e a educação usa cada vez mais HQs como recurso didático.</p>
+
+  <h1>3. Justificativa e Benefícios Esperados</h1>
+  <p>Uma aplicação que <strong>orquestra</strong> os modelos generativos em um fluxo guiado, mantendo o criador no controle de cada decisão, resolve os três problemas: a história é gerada em etapas hierárquicas (ideia → personagens → roteiro → quadros), a ficha de cada personagem é injetada no prompt de todos os quadros em que ele aparece e todo o material fica versionado em um único projeto.</p>
+  <table>
+    <tr><th style="width:30%">Benefício</th><th>Descrição</th></tr>
+    <tr><td><strong>Redução de tempo de produção</strong></td><td>Uma HQ curta que levaria semanas pode ser rascunhada em uma sessão; a meta é gerar o primeiro storyboard completo em menos de 5 minutos.</td></tr>
+    <tr><td><strong>Coerência visual</strong></td><td>A biblioteca de personagens reutilizáveis preserva aparência, figurino e paleta entre quadros, projetos e séries.</td></tr>
+    <tr><td><strong>Democratização</strong></td><td>Pessoas sem habilidade de desenho conseguem produzir narrativas visuais de qualidade, mantendo a autoria das decisões criativas.</td></tr>
+    <tr><td><strong>Reaproveitamento multiformato</strong></td><td>O mesmo projeto gera páginas para leitura, link público compartilhável e vídeo narrado com voz por personagem.</td></tr>
+    <tr><td><strong>Controle de custo</strong></td><td>A arquitetura de provedores plugáveis permite trocar o modelo de IA por um mais barato ou executado localmente sem alterar a aplicação.</td></tr>
+  </table>
+
+  <h1>4. Objetivo da Aplicação</h1>
+  <div class="card-meta">
+    <strong>Objetivo geral:</strong> permitir que um usuário produza uma história em quadrinhos completa e um motion comic narrado a partir de uma ideia em linguagem natural, com a IA propondo cada etapa e o usuário aprovando, editando ou regerando o resultado (<em>human-in-the-loop</em>).
+  </div>
+  <p><strong>Objetivos específicos:</strong> (i) gerar roteiro estruturado quadro a quadro a partir da premissa; (ii) manter a consistência visual dos personagens entre os quadros; (iii) permitir revisão e edição granular de cada quadro e balão; (iv) exportar a obra em páginas, link público e vídeo narrado; (v) usar provedores de IA intercambiáveis.</p>
+
+  <h1>5. Público-Alvo e Beneficiários</h1>
+  <ul>
+    <li><strong>Criadores de conteúdo independentes:</strong> produtores de vídeos curtos e webtoons que precisam de narrativas visuais frequentes.</li>
+    <li><strong>Roteiristas e escritores:</strong> autores que dominam a narrativa mas não o desenho, e querem visualizar suas histórias.</li>
+    <li><strong>Professores e educadores:</strong> uso de HQs como material didático (história, literatura, ciências) produzido sob medida para a turma.</li>
+    <li><strong>Pequenos estúdios e agências:</strong> prototipação rápida de storyboards. Leitores são beneficiários indiretos, via galeria pública e vídeo.</li>
+  </ul>
+
+  <h1>6. Funcionalidades Principais</h1>
+  <table>
+    <tr><th style="width:5%">#</th><th style="width:22%">Etapa</th><th>Funcionalidade</th><th style="width:16%">Usa IA?</th></tr>
+    <tr><td>1</td><td><strong>Ideia</strong></td><td>Premissa em linguagem natural, gênero, tom, nº de páginas e estilo visual; sinopse proposta pela IA.</td><td>LLM</td></tr>
+    <tr><td>2</td><td><strong>Personagens</strong></td><td>Biblioteca reutilizável; criação manual ou geração de retratos candidatos a partir da descrição (tipo físico, tom de pele, figurino, estilo).</td><td>LLM + imagem</td></tr>
+    <tr><td>3</td><td><strong>Roteiro</strong></td><td>Storyboard completo: um card por quadro com legenda, personagens, enquadramento e prompt visual.</td><td>LLM</td></tr>
+    <tr><td>4</td><td><strong>Revisão</strong></td><td>Aprovar, regerar ou editar cada quadro e seus balões (fala, pensamento, grito).</td><td>LLM + imagem</td></tr>
+    <tr><td>5</td><td><strong>Editor visual</strong></td><td>Diagramação de página (mangá vertical, grade ocidental, dinâmico) e balões arrastáveis.</td><td>Não</td></tr>
+    <tr><td>6</td><td><strong>Finalizar</strong></td><td>Leitura pública por link compartilhável e exportação/backup do projeto em ZIP.</td><td>Não</td></tr>
+    <tr><td>7</td><td><strong>Vídeo</strong></td><td>Motion comic: narrador e voz por personagem, renderização em MP4 e metadados para YouTube.</td><td>TTS + LLM</td></tr>
+  </table>
+  <p>Transversais: login com JWT, aprovação de usuários por administrador, séries, cenários reutilizáveis e IA local configurável por usuário.</p>
+
+  <h1>7. Fundamentação Científica</h1>
+  <h2>7.1 Artigo selecionado</h2>
+  <div class="card-destaque">
+    MIROWSKI, P.; MATHEWSON, K. W.; PITTMAN, J.; EVANS, R. <strong>Co-Writing Screenplays and Theatre Scripts with Language Models: An Evaluation by Industry Professionals.</strong> In: <em>Proceedings of the 2023 CHI Conference on Human Factors in Computing Systems (CHI '23)</em>. Hamburg: ACM, 2023. Disponível em: ACM Digital Library; preprint em &lt;https://arxiv.org/abs/2209.14958&gt;.
+  </div>
+
+  <h2>7.2 Objetivos e contribuições do artigo</h2>
+  <p><strong>Objetivo:</strong> investigar se grandes modelos de linguagem conseguem apoiar profissionais na escrita de roteiros longos e coerentes, superando a limitação de contexto e a perda de coerência que ocorrem quando o modelo gera um texto longo de uma só vez.</p>
+  <p><strong>Contribuições:</strong></p>
+  <ul>
+    <li><strong>Geração hierárquica de histórias:</strong> o sistema <em>Dramatron</em> parte de uma <em>logline</em> (premissa de uma frase) e gera, em sequência, título, personagens, estrutura de cenas (<em>story beats</em>), descrições de locais e, por fim, diálogos. Cada nível usa o anterior como contexto, via <em>prompt chaining</em>.</li>
+    <li><strong>Co-autoria interativa:</strong> o usuário pode editar, aceitar ou regerar qualquer nível antes de seguir para o próximo, mantendo o controle criativo.</li>
+    <li><strong>Avaliação com profissionais:</strong> estudo com 15 profissionais de teatro e cinema; roteiros co-escritos foram encenados no Edmonton Fringe Theatre Festival (2022).</li>
+    <li><strong>Riscos e limitações:</strong> o artigo discute estereótipos, plágio involuntário e homogeneização de estilo, recomendando que a IA atue como ferramenta de apoio, e não de substituição.</li>
+  </ul>
+
+  <h2>7.3 Relação com a solução proposta</h2>
+  <p>O fluxo do Sumi aplica diretamente a geração hierárquica do Dramatron ao domínio das HQs: a <strong>premissa</strong> equivale à <em>logline</em>; a etapa de <strong>Personagens</strong> corresponde à geração de personagens; o <strong>Roteiro</strong> corresponde aos <em>story beats</em> (um quadro por beat, com enquadramento e prompt visual); e os <strong>balões</strong> correspondem aos diálogos. Assim como no artigo, cada etapa é revisável antes da próxima (<em>human-in-the-loop</em>). O Sumi estende a proposta com uma camada visual e sonora: a ficha estruturada do personagem é reinjetada no prompt de imagem de cada quadro para manter a consistência visual e os diálogos são convertidos em narração com voz por personagem.</p>
+
+  <div class="quebra-pagina"></div>
+
+  <!-- ===================== PARTE 2 ===================== -->
+  <div class="parte">PARTE 2 — Arquitetura e Planejamento Técnico</div>
+  <div class="parte-sub">Arquitetura, tecnologias, fluxo de CI/CD e estratégias de qualidade, confiabilidade e governança de dados.</div>
+
+  <h1>8. Arquitetura da Aplicação</h1>
+  <h2>8.1 Diagrama de componentes</h2>
+  <div class="figura">
+    <svg viewBox="0 0 1000 640" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Calibri, sans-serif">
+      <defs>
+        <marker id="seta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#2E3B55"/>
+        </marker>
+      </defs>
+      <rect width="1000" height="640" fill="#fdfdfd"/>
+
+      <!-- Usuário -->
+      <rect x="380" y="14" width="240" height="40" rx="20" fill="#ffffff" stroke="#1F2A44" stroke-width="1.5"/>
+      <text x="500" y="39" text-anchor="middle" font-size="14" font-weight="bold" fill="#1F2A44">Usuário (navegador)</text>
+      <line x1="500" y1="54" x2="500" y2="80" stroke="#2E3B55" stroke-width="1.6" marker-end="url(#seta)"/>
+
+      <!-- Frontend -->
+      <rect x="20" y="82" width="960" height="78" rx="8" fill="#f0f4f9" stroke="#1F2A44" stroke-width="1.5"/>
+      <text x="36" y="104" font-size="14" font-weight="bold" fill="#1F2A44">Camada de Apresentação — sumi-web (Angular 21, SPA)</text>
+      <g font-size="11.5" fill="#1F2A44">
+        <rect x="36" y="114" width="110" height="32" rx="5" fill="#ffffff" stroke="#9aa9c2"/><text x="91" y="134" text-anchor="middle">Ideia</text>
+        <rect x="154" y="114" width="110" height="32" rx="5" fill="#ffffff" stroke="#9aa9c2"/><text x="209" y="134" text-anchor="middle">Personagens</text>
+        <rect x="272" y="114" width="110" height="32" rx="5" fill="#ffffff" stroke="#9aa9c2"/><text x="327" y="134" text-anchor="middle">Roteiro</text>
+        <rect x="390" y="114" width="110" height="32" rx="5" fill="#ffffff" stroke="#9aa9c2"/><text x="445" y="134" text-anchor="middle">Revisão</text>
+        <rect x="508" y="114" width="110" height="32" rx="5" fill="#ffffff" stroke="#9aa9c2"/><text x="563" y="134" text-anchor="middle">Editor</text>
+        <rect x="626" y="114" width="110" height="32" rx="5" fill="#ffffff" stroke="#9aa9c2"/><text x="681" y="134" text-anchor="middle">Vídeo</text>
+        <rect x="744" y="114" width="220" height="32" rx="5" fill="#e3e9f3" stroke="#9aa9c2"/><text x="854" y="134" text-anchor="middle">core: guard + interceptor JWT</text>
+      </g>
+
+      <line x1="500" y1="160" x2="500" y2="196" stroke="#2E3B55" stroke-width="1.6" marker-start="url(#seta)" marker-end="url(#seta)"/>
+      <text x="512" y="183" font-size="11.5" fill="#444">HTTPS · REST/JSON · Bearer JWT</text>
+
+      <!-- Container -->
+      <rect x="20" y="198" width="960" height="262" rx="8" fill="#ffffff" stroke="#2E3B55" stroke-width="1.5" stroke-dasharray="7 4"/>
+      <text x="36" y="219" font-size="13.5" font-weight="bold" fill="#2E3B55">Contêiner Docker — sumi-api (Python 3.13 · FastAPI · Uvicorn) — também serve o build estático do Angular</text>
+
+      <rect x="36" y="230" width="928" height="46" rx="6" fill="#eef2f8" stroke="#9aa9c2"/>
+      <text x="50" y="250" font-size="12.5" font-weight="bold" fill="#1F2A44">Routers (API HTTP)</text>
+      <text x="50" y="267" font-size="11" fill="#333">auth · projects · series · characters · scenarios · panels · voice · public · backup · storage · admin · health — validação Pydantic v2</text>
+
+      <rect x="36" y="284" width="928" height="46" rx="6" fill="#eef2f8" stroke="#9aa9c2"/>
+      <text x="50" y="304" font-size="12.5" font-weight="bold" fill="#1F2A44">Services (regras de negócio)</text>
+      <text x="50" y="321" font-size="11" fill="#333">project · character · panel · video (ffmpeg) · voice · backup · recommendation · settings — orquestram IA, banco e storage</text>
+
+      <rect x="36" y="338" width="560" height="110" rx="6" fill="#fef7e6" stroke="#d9a441"/>
+      <text x="50" y="358" font-size="12.5" font-weight="bold" fill="#7a4d00">Camada de IA — contrato AIProvider (text / image)</text>
+      <text x="50" y="375" font-size="11" fill="#5a3a00">roteiro.py · synopsis.py · youtube_metadata.py (prompt chaining)</text>
+      <g font-size="11" fill="#5a3a00">
+        <rect x="50" y="386" width="122" height="26" rx="4" fill="#ffffff" stroke="#d9a441"/><text x="111" y="403" text-anchor="middle">OpenAIProvider</text>
+        <rect x="180" y="386" width="132" height="26" rx="4" fill="#ffffff" stroke="#d9a441"/><text x="246" y="403" text-anchor="middle">SeedreamProvider</text>
+        <rect x="320" y="386" width="122" height="26" rx="4" fill="#ffffff" stroke="#d9a441"/><text x="381" y="403" text-anchor="middle">MinimaxProvider</text>
+        <rect x="450" y="386" width="132" height="26" rx="4" fill="#ffffff" stroke="#d9a441"/><text x="516" y="403" text-anchor="middle">ComfyUIProvider</text>
+      </g>
+      <text x="50" y="436" font-size="10.5" fill="#7a4d00" font-style="italic">Provider escolhido por configuração (AI_TEXT_PROVIDER / AI_IMAGE_PROVIDER) ou por usuário</text>
+
+      <rect x="610" y="338" width="354" height="110" rx="6" fill="#eef7f1" stroke="#6aa884"/>
+      <text x="624" y="358" font-size="12.5" font-weight="bold" fill="#1d5c37">Persistência</text>
+      <text x="624" y="378" font-size="11" fill="#1d5c37">models/ — SQLAlchemy 2 (ORM)</text>
+      <text x="624" y="396" font-size="11" fill="#1d5c37">alembic/ — migrations versionadas</text>
+      <text x="624" y="414" font-size="11" fill="#1d5c37">storage.py — StorageBackend</text>
+      <text x="624" y="432" font-size="11" fill="#1d5c37">(LocalStorage | S3Storage)</text>
+
+      <!-- Externos -->
+      <line x1="316" y1="448" x2="316" y2="508" stroke="#2E3B55" stroke-width="1.6" marker-end="url(#seta)"/>
+      <text x="324" y="484" font-size="11" fill="#444">HTTPS (timeout 60–300 s)</text>
+      <line x1="700" y1="448" x2="700" y2="508" stroke="#2E3B55" stroke-width="1.6" marker-end="url(#seta)"/>
+      <text x="708" y="484" font-size="11" fill="#444">SQL (psycopg2, pool_pre_ping)</text>
+      <line x1="880" y1="448" x2="880" y2="508" stroke="#2E3B55" stroke-width="1.6" marker-end="url(#seta)"/>
+      <text x="888" y="484" font-size="11" fill="#444">arquivos</text>
+
+      <rect x="20" y="510" width="590" height="110" rx="8" fill="#fef7e6" stroke="#d9a441" stroke-width="1.3"/>
+      <text x="36" y="532" font-size="13" font-weight="bold" fill="#7a4d00">Serviços de IA externos (SaaS)</text>
+      <text x="36" y="553" font-size="11" fill="#5a3a00">• OpenAI — LLM de texto (gpt-4o-mini / gpt-5) e imagem (gpt-image-1)</text>
+      <text x="36" y="571" font-size="11" fill="#5a3a00">• BytePlus ModelArk — Seedream (texto → imagem com referência)</text>
+      <text x="36" y="589" font-size="11" fill="#5a3a00">• MiniMax — síntese de voz (T2A) e geração de vídeo</text>
+      <text x="36" y="607" font-size="11" fill="#5a3a00">• ComfyUI — difusão em GPU própria (alternativa de custo zero por chamada)</text>
+
+      <rect x="626" y="510" width="160" height="110" rx="8" fill="#eef7f1" stroke="#6aa884" stroke-width="1.3"/>
+      <text x="706" y="540" text-anchor="middle" font-size="13" font-weight="bold" fill="#1d5c37">PostgreSQL</text>
+      <text x="706" y="562" text-anchor="middle" font-size="11" fill="#1d5c37">usuários, projetos,</text>
+      <text x="706" y="578" text-anchor="middle" font-size="11" fill="#1d5c37">personagens, quadros,</text>
+      <text x="706" y="594" text-anchor="middle" font-size="11" fill="#1d5c37">séries, vozes, estilos</text>
+
+      <rect x="800" y="510" width="180" height="110" rx="8" fill="#eef7f1" stroke="#6aa884" stroke-width="1.3"/>
+      <text x="890" y="540" text-anchor="middle" font-size="13" font-weight="bold" fill="#1d5c37">Volume Docker</text>
+      <text x="890" y="562" text-anchor="middle" font-size="11" fill="#1d5c37">(S3 opcional)</text>
+      <text x="890" y="580" text-anchor="middle" font-size="11" fill="#1d5c37">imagens, retratos,</text>
+      <text x="890" y="596" text-anchor="middle" font-size="11" fill="#1d5c37">áudios e vídeos MP4</text>
+    </svg>
+    <div class="legenda">Figura 1 — Arquitetura em camadas do Sumi: SPA Angular, API FastAPI em contêiner, camada de IA com provedores plugáveis, contêiner PostgreSQL e volume de arquivos.</div>
+  </div>
+
+  <h2>8.2 Responsabilidades e comunicações</h2>
+  <table>
+    <tr><th style="width:22%">Componente</th><th>Responsabilidade</th><th style="width:24%">Comunicação</th></tr>
+    <tr><td><strong>sumi-web (Angular)</strong></td><td>Interface do fluxo de 7 etapas, edição de quadros e balões, player do motion comic. Interceptor anexa o JWT e trata erros de forma centralizada.</td><td>REST/JSON sobre HTTPS com a API</td></tr>
+    <tr><td><strong>Routers</strong></td><td>Contrato HTTP, autenticação (<code>Depends</code>), validação de entrada e saída com Pydantic.</td><td>Chamam apenas Services</td></tr>
+    <tr><td><strong>Services</strong></td><td>Regras de negócio: montagem do roteiro, consistência de personagens, aprovação de quadros, renderização do vídeo, backup.</td><td>Usam IA, ORM e Storage</td></tr>
+    <tr><td><strong>Camada de IA</strong></td><td>Monta os prompts (cadeia premissa → roteiro → quadro) e isola cada fornecedor atrás do contrato <code>AIProvider</code>.</td><td>HTTPS com APIs externas</td></tr>
+    <tr><td><strong>Persistência</strong></td><td>Modelos ORM, migrations Alembic e abstração de armazenamento de arquivos (local ou S3).</td><td>SQL e sistema de arquivos / S3</td></tr>
+  </table>
+
+  <h2>8.3 Justificativa do estilo arquitetural</h2>
+  <p>Adotou-se uma <strong>arquitetura em camadas em um monólito modular</strong>, implantado como um único contêiner. As dependências fluem em um só sentido (Routers → Services → IA/Persistência), o que mantém as regras de negócio testáveis sem a camada HTTP e permite trocar fornecedores de IA ou de armazenamento sem impacto no restante do código.</p>
+  <p><strong>Microsserviços foram descartados</strong> nesta fase: o sistema é mantido por uma equipe pequena, o domínio é coeso (todas as entidades orbitam o projeto de HQ) e o custo operacional de vários serviços, filas e observabilidade distribuída não se justifica para o volume esperado. O ponto de maior carga, a chamada aos modelos de IA, já está externalizado em serviços SaaS que escalam por conta própria. Caso o processamento de vídeo se torne gargalo, ele é o primeiro candidato a ser extraído para um <em>worker</em> assíncrono com fila (Seção 14).</p>
+
+  <h1>9. Integração de Machine Learning</h1>
+  <p>O Sumi não treina modelos próprios: consome <strong>modelos fundacionais pré-treinados</strong> via API, escolha adequada ao problema (geração criativa, que exige modelos de grande escala) e ao orçamento de um projeto acadêmico. O valor de engenharia está na orquestração, no condicionamento dos prompts e na avaliação.</p>
+  <table>
+    <tr><th style="width:17%">Componente de IA</th><th style="width:25%">Problema resolvido</th><th style="width:22%">Técnica / modelo</th><th>Dados necessários</th></tr>
+    <tr><td><strong>Roteirista</strong></td><td>Transformar a premissa em storyboard coerente quadro a quadro.</td><td>LLM (GPT-4o-mini / GPT-5) com <em>prompt chaining</em> hierárquico e saída JSON estruturada.</td><td>Premissa, gênero, tom, nº de páginas, fichas dos personagens, cenários.</td></tr>
+    <tr><td><strong>Ilustrador</strong></td><td>Gerar a arte de cada quadro mantendo o personagem reconhecível.</td><td>Difusão text-to-image (gpt-image-1, Seedream, ComfyUI) com imagem de referência do retrato.</td><td>Prompt visual do quadro, ficha (aparência, figurino, paleta), retrato aprovado, estilo visual.</td></tr>
+    <tr><td><strong>Retratista</strong></td><td>Propor retratos candidatos de um novo personagem.</td><td>Text-to-image com prompt derivado de atributos estruturados.</td><td>Descrição textual, tipo físico, tom de pele, gênero, estilo.</td></tr>
+    <tr><td><strong>Narrador</strong></td><td>Dar voz ao narrador e a cada personagem no vídeo.</td><td>Text-to-Speech neural (MiniMax T2A) + montagem com ffmpeg.</td><td>Legendas e balões aprovados, voz atribuída a cada personagem.</td></tr>
+    <tr><td><strong>Editor de publicação</strong></td><td>Gerar sinopse e metadados (título, descrição, tags) para publicação.</td><td>LLM com prompt de sumarização.</td><td>Roteiro final do projeto.</td></tr>
+    <tr><td><strong>Avaliador (evals)</strong></td><td>Medir se roteiro e imagens respeitam briefing, ambientação e atributos.</td><td>LLM-as-a-judge (Zheng et al., 2023) (texto e visão: Qwen2.5 local via Ollama ou GPT-4o).</td><td>Casos de teste versionados em JSON e imagens de calibração com veredito esperado.</td></tr>
+  </table>
+  <p><strong>Integração à aplicação:</strong> os Services chamam a camada de IA de forma síncrona por meio do contrato <code>AIProvider</code> (padrão <em>Strategy</em>); o fornecedor é escolhido por variável de ambiente ou pela configuração do usuário. A saída do LLM é exigida em JSON e validada estruturalmente (campos obrigatórios, limite de quadros) antes de ser persistida; imagens e áudios gerados são gravados no storage de arquivos e apenas a URL é salva no banco. Toda geração passa por aprovação explícita do usuário antes de compor a obra final.</p>
+
+  <h1>10. Computação em Nuvem e Contêineres</h1>
+  <table>
+    <tr><th style="width:13%">Necessidade</th><th style="width:40%">Serviço sugerido</th><th>Justificativa</th></tr>
+    <tr><td><strong>Ambiente</strong></td><td><strong>Atual:</strong> servidor Linux próprio (Debian/CasaOS) com Docker Compose, em modelo de nuvem privada. <strong>Evolução sugerida:</strong> VM em nuvem pública (ex.: AWS EC2) com banco e storage gerenciados (RDS e S3).</td><td>Na fase atual o custo de infraestrutura é praticamente zero: o processamento pesado (inferência de IA) já está em APIs SaaS e o servidor só executa a aplicação. Como tudo roda em contêineres, a migração para nuvem pública não exige mudança de código, apenas de variáveis de ambiente.</td></tr>
+    <tr><td><strong>Execução</strong></td><td>Contêiner Docker único com Uvicorn (API + SPA estática).</td><td>Uma só unidade de implantação, sem servidor web separado. Pode ser servida sob sub-path atrás de proxy reverso (<code>ROOT_PATH</code>/<code>BASE_HREF</code>).</td></tr>
+    <tr><td><strong>Banco de dados</strong></td><td>PostgreSQL 16 em stack Docker própria (<code>postgres/</code>), com volume persistente, healthcheck e rede externa <code>shared-db</code>.</td><td>Separar o banco da aplicação permite atualizar e reiniciar a API sem tocar nos dados, e reaproveitar o mesmo Postgres em outras aplicações. SQLAlchemy abstrai o dialeto, permitindo migrar para um banco gerenciado (AWS RDS, Azure Database) só trocando a <code>DATABASE_URL</code>.</td></tr>
+    <tr><td><strong>Arquivos</strong></td><td>Volume Docker nomeado (<code>images</code>) montado em <code>/app/static/images</code>; a abstração <code>StorageBackend</code> já suporta bucket S3 compatível.</td><td>O volume sobrevive a rebuilds do contêiner. Na migração para nuvem pública basta mudar <code>STORAGE_BACKEND</code> para usar AWS S3 ou Cloudflare R2, sem mudança de código.</td></tr>
+    <tr><td><strong>IA</strong></td><td>APIs SaaS (OpenAI, BytePlus, MiniMax) e ComfyUI em GPU própria.</td><td>Elimina a necessidade de GPUs na nuvem para inferência; o ComfyUI local serve de alternativa de baixo custo.</td></tr>
+    <tr><td><strong>Segredos</strong></td><td>Arquivo <code>.env</code> mantido apenas no servidor (o deploy o preserva no <code>rsync</code>) e GitHub Secrets no pipeline.</td><td>Chaves de API e <code>JWT_SECRET_KEY</code> nunca são versionadas; o repositório contém apenas <code>.env.example</code> e <code>.env.production.example</code>.</td></tr>
+  </table>
+  <p><strong>Uso de Docker:</strong> o <code>Dockerfile</code> é <em>multi-stage</em>: o estágio 1 (<code>node:22-alpine</code>) compila o Angular; o estágio 2 (<code>python:3.13-slim</code> + <code>uv</code>) instala as dependências travadas no <code>uv.lock</code>, copia o código e o build do frontend. O <code>docker-compose.yml</code> executa <code>alembic upgrade head</code> antes de iniciar a API, com política <code>restart: unless-stopped</code>. Isso garante que desenvolvimento e produção executem exatamente a mesma imagem.</p>
+
+  <h1>11. DevOps e Integração/Entrega Contínua (CI/CD)</h1>
+  <div class="figura">
+    <svg viewBox="0 0 1000 330" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Calibri, sans-serif">
+      <defs>
+        <marker id="seta2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0,0 L10,5 L0,10 z" fill="#2E3B55"/>
+        </marker>
+      </defs>
+      <rect width="1000" height="330" fill="#fdfdfd"/>
+
+      <g font-size="11" fill="#333">
+        <rect x="20" y="20" width="290" height="120" rx="8" fill="#f0f4f9" stroke="#1F2A44" stroke-width="1.4"/>
+        <text x="36" y="44" font-size="13.5" font-weight="bold" fill="#1F2A44">1 · Versionamento</text>
+        <text x="36" y="66">Git + GitHub (monorepo api + web)</text>
+        <text x="36" y="84">Branch por funcionalidade → Pull Request</text>
+        <text x="36" y="102">Commits convencionais (feat:, fix:)</text>
+        <text x="36" y="120">main protegida; tag semântica na release</text>
+
+        <rect x="355" y="20" width="290" height="120" rx="8" fill="#f0f4f9" stroke="#1F2A44" stroke-width="1.4"/>
+        <text x="371" y="44" font-size="13.5" font-weight="bold" fill="#1F2A44">2 · Integração (no PR)</text>
+        <text x="371" y="66">GitHub Actions dispara a cada PR</text>
+        <text x="371" y="84">Lint: ruff · Tipos: pyright</text>
+        <text x="371" y="102">Frontend: ng build (verificação AOT)</text>
+        <text x="371" y="120">Merge só com todos os checks verdes</text>
+
+        <rect x="690" y="20" width="290" height="120" rx="8" fill="#f0f4f9" stroke="#1F2A44" stroke-width="1.4"/>
+        <text x="706" y="44" font-size="13.5" font-weight="bold" fill="#1F2A44">3 · Testes automatizados</text>
+        <text x="706" y="66">pytest + httpx (TestClient FastAPI)</text>
+        <text x="706" y="84">Postgres efêmero (service container)</text>
+        <text x="706" y="102">Provedores de IA mockados (custo zero)</text>
+        <text x="706" y="120">Frontend: ng test (Vitest)</text>
+
+        <rect x="690" y="190" width="290" height="120" rx="8" fill="#eef7f1" stroke="#16a34a" stroke-width="1.4"/>
+        <text x="706" y="214" font-size="13.5" font-weight="bold" fill="#1d5c37">4 · Geração de artefato</text>
+        <text x="706" y="236">docker build multi-stage</text>
+        <text x="706" y="254">Tag da imagem = SHA do commit + semver</text>
+        <text x="706" y="272">Push no GitHub Container Registry</text>
+        <text x="706" y="290">Imagem única promovida entre ambientes</text>
+
+        <rect x="355" y="190" width="290" height="120" rx="8" fill="#eef7f1" stroke="#16a34a" stroke-width="1.4"/>
+        <text x="371" y="214" font-size="13.5" font-weight="bold" fill="#1d5c37">5 · Implantação</text>
+        <text x="371" y="236">Runner self-hosted no servidor Linux</text>
+        <text x="371" y="254">docker compose up -d com a nova tag</text>
+        <text x="371" y="272">Aprovação manual (GitHub Environments)</text>
+        <text x="371" y="290">alembic upgrade head antes da API</text>
+
+        <rect x="20" y="190" width="290" height="120" rx="8" fill="#fffbeb" stroke="#d97706" stroke-width="1.4"/>
+        <text x="36" y="214" font-size="13.5" font-weight="bold" fill="#92400e">6 · Verificação pós-deploy</text>
+        <text x="36" y="236">Smoke test: /health, /health/ai,</text>
+        <text x="36" y="254">  /health/storage</text>
+        <text x="36" y="272">Falhou → redeploy da tag anterior</text>
+        <text x="36" y="290">Evals de IA: gate manual ao trocar modelo</text>
+      </g>
+
+      <line x1="310" y1="80" x2="353" y2="80" stroke="#2E3B55" stroke-width="1.8" marker-end="url(#seta2)"/>
+      <line x1="645" y1="80" x2="688" y2="80" stroke="#2E3B55" stroke-width="1.8" marker-end="url(#seta2)"/>
+      <line x1="835" y1="140" x2="835" y2="188" stroke="#2E3B55" stroke-width="1.8" marker-end="url(#seta2)"/>
+      <line x1="690" y1="250" x2="647" y2="250" stroke="#2E3B55" stroke-width="1.8" marker-end="url(#seta2)"/>
+      <line x1="355" y1="250" x2="312" y2="250" stroke="#2E3B55" stroke-width="1.8" marker-end="url(#seta2)"/>
+      <text x="500" y="170" text-anchor="middle" font-size="11.5" fill="#555" font-style="italic">merge na main → pipeline de entrega</text>
+    </svg>
+    <div class="legenda">Figura 2 — Fluxo de CI/CD planejado: versionamento, integração, testes, artefato Docker, implantação e verificação.</div>
+  </div>
+  <p><strong>Estado atual e planejado.</strong> O repositório já possui um workflow GitHub Actions (<code>.github/workflows/deploy.yml</code>) que, a cada push na <code>main</code>, executa em um runner self-hosted a sincronização do código e o <code>docker compose up -d --build</code>, além de ruff e pyright configurados no <code>pyproject.toml</code>. O plano evolui esse fluxo separando <strong>CI</strong> (executado em todo PR, em runner hospedado pelo GitHub) de <strong>CD</strong> (executado apenas na <code>main</code>), e introduz o registro de imagens versionadas, permitindo reverter um deploy apontando para a tag anterior sem novo build.</p>
+  <p><strong>Testes de IA.</strong> Testes de unidade e integração substituem os provedores por <em>mocks</em> do contrato <code>AIProvider</code>, sendo determinísticos e sem custo. A qualidade dos modelos é medida pelo harness de <em>evals</em> (<code>sumi-api/evals/</code>), executado manualmente antes de trocar modelo ou prompt, pois consome tokens: o relatório de taxa de aprovação funciona como critério de liberação da mudança.</p>
+
+  <h1>12. Qualidade, Confiabilidade e Governança de Dados</h1>
+
+  <h2>12.1 Qualidade e consistência dos dados</h2>
+  <ul>
+    <li><strong>Validação na borda:</strong> todo payload de entrada e saída é validado por esquemas Pydantic v2; a resposta do LLM é parseada como JSON e descartada se não contiver a estrutura esperada.</li>
+    <li><strong>Integridade relacional:</strong> chaves estrangeiras, UUIDs e restrições no PostgreSQL; a evolução do esquema é feita exclusivamente por migrations Alembic versionadas no Git.</li>
+    <li><strong>Atributos controlados:</strong> características de personagem (tipo físico, tom de pele, estilo) vêm de listas fechadas, reduzindo ambiguidade nos prompts e permitindo medir a aderência das imagens.</li>
+    <li><strong>Qualidade das saídas de IA:</strong> casos de avaliação versionados medem aderência à ambientação e aos personagens; o próprio juiz é calibrado com imagens de veredito conhecido (“teste do teste”).</li>
+  </ul>
+
+  <h2>12.2 Segurança e privacidade das informações</h2>
+  <ul>
+    <li><strong>Autenticação e autorização:</strong> senhas com hash bcrypt, tokens JWT com expiração, aprovação de novos cadastros por administrador e verificação de propriedade em cada recurso (um usuário só acessa os próprios projetos).</li>
+    <li><strong>Segredos:</strong> chaves de API e de assinatura apenas em variáveis de ambiente; Swagger desabilitado em produção; mensagens de erro detalhadas apenas em desenvolvimento.</li>
+    <li><strong>Transporte:</strong> HTTPS com terminação TLS no proxy reverso do servidor e CORS restrito às origens configuradas.</li>
+    <li><strong>Privacidade (LGPD):</strong> coleta mínima (nome, e-mail e conteúdo criativo); o texto enviado aos provedores de IA não inclui dados pessoais do usuário; termos de uso informam o envio do conteúdo a serviços de terceiros; exclusão de conta disponível ao administrador (planejado: autoatendimento pelo titular e remoção dos arquivos no storage).</li>
+    <li><strong>Uso adequado:</strong> publicação pública apenas por ação explícita do autor; moderação de conteúdo dos provedores mantida ativa; obras geradas por IA identificadas como tal.</li>
+  </ul>
+
+  <h2>12.3 Disponibilidade e confiabilidade da aplicação</h2>
+  <ul>
+    <li>Dados persistentes fora do contêiner da aplicação (PostgreSQL em stack própria e volume de arquivos), permitindo recriar o contêiner da API a cada deploy sem perda de dados.</li>
+    <li><strong>Limitação conhecida:</strong> o estado dos jobs longos (retratos, cenas, vídeo) fica em memória do processo, o que exige uma única instância e perde jobs em andamento num reinício. O plano é externalizar esse estado para uma fila (ex.: Redis + RQ), habilitando múltiplas réplicas.</li>
+    <li>Política de reinício automático (<code>restart: unless-stopped</code>) e <code>pool_pre_ping</code> no pool de conexões para descartar conexões quebradas.</li>
+    <li><strong>Redundância de fornecedor:</strong> se um provedor de IA ficar indisponível, a configuração permite alternar para outro (OpenAI ↔ Seedream ↔ ComfyUI) sem novo deploy.</li>
+    <li>Metas planejadas: disponibilidade de 99,5% para a API (excluídas as APIs de IA) e p95 &lt; 500 ms em operações sem IA.</li>
+  </ul>
+
+  <h2>12.4 Monitoramento e identificação de falhas</h2>
+  <ul>
+    <li><strong>Health checks:</strong> <code>/health</code> (processo), <code>/health/ai</code> (provedor configurado) e <code>/health/storage</code> (armazenamento), usados pelo smoke test do pipeline e por monitoramento externo de disponibilidade (ex.: Uptime Kuma).</li>
+    <li><strong>Logs:</strong> logging por módulo, registrando tokens consumidos por chamada de IA e stack trace de exceções não tratadas (<code>docker compose logs</code>); planejada a centralização em Grafana Loki e o envio de exceções para Sentry.</li>
+    <li><strong>Métricas de negócio e custo:</strong> taxa de quadros aprovados versus regerados (proxy de qualidade da IA) e consumo de tokens por projeto, com alertas quando o custo diário ultrapassar um limite.</li>
+  </ul>
+
+  <h2>12.5 Tratamento de erros e recuperação de serviços</h2>
+  <table>
+    <tr><th style="width:30%">Falha</th><th>Tratamento</th></tr>
+    <tr><td>Exceção não tratada na API</td><td>Handler global registra o stack trace e devolve resposta 500 padronizada (com cabeçalho CORS), sem expor detalhes em produção.</td></tr>
+    <tr><td>Timeout ou erro do provedor de IA</td><td>Timeouts explícitos (60–300 s); erro mapeado para mensagem amigável exibida no frontend; o quadro permanece em estado “revisar” e pode ser regerado. Planejado: <em>retry</em> com <em>backoff</em> exponencial para erros 429/5xx.</td></tr>
+    <tr><td>Resposta inválida do LLM</td><td>JSON fora da estrutura esperada é descartado e registrado em log, sem gravar dados inconsistentes; o usuário pode regerar a etapa.</td></tr>
+    <tr><td>Banco indisponível na subida</td><td>Migrations executadas no início do contêiner; se o PostgreSQL ainda não estiver pronto, o reinício automático tenta novamente.</td></tr>
+    <tr><td>Perda de dados</td><td>Exportação/importação de projeto completo em ZIP (dados + imagens + áudios) pela própria aplicação; planejado <code>pg_dump</code> agendado do contêiner PostgreSQL e cópia do volume de arquivos para armazenamento externo.</td></tr>
+    <tr><td>Deploy com defeito</td><td>Smoke test falho bloqueia a promoção; recuperação por redeploy da imagem anterior (tag imutável no registry).</td></tr>
+  </table>
+
+  <div class="quebra-pagina"></div>
+
+  <!-- ===================== PARTE 3 ===================== -->
+  <div class="parte">PARTE 3 — Apresentação e Análise Crítica</div>
+  <div class="parte-sub">Vídeo de até 8 minutos apresentado pelo próprio aluno.</div>
+
+  <h1>13. Vídeo de Apresentação e Roteiro</h1>
+  <div class="card-alerta">
+    <strong>Link do vídeo (Google Drive, permissão de visualização):</strong> <span class="preencher">[colar o link aqui]</span><br>
+    <strong>Repositório do projeto:</strong> <a href="https://github.com/luisrobertolrm/comic-prompt2">https://github.com/luisrobertolrm/comic-prompt2</a><br>
+    Duração máxima: 8 minutos. Gravação apresentada pelo próprio aluno, com tela compartilhada do documento e do protótipo.
+  </div>
+  <table>
+    <tr><th style="width:15%">Tempo</th><th style="width:30%">Tópico exigido</th><th>Conteúdo e apoio visual</th></tr>
+    <tr><td><strong>00:00–01:00</strong></td><td>1. Contextualização e justificativa</td><td>Custo e tempo de produzir HQ; problemas de coerência e consistência visual ao usar IA de forma isolada; artigo Dramatron como base.</td></tr>
+    <tr><td><strong>01:00–02:15</strong></td><td>2. Funcionalidades e benefícios</td><td>Demonstração do fluxo no protótipo: ideia → personagens → roteiro → revisão → vídeo narrado.</td></tr>
+    <tr><td><strong>02:15–03:30</strong></td><td>3. Diagrama arquitetural</td><td>Figura 1: camadas, contêiner da aplicação, stack PostgreSQL e volume de arquivos; por que monólito modular e não microsserviços.</td></tr>
+    <tr><td><strong>03:30–04:45</strong></td><td>4. Integração de ML</td><td>Tabela da Seção 9: prompt chaining, ficha do personagem no prompt, contrato AIProvider, evals com LLM-as-a-judge.</td></tr>
+    <tr><td><strong>04:45–06:00</strong></td><td>5. Nuvem e CI/CD</td><td>Dockerfile multi-stage, servidor Linux próprio com Docker Compose e caminho de migração para nuvem pública; Figura 2 com as seis etapas do pipeline.</td></tr>
+    <tr><td><strong>06:00–07:30</strong></td><td>6. Desafios, riscos e evolução</td><td>Tabela da Seção 14: custo de tokens, dependência de fornecedores, consistência visual, direitos autorais; próximos passos.</td></tr>
+    <tr><td><strong>07:30–08:00</strong></td><td>Encerramento</td><td>Síntese da proposta e agradecimentos.</td></tr>
+  </table>
+
+  <h1>14. Desafios, Riscos, Limitações e Evolução</h1>
+  <table>
+    <tr><th style="width:24%">Risco / limitação</th><th style="width:12%">Impacto</th><th>Mitigação</th></tr>
+    <tr><td><strong>Custo variável de tokens e imagens</strong></td><td><span class="tag-status status-limite">Alto</span></td><td>Modelos menores por padrão, geração sob demanda (quadro a quadro), ComfyUI local como alternativa, cota por usuário e alertas de custo.</td></tr>
+    <tr><td><strong>Dependência de fornecedores de IA</strong></td><td><span class="tag-status status-limite">Alto</span></td><td>Contrato <code>AIProvider</code> com quatro implementações; troca por configuração.</td></tr>
+    <tr><td><strong>Consistência visual imperfeita</strong></td><td><span class="tag-status status-meta">Médio</span></td><td>Ficha estruturada e retrato de referência no prompt; revisão humana por quadro; evolução para técnicas de consistência (ex.: StoryDiffusion, adaptadores de identidade).</td></tr>
+    <tr><td><strong>Alucinação e estereótipos do LLM</strong></td><td><span class="tag-status status-meta">Médio</span></td><td>Human-in-the-loop obrigatório, saída estruturada validada, evals de aderência e moderação do provedor.</td></tr>
+    <tr><td><strong>Direitos autorais das obras geradas</strong></td><td><span class="tag-status status-meta">Médio</span></td><td>Termos de uso claros, identificação de conteúdo gerado por IA e restrição de prompts que imitem artistas específicos.</td></tr>
+    <tr><td><strong>Cobertura de testes automatizados baixa</strong></td><td><span class="tag-status status-meta">Médio</span></td><td>Prioridade do roadmap: testes de services com mocks de IA antes de novas funcionalidades.</td></tr>
+    <tr><td><strong>Servidor único (ponto único de falha)</strong></td><td><span class="tag-status status-limite">Alto</span></td><td>Reinício automático e backups; contêineres permitem subir a mesma stack em nuvem pública rapidamente em caso de falha do servidor.</td></tr>
+    <tr><td><strong>Latência da geração de vídeo</strong></td><td><span class="tag-status status-ok">Baixo</span></td><td>Evolução para worker assíncrono com fila (ex.: Redis + RQ) e notificação ao concluir.</td></tr>
+  </table>
+  <p><strong>Possibilidades de evolução:</strong> processamento assíncrono de imagens e vídeo em fila; ajuste fino (LoRA) de um modelo de difusão por personagem para consistência máxima; tradução automática dos balões para publicação multilíngue; trilha sonora gerada por IA; aplicativo móvel de leitura; e painel de observabilidade de custo e qualidade dos modelos.</p>
+
+  <h1>15. Referências</h1>
+  <ul>
+    <li>MIROWSKI, P.; MATHEWSON, K. W.; PITTMAN, J.; EVANS, R. <strong>Co-Writing Screenplays and Theatre Scripts with Language Models: An Evaluation by Industry Professionals.</strong> In: CHI Conference on Human Factors in Computing Systems (CHI '23). ACM, 2023. Disponível em: &lt;https://arxiv.org/abs/2209.14958&gt;. Acesso em: nov. 2026.</li>
+    <li>ZHENG, L. et al. <strong>Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena.</strong> In: Advances in Neural Information Processing Systems (NeurIPS 2023), Datasets and Benchmarks Track. Disponível em: &lt;https://arxiv.org/abs/2306.05685&gt;. Acesso em: nov. 2026.</li>
+    <li>SCULLEY, D. et al. <strong>Hidden Technical Debt in Machine Learning Systems.</strong> In: Advances in Neural Information Processing Systems 28 (NeurIPS 2015), p. 2503–2511.</li>
+    <li>ZHOU, Y. et al. <strong>StoryDiffusion: Consistent Self-Attention for Long-Range Image and Video Generation.</strong> In: NeurIPS 2024. Disponível em: &lt;https://arxiv.org/abs/2405.01434&gt;. Acesso em: nov. 2026.</li>
+    <li>BRASIL. <strong>Lei nº 13.709, de 14 de agosto de 2018.</strong> Lei Geral de Proteção de Dados Pessoais (LGPD). Brasília, DF, 2018.</li>
+    <li>FASTAPI. <strong>FastAPI Documentation.</strong> Disponível em: &lt;https://fastapi.tiangolo.com/&gt;. Acesso em: nov. 2026.</li>
+    <li>ANGULAR. <strong>Angular Documentation.</strong> Disponível em: &lt;https://angular.dev/&gt;. Acesso em: nov. 2026.</li>
+    <li>DOCKER. <strong>Multi-stage builds.</strong> Disponível em: &lt;https://docs.docker.com/build/building/multi-stage/&gt;. Acesso em: nov. 2026.</li>
+    <li>GITHUB. <strong>GitHub Actions Documentation.</strong> Disponível em: &lt;https://docs.github.com/actions&gt;. Acesso em: nov. 2026.</li>
+  </ul>
+
+</body>
+</html>

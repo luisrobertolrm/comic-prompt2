@@ -3,17 +3,17 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime
 
-import prompt_clinica._paths  # noqa: F401
 from fastapi import HTTPException, status
+from project import Project
+from recomendacao import RecomendacaoNegativa, RecomendacaoPositiva, RecomendacaoUsuario
 from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-
-from project import Project
-from prompt_clinica.schemas.project import ReactionOut
-from recomendacao import RecomendacaoNegativa, RecomendacaoPositiva, RecomendacaoUsuario
 from user import User
+
+import prompt_clinica._paths  # noqa: F401
+from prompt_clinica.schemas.project import ReactionOut
 
 _COUNTER = {True: RecomendacaoPositiva, False: RecomendacaoNegativa}
 

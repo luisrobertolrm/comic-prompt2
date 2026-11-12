@@ -3,11 +3,10 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
+from base import Base
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
-
-from base import Base
 
 
 class RecomendacaoPositiva(Base):

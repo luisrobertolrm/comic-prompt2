@@ -3,22 +3,27 @@ from __future__ import annotations
 import random
 import uuid
 
-import prompt_clinica._paths  # noqa: F401
-from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
-
 from character import Character
+from fastapi import HTTPException, status
 from panel import Panel
 from project import Project
 from project_character import ProjectCharacter
 from project_scenario import ProjectScenario
+from scenario import Scenario
+from sqlalchemy.orm import Session
+from user import User
+
+import prompt_clinica._paths  # noqa: F401
 from prompt_clinica.ai.synopsis import generate_synopsis as ai_generate_synopsis
 from prompt_clinica.schemas.character import CharacterOut
-from prompt_clinica.schemas.project import ProjectCreate, ProjectDetailOut, ProjectOut, ProjectPatch
+from prompt_clinica.schemas.project import (
+    ProjectCreate,
+    ProjectDetailOut,
+    ProjectOut,
+    ProjectPatch,
+)
 from prompt_clinica.schemas.scenario import ScenarioOut
 from prompt_clinica.storage import get_storage
-from scenario import Scenario
-from user import User
 
 _ACCENTS = ["accent", "mint", "peach", "blush", "lilac"]
 _TONES = ["dots", "diag", "dense"]

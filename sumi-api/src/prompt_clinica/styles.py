@@ -21,7 +21,6 @@ from pydantic import AfterValidator
 
 import prompt_clinica._paths  # noqa: F401  (coloca models/ no sys.path)
 
-
 DEFAULT_STYLE = "anime-90s"
 DEFAULT_COLOR_MODE = "tons-cinza"
 

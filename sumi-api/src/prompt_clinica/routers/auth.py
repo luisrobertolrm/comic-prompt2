@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from user import User
 from prompt_clinica.database import get_db
+from prompt_clinica.deps import get_current_user
 from prompt_clinica.schemas.auth import (
     LoginRequest,
     PasswordResetRequest,
@@ -22,6 +24,11 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)) -> RegisterRes
 @router.post("/login", response_model=TokenResponse)
 def login(req: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse:
     return auth_service.login(req, db)
+
+
+@router.post("/refresh", response_model=TokenResponse)
+def refresh(user: User = Depends(get_current_user)) -> TokenResponse:
+    return auth_service.refresh(user)
 
 
 @router.post("/password-reset/request", status_code=202)

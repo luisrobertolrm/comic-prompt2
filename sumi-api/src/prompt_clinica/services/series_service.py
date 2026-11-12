@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import uuid
 
-import prompt_clinica._paths  # noqa: F401
 from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
-
 from project import Project
-from prompt_clinica.schemas.series import SeriesCreate, SeriesOut, SeriesUpdate
 from series import Series
 from series_project import SeriesProject
+from sqlalchemy.orm import Session
 from user import User
+
+import prompt_clinica._paths  # noqa: F401
+from prompt_clinica.schemas.series import SeriesCreate, SeriesOut, SeriesUpdate
 
 
 def _project_ids(series_id: uuid.UUID, db: Session) -> list[uuid.UUID]:

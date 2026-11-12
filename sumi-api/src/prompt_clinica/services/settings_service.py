@@ -3,12 +3,12 @@ from __future__ import annotations
 import logging
 
 import httpx
-import prompt_clinica._paths  # noqa: F401
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from user import User
 from user_settings import UserSettings
 
+import prompt_clinica._paths  # noqa: F401
 from prompt_clinica.ai import AIProvider, build_local_text_provider
 from prompt_clinica.schemas.settings import SettingsOut, SettingsUpdate
 
@@ -64,8 +64,7 @@ def list_local_models(url: str) -> list[str]:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Informe a URL da IA local.",
         )
-    if base.endswith("/v1"):
-        base = base[: -len("/v1")]
+    base = base.removesuffix("/v1")
     try:
         resp = httpx.get(f"{base}/api/tags", timeout=10.0)
         resp.raise_for_status()

@@ -36,5 +36,5 @@ ENV APP_RELOAD=false
 
 EXPOSE 8000
 
-# ${PORT} é injetado pelo Railway; fallback 8000 para testes locais
+# ${PORT} permite sobrescrever a porta; o docker-compose.yml usa 8000
 CMD ["sh", "-c", "uvicorn prompt_clinica.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

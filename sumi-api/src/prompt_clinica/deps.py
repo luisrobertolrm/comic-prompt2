@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import uuid
 
-import prompt_clinica._paths  # noqa: F401
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
+from user import User
 
+import prompt_clinica._paths  # noqa: F401
 from prompt_clinica.database import get_db
 from prompt_clinica.utils.security import decode_token
-from user import User
 
 _bearer = HTTPBearer()
 _bearer_optional = HTTPBearer(auto_error=False)

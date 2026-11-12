@@ -2,444 +2,212 @@
 
 > Produza quadrinhos completos a partir de uma faísca de ideia, com IA guiando cada etapa — do roteiro à narração em vídeo.
 
+Repositório: <https://github.com/luisrobertolrm/comic-prompt2>
+
 ---
 
 ## Visão geral do sistema
 
-**Sumi** é uma plataforma de criação de histórias em quadrinhos assistida por inteligência artificial. O usuário parte de uma frase inicial e, etapa a etapa, a IA propõe personagens, roteiro, quadros e balões. O sistema mantém a **coerência visual dos personagens** entre quadros e projetos, e ao final gera tanto páginas para leitura quanto um **motion comic narrado** com vozes por personagem.
+**Sumi** é uma plataforma de criação de histórias em quadrinhos assistida por inteligência artificial. O usuário parte de uma premissa e, etapa a etapa, a IA propõe sinopse, personagens, cenários, roteiro, quadros e balões. O sistema mantém a **coerência visual dos personagens** entre quadros e projetos e, ao final, gera páginas para leitura, um link público na galeria e um **motion comic narrado** em MP4 com voz por personagem.
 
 ### Fluxo de criação
 
 ```
-Ideia → Personagens → Roteiro → Revisão quadro a quadro → Editor visual → Exportar
-                                                                       ↓
-                                                              Vídeo narrado (motion comic)
+Ideia → Personagens → Cenários → Roteiro → Revisão → Editor → Finalizar → Vídeo
 ```
 
-| Etapa | O que acontece |
-|---|---|
-| **1 · Ideia** | Usuário descreve a premissa em linguagem natural; define gênero, tom emocional, nº de páginas e estilo visual |
-| **2 · Personagens** | Seleciona da biblioteca, cria manualmente ou pede à IA 4 retratos candidatos a partir de uma descrição textual |
-| **3 · Roteiro** | A IA propõe o storyboard completo: um card por quadro com caption, personagem, enquadramento e prompt visual |
-| **4 · Revisão** | Cada quadro é aprovado, regerado ou editado individualmente (caption, balões, tipo de balão, prompt visual) |
-| **5 · Editor visual** | Layout da página ajustado com grade dinâmica; balões arrastáveis sobre os quadros |
-| **6 · Finalizar** | Exportação em PDF, PNG, EPUB e link de leitura compartilhável |
-| **7 · Vídeo** | Motion comic narrado: cada quadro vira uma cena, narrador + voz por personagem, trilha sonora |
+| Etapa | Rota | O que acontece |
+|---|---|---|
+| **Ideia** | `/projects/new` | Premissa, gênero, tom, nº de páginas, estilo visual, modo de cor; sinopse gerada por IA |
+| **Personagens** | `/projects/new/characters` | Biblioteca reutilizável; criação manual ou retratos gerados por IA a partir de atributos (gênero, etnia, tipo físico, tom de pele, estilo) |
+| **Cenários** | `/projects/new/scenarios` | Biblioteca de cenários reutilizáveis; imagem de cena gerada por IA |
+| **Roteiro** | `/projects/:id/script` | A IA propõe o storyboard: um quadro por beat com legenda, personagens, enquadramento e prompt visual |
+| **Revisão** | `/projects/:id/review` | Cada quadro é editado, reordenado, regerado (imagem/balões) ou removido |
+| **Editor** | `/projects/:id/editor` | Diagramação da página e balões arrastáveis (sem IA) |
+| **Finalizar** | `/projects/:id/final` | Preview das páginas e exportação dos quadros |
+| **Vídeo** | `/projects/:id/video` | Motion comic: narração TTS (MiniMax) por personagem, render MP4 com ffmpeg, metadados de YouTube gerados por IA |
 
-### Recursos-chave
+### Outros recursos
 
-- **Biblioteca de personagens reutilizáveis** — ficha visual (aparência, figurino, paleta) e personalidade são preservadas em todas as HQs do usuário.
-- **Consistência visual via IA** — o prompt de cada quadro é construído a partir da ficha do personagem, garantindo coerência entre cenas.
-- **Balões tipados** — fala, pensamento e grito; posição e lado configuráveis.
-- **Múltiplos estilos de quadro** — Shojo clássico, linha moderna limpa, tinta marcada, minimalista.
-- **Múltiplos layouts de página** — Mangá vertical, grade ocidental, dinâmico mangá.
-- **Motion comic** — player com timeline de cenas, elenco de voz por personagem, transições (corte, fade, zoom Ken Burns, deslize), exportação de vídeo.
-- **Multilíngue** — balões em PT-BR, japonês, inglês ou espanhol.
+- **Galeria pública** (`/` e `/p/:id`) — leitura sem login, com vídeo e reações (curtir/não curtir).
+- **Séries** — agrupam vários projetos em ordem.
+- **Aprovação de usuários** — novos cadastros ficam pendentes até um administrador aprovar (`/admin`).
+- **Configurações por usuário** — permite usar uma IA local compatível com a API OpenAI (ex.: Ollama) para o roteiro.
+- **Backup** — exportação/importação de um projeto completo em `.zip` (dados + imagens + áudios).
+- **Vozes de narração** — cadastro de vozes MiniMax e atribuição ao narrador e a cada personagem.
 
 ---
 
-## Arquitetura do projeto
+## Arquitetura
 
-O sistema é dividido em dois projetos independentes que convivem no mesmo repositório:
+Monorepo com dois projetos e uma stack de banco separada:
 
 ```
-comic-prompt/                   ← raiz do repositório
-├── sumi-api/                   ← backend Python (FastAPI + SQLAlchemy)
-│   ├── sumi/                   ← pacote Python principal
-│   │   ├── core/               ← entidades de domínio e ORM
-│   │   ├── infra/              ← banco, LLMs, serviços externos
-│   │   ├── services/           ← regras de negócio
-│   │   └── api/                ← endpoints HTTP (FastAPI)
-│   ├── tests/
-│   ├── alembic/                ← migrations
-│   ├── alembic.ini
-│   ├── pyproject.toml
-│   ├── .env.example
-│   └── Dockerfile
-├── sumi-web/                   ← frontend Angular
-│   ├── src/
-│   │   └── app/
-│   │       ├── core/           ← guards, interceptors, auth
-│   │       ├── shared/         ← componentes, pipes, diretivas reutilizáveis
-│   │       ├── features/       ← módulos de feature (projects, characters, editor, video)
-│   │       └── layout/         ← shell, sidebar, topbar
-│   ├── angular.json
-│   ├── package.json
-│   └── Dockerfile
-├── comic-prompt/               ← protótipo HTML/React (referência visual)
-├── docker-compose.yml
-└── README.md
+comic-prompt/
+├── sumi-api/                 ← backend Python 3.13 (FastAPI + SQLAlchemy 2 + Alembic)
+│   ├── src/prompt_clinica/   ← pacote da API (routers, services, schemas, ai, storage)
+│   ├── models/               ← modelos ORM (fora do pacote; ver sumi-api/ARCHITECTURE.md)
+│   ├── alembic/              ← migrations
+│   ├── evals/                ← avaliação LLM-as-judge (manual, fora do CI)
+│   └── scripts/              ← scripts de teste manual dos providers de IA
+├── sumi-web/                 ← frontend Angular 21 (standalone components)
+│   └── src/app/{core,features,shared}
+├── sumi-mobile/              ← app Android em Flutter (consome a mesma API; ver sumi-mobile/README.md)
+│   └── lib/{core,features,shared}
+├── postgres/                 ← stack Docker do PostgreSQL (separada e reutilizável)
+├── comic-prompt/             ← protótipo HTML/React (referência visual)
+├── docs/                     ← análises e especificações
+├── Dockerfile                ← build multi-stage: Angular + API em uma imagem
+├── docker-compose.yml        ← stack de produção da Sumi
+└── .github/workflows/        ← deploy contínuo (GitHub Actions, runner self-hosted)
 ```
 
+Em produção a **API serve o build do Angular** como arquivos estáticos — não há servidor web separado para o frontend.
 
-> **Por que separados?** O Angular tem toolchain próprio (`npm`, `ng`), ciclo de build independente e pode ser hospedado em CDN. Manter os dois na raiz do mesmo repositório (monorepo simples) facilita PRs que afetam os dois lados sem precisar de submódulos.
+```
+Navegador ──HTTPS──► Contêiner sumi (FastAPI + SPA Angular)
+                        ├── routers → services → ai/providers ──► OpenAI / BytePlus Seedream / MiniMax / ComfyUI
+                        ├── SQLAlchemy ─────────────────────────► Contêiner PostgreSQL (rede shared-db)
+                        └── storage.py ─────────────────────────► Volume Docker (imagens, áudios, vídeos)
+```
+
+Detalhes da API (camadas, endpoints, variáveis): [`sumi-api/ARCHITECTURE.md`](sumi-api/ARCHITECTURE.md).
 
 ---
 
-## Backend Python — `sumi-api`
+## Backend — `sumi-api`
 
 ### Stack
 
 | Componente | Tecnologia |
 |---|---|
-| Framework web | **FastAPI** |
-| ORM | **SQLAlchemy 2** (async) |
-| Banco de dados | **PostgreSQL** (abstrato via ORM, mas driver configurado para `asyncpg`) |
+| Framework web | **FastAPI** (Uvicorn) |
+| ORM | **SQLAlchemy 2** (síncrono, `psycopg2`) |
+| Banco de dados | **PostgreSQL 16** |
 | Migrations | **Alembic** |
 | Validação | **Pydantic v2** |
-| LLM | SDK Anthropic (Claude) — chamados na camada `infra` |
-| Geração de imagem | API de terceiros (configurável via `infra`) |
-| TTS / narração | API de terceiros (configurável via `infra`) |
-| Autenticação | JWT via `python-jose` |
-| Testes | `pytest` + `httpx` |
+| Gerenciador de pacotes | **uv** (`pyproject.toml` + `uv.lock`) |
+| LLM (texto) | OpenAI (`gpt-4o-mini` padrão; suporta gpt-5/o-series), MiniMax, ou IA local OpenAI-compatível via LangChain |
+| Imagem | OpenAI `gpt-image-1`, BytePlus **Seedream**, MiniMax `image-01`, **ComfyUI** (Stable Diffusion local) |
+| Voz (TTS) | MiniMax `speech-2.8-hd` |
+| Vídeo | ffmpeg (via `imageio-ffmpeg`) — quadros + áudio → MP4 |
+| Autenticação | JWT + bcrypt |
+| Qualidade | `ruff`, `pyright` (pytest configurado, sem testes ainda) |
 
-### Namespaces
+### Provedores de IA
 
-#### `sumi/core/`
-Entidades puras de domínio e modelos ORM. Não depende de nenhum outro namespace interno.
+Toda chamada de IA passa pelo contrato `AIProvider` (`src/prompt_clinica/ai/base.py`), com implementações em `ai/providers/`. O provedor é escolhido por variável de ambiente:
 
-```
-core/
-├── models/
-│   ├── project.py          # Project, Page, Panel
-│   ├── character.py        # Character, CharacterTrait, CharacterPalette
-│   ├── bubble.py           # Bubble, BubbleKind
-│   ├── user.py             # User
-│   └── __init__.py
-├── enums.py                # PanelStatus, BubbleKind, PanelAspect, PanelTone...
-├── base.py                 # declarative_base, TimestampMixin
-└── __init__.py
+```dotenv
+AI_PROVIDER=openai          # openai | minimax | comfyui | seedream
+AI_TEXT_PROVIDER=           # opcional: sobrescreve só o texto
+AI_IMAGE_PROVIDER=          # opcional: sobrescreve só a imagem
 ```
 
-- Todos os modelos herdam de `base.TimestampMixin` (`created_at`, `updated_at`).
-- IDs são UUIDs gerados na aplicação.
-- Relacionamentos declarados aqui; queries ficam no `infra`.
+Gerações demoradas (retratos, cenas, vídeo) rodam em `BackgroundTasks` do FastAPI e o frontend acompanha o job por polling (`/characters/portrait-job/{id}`, `/scenarios/scene-job/{id}`, `/projects/{id}/export/video/{job_id}`). O estado dos jobs fica em memória do processo.
 
-#### `sumi/infra/`
-Conexão com recursos externos. Depende de `core`. Nunca importado por `api` diretamente — apenas via `services`.
+### Geração de imagem — Seedream
 
-```
-infra/
-├── database/
-│   ├── session.py          # AsyncSessionFactory, get_db (dependency)
-│   ├── repositories/       # um repo por aggregate root (ProjectRepo, CharacterRepo…)
-│   └── __init__.py
-├── migrations/             # pasta gerenciada pelo Alembic
-├── llm/
-│   ├── claude_client.py    # wrapper do SDK Anthropic com prompt caching
-│   ├── prompts/            # arquivos .jinja2 com templates de prompt
-│   └── __init__.py
-├── image_gen/
-│   ├── client.py           # abstração para API de geração de imagem
-│   └── __init__.py
-├── tts/
-│   ├── client.py           # abstração para Text-to-Speech
-│   └── __init__.py
-└── __init__.py
-```
+Com `AI_IMAGE_PROVIDER=seedream` (BytePlus ModelArk), o `size` enviado à API deve ser uma dimensão concreta. Dimensões recomendadas por razão de aspecto:
 
-- A connection string do banco **nunca é hardcoded** — lida sempre de `settings.DATABASE_URL`.
-- Cada repository expõe métodos async puros; sem lógica de negócio.
+| Razão | 2K | 3K | 4K |
+|-------|----|----|----|
+| 1:1   | 2048×2048 | 3072×3072 | 4096×4096 |
+| 3:4   | 1728×2304 | 2592×3456 | 3520×4704 |
+| 4:3   | 2304×1728 | 3456×2592 | 4704×3520 |
+| 16:9  | 2848×1600 | 4096×2304 | 5504×3040 |
+| 9:16  | 1600×2848 | 2304×4096 | 3040×5504 |
+| 3:2   | 2496×1664 | 3744×2496 | 4992×3328 |
+| 2:3   | 1664×2496 | 2496×3744 | 3328×4992 |
+| 21:9  | 3136×1344 | 4704×2016 | 6240×2656 |
 
-#### `sumi/services/`
-Regras de negócio. Depende de `core` e `infra`. Retorna `ViewModels` (Pydantic) para a camada `api`.
+A resolução 1K não é suportada.
 
-```
-services/
-├── project_service.py      # criar, editar, listar projetos
-├── character_service.py    # CRUD + geração IA de personagens
-├── script_service.py       # proposta de roteiro via LLM
-├── panel_service.py        # aprovação, regeneração de quadros
-├── video_service.py        # montagem do motion comic
-├── export_service.py       # PDF, PNG, EPUB
-├── viewmodels/
-│   ├── project_vm.py
-│   ├── character_vm.py
-│   ├── panel_vm.py
-│   └── video_vm.py
-└── __init__.py
-```
+### Evals
 
-#### `sumi/api/`
-Endpoints FastAPI. Depende apenas de `services` e `core.enums`. Não acessa banco diretamente.
-
-```
-api/
-├── main.py                 # cria a instância FastAPI, registra routers, CORS, middleware
-├── dependencies.py         # get_current_user, get_db forwarding
-├── routers/
-│   ├── projects.py         # /projects
-│   ├── characters.py       # /characters
-│   ├── panels.py           # /panels
-│   ├── script.py           # /script/generate
-│   ├── video.py            # /video
-│   └── auth.py             # /auth/token
-└── __init__.py
-```
-
-### Banco de dados
-
-O ORM é configurado para PostgreSQL mas abstrai o dialeto. Para trocar de banco basta alterar `DATABASE_URL` no `.env` (SQLAlchemy reconhece o dialeto pelo prefixo da URL).
-
-**Migrations com Alembic:**
-
-```bash
-# Criar uma migration
-alembic revision --autogenerate -m "add character palette table"
-
-# Aplicar migrations
-alembic upgrade head
-
-# Reverter última migration
-alembic downgrade -1
-```
-
-### Geração de imagem — Seedream 5.0 lite
-
-Provider de imagem ativo via `AI_IMAGE_PROVIDER=seedream` (BytePlus ModelArk),
-modelo `SEEDREAM_MODEL=seedream-5-0-lite`. O `size` enviado à API deve ser uma
-dimensão concreta — abaixo as dimensões recomendadas por razão de aspecto e
-resolução-alvo.
-
-| Razão | 1K | 2K | 3K | 4K |
-|-------|----|----|----|----|
-| 1:1   | Not supported | 2048×2048 | 3072×3072 | 4096×4096 |
-| 3:4   | Not supported | 1728×2304 | 2592×3456 | 3520×4704 |
-| 4:3   | Not supported | 2304×1728 | 3456×2592 | 4704×3520 |
-| 16:9  | Not supported | 2848×1600 | 4096×2304 | 5504×3040 |
-| 9:16  | Not supported | 1600×2848 | 2304×4096 | 3040×5504 |
-| 3:2   | Not supported | 2496×1664 | 3744×2496 | 4992×3328 |
-| 2:3   | Not supported | 1664×2496 | 2496×3744 | 3328×4992 |
-| 21:9  | Not supported | 3136×1344 | 4704×2016 | 6240×2656 |
-
-**Observações:**
-- A coluna **1K não é suportada** para nenhuma razão de aspecto.
-- Na imagem original, na coluna **3K** as posições de `3:2` e `2:3` aparecem
-  trocadas em relação às outras colunas — lá, `2:3 : 2496×3744` vem antes de
-  `3:2 : 3744×2496`. A tabela acima mantém os valores como na imagem, alinhados
-  por razão de aspecto.
+`sumi-api/evals/` contém um harness LLM-as-judge que mede se roteiros e imagens respeitam ambientação, personagens e atributos. Roda **manualmente** (consome tokens) — ver [`sumi-api/evals/README.md`](sumi-api/evals/README.md).
 
 ---
 
-## Frontend Angular — `sumi-web`
-
-O design visual segue **rigorosamente** o protótipo em `comic-prompt/`. Os tokens de design estão documentados abaixo.
-
-### Stack
+## Frontend — `sumi-web`
 
 | Componente | Tecnologia |
 |---|---|
-| Framework | **Angular 18+** (standalone components) |
-| Estilos | **SCSS** com os tokens abaixo, sem framework CSS externo |
-| HTTP | `HttpClient` com interceptor de JWT |
-| Estado | **NgRx Signals** (ou Akita — a definir) |
-| Rotas | Angular Router |
-| Formulários | Reactive Forms |
-| Build | Angular CLI / esbuild |
+| Framework | **Angular 21** (standalone components, rotas lazy) |
+| Estilos | SCSS com os tokens do protótipo, sem framework CSS |
+| HTTP | `HttpClient` + `auth.interceptor.ts` (JWT) |
+| Rotas | Angular Router com `authGuard` e `adminGuard` |
+| Testes | Vitest (`ng test`) |
 
-### Tokens de design (importados como variáveis SCSS)
+```
+src/app/
+├── core/       ← guards, interceptor, services HTTP, models
+├── features/   ← auth, gallery, home, library, series, projects/*, settings, admin, shell
+└── shared/     ← tag-picker, text-reader, voice-preview-button
+```
+
+O design segue o protótipo em `comic-prompt/` (abra `comic-prompt/Sumi - HQ com IA.html`). Tokens principais:
 
 ```scss
-// Paleta papel
---paper:     #F4ECDB;
---paper-2:   #FAF3E2;
---paper-3:   #FFFAEC;
-
-// Tinta
---ink:       #1E1812;
---ink-2:     #4A4034;
---ink-3:     #8A7B6A;
---ink-4:     #B6A790;
-
-// Linhas
---rule:      #E2D5B8;
-
-// Acentos pastel (shojo)
---blush:     #E5A6A8;    --blush-soft:  #F4D6D7;
---peach:     #E7BD8E;    --peach-soft:  #F6DEC2;
---mint:      #A9CDB6;    --mint-soft:   #DBEADF;
---lilac:     #B8A9CE;    --lilac-soft:  #E1D8EC;
---sky:       #A9C0D2;    --sky-soft:    #D8E2EC;
-
-// Tipografia
---serif:     "Shippori Mincho", "Cormorant Garamond", Georgia, serif;
---sans:      "DM Sans", -apple-system, "Segoe UI", system-ui, sans-serif;
---mono:      "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
---hand:      "Caveat", "Bradley Hand", cursive;
-```
-
-O layout principal é `sidebar (220px) + main (1fr)`. A topbar tem `56px` de altura e é sticky. O conteúdo tem `padding: 32px 36px 80px` e `max-width: 1200px`.
-
-### Módulos de feature
-
-| Módulo | Rotas | Descrição |
-|---|---|---|
-| `projects` | `/`, `/library` | Lista de projetos, biblioteca de personagens |
-| `create` | `/new`, `/characters` | Wizard de criação (ideia + personagens) |
-| `story` | `/script`, `/review` | Roteiro e revisão quadro a quadro |
-| `editor` | `/editor` | Editor visual de página |
-| `export` | `/final`, `/video` | Exportação e motion comic |
-
----
-
-## Gerenciamento de secrets e variáveis de ambiente
-
-### Configuração
-
-O backend lê todas as configurações de variáveis de ambiente (via `pydantic-settings`). **Nunca commite valores reais no repositório.**
-
-**`sumi-api/.env.example`** — copie para `.env` e preencha:
-
-```dotenv
-# ── Banco de dados ──────────────────────────────────────────────────────
-DATABASE_URL=postgresql+asyncpg://sumi_user:senha_aqui@localhost:5432/sumi_db
-
-# ── Segurança ───────────────────────────────────────────────────────────
-SECRET_KEY=gere-uma-chave-aleatória-com-openssl-rand-hex-32
-ACCESS_TOKEN_EXPIRE_MINUTES=60
-
-# ── IA — LLM ────────────────────────────────────────────────────────────
-ANTHROPIC_API_KEY=sk-ant-...
-
-# ── IA — Geração de imagem ──────────────────────────────────────────────
-IMAGE_GEN_PROVIDER=openai          # openai | stability | fal
-IMAGE_GEN_API_KEY=sk-...
-
-# ── IA — Text-to-Speech ─────────────────────────────────────────────────
-TTS_PROVIDER=elevenlabs            # elevenlabs | google | openai
-TTS_API_KEY=...
-
-# ── Armazenamento (imagens geradas, vídeos) ─────────────────────────────
-STORAGE_BACKEND=local              # local | s3
-STORAGE_LOCAL_PATH=./media
-# S3_BUCKET=
-# S3_REGION=
-# AWS_ACCESS_KEY_ID=
-# AWS_SECRET_ACCESS_KEY=
-
-# ── Aplicação ───────────────────────────────────────────────────────────
-ENVIRONMENT=development            # development | staging | production
-DEBUG=true
-ALLOWED_ORIGINS=http://localhost:4200
-```
-
-### Como carregar o `.env` ao rodar o projeto
-
-**Desenvolvimento local (uvicorn):**
-
-```bash
-# Opção 1 — uvicorn lê .env automaticamente via pydantic-settings
-cd sumi-api
-uvicorn sumi.api.main:app --reload
-
-# Opção 2 — passar explicitamente com dotenv
-dotenv run -- uvicorn sumi.api.main:app --reload
-
-# Opção 3 — exportar antes de rodar
-export $(grep -v '^#' .env | xargs)
-uvicorn sumi.api.main:app --reload
-```
-
-**Docker Compose (recomendado para ambiente completo):**
-
-```bash
-# Sobe banco + api + frontend
-docker-compose up --build
-
-# Apenas a api com .env externo
-docker-compose run --env-file .env api
-```
-
-**`docker-compose.yml` de referência:**
-
-```yaml
-services:
-  db:
-    image: postgres:16
-    environment:
-      POSTGRES_USER: sumi_user
-      POSTGRES_PASSWORD: senha_aqui
-      POSTGRES_DB: sumi_db
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-
-  api:
-    build: ./sumi-api
-    env_file: ./sumi-api/.env
-    ports:
-      - "8000:8000"
-    depends_on:
-      - db
-    command: uvicorn sumi.api.main:app --host 0.0.0.0 --port 8000 --reload
-
-  web:
-    build: ./sumi-web
-    ports:
-      - "4200:80"
-    depends_on:
-      - api
-
-volumes:
-  pgdata:
+--paper: #F4ECDB;  --ink: #1E1812;  --rule: #E2D5B8;
+--blush: #E5A6A8;  --peach: #E7BD8E;  --mint: #A9CDB6;  --lilac: #B8A9CE;  --sky: #A9C0D2;
+--serif: "Shippori Mincho";  --sans: "DM Sans";  --mono: "JetBrains Mono";  --hand: "Caveat";
 ```
 
 ---
 
-## Primeiros passos (desenvolvimento)
+## Desenvolvimento local
 
 ### Backend
 
 ```bash
 cd sumi-api
-
-# Criar ambiente virtual e instalar dependências
-python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -e ".[dev]"
-
-# Configurar banco local
-cp .env.example .env
-# edite .env com suas credenciais
-
-# Criar banco e aplicar migrations
-createdb sumi_db                 # ou use pgAdmin / docker
-alembic upgrade head
-
-# Rodar a API
-uvicorn sumi.api.main:app --reload
-# Docs: http://localhost:8000/docs
+uv sync                          # cria .venv e instala dependências
+cp .env.example .env             # preencha DATABASE_URL, JWT_SECRET_KEY e a chave do provider de IA
+uv run alembic upgrade head
+uv run python -m prompt_clinica.main   # http://localhost:8000  (Swagger em /docs)
 ```
+
+Verificações: `uv run ruff check` e `uv run pyright`. O `pytest` está configurado no `pyproject.toml`, mas a suíte de testes ainda não foi escrita (`tests/` tem apenas o `conftest.py`).
 
 ### Frontend
 
 ```bash
 cd sumi-web
-
 npm install
-ng serve
-# App: http://localhost:4200
+npm start                        # http://localhost:4200
 ```
 
 ---
 
-## Referência visual
+## Implantação
 
-O protótipo interativo em `comic-prompt/` é a fonte da verdade para o design. Abra `comic-prompt/Sumi - HQ com IA.html` em qualquer browser para ver o design system completo com todos os componentes, paletas e fluxos.
+A produção roda em **servidor Linux próprio (Debian / CasaOS) com Docker Compose**. São duas stacks:
 
-Os screenshots em `comic-prompt/screenshots/` mostram os estados principais de cada tela.
+1. **`postgres/`** — PostgreSQL 16 com volume persistente e healthcheck, na rede Docker externa `shared-db` (reutilizável por outras aplicações).
+2. **Raiz (`docker-compose.yml`)** — a imagem do `Dockerfile` multi-stage (Node 22 compila o Angular; Python 3.13 + uv roda a API). Ao subir, executa `alembic upgrade head` e depois o Uvicorn; imagens/áudios/vídeos ficam no volume `images`; `restart: unless-stopped`.
+
+Instalação inicial: [`install-debian.sh`](install-debian.sh) (Linux) ou [`INSTALL_WINDOWS.md`](INSTALL_WINDOWS.md) / [`install-windows.ps1`](install-windows.ps1). Variáveis de produção: [`.env.production.example`](.env.production.example). Para servir sob um sub-path atrás de proxy reverso, use `BASE_HREF=/sumi/` e `ROOT_PATH=/sumi`.
+
+### Deploy contínuo
+
+[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml): a cada push na `main`, um **runner self-hosted** no servidor faz checkout, sincroniza o código com `rsync` para `/DATA/comic-prompt2` (preservando o `.env`) e executa `docker compose up -d --build`.
 
 ---
 
-## Próximos passos planejados
+## Secrets
 
-- [ ] Scaffolding do projeto Python (`pyproject.toml`, estrutura de pastas)
-- [ ] Scaffolding do projeto Angular (workspace + módulos)
-- [ ] Modelos ORM e primeira migration
-- [ ] Endpoint `/auth/token` + JWT
-- [ ] Endpoint `/script/generate` com integração Claude
-- [ ] Endpoint `/characters/generate` com geração de 4 candidatos
-- [ ] Endpoint `/panels/{id}/image` com geração de imagem
-- [ ] Endpoint `/video/render` com TTS e montagem
-- [ ] Deploy (docker-compose produção + variáveis em secrets manager)
+Nenhum segredo é versionado. Use `sumi-api/.env.example` (dev) e `.env.production.example` (produção) como modelo; os arquivos `.env` estão no `.gitignore`.
+
+---
+
+## Documentação
+
+| Documento | Conteúdo |
+|---|---|
+| [`sumi-api/ARCHITECTURE.md`](sumi-api/ARCHITECTURE.md) | Camadas da API, endpoints, migrations, variáveis |
+| [`sumi-api/evals/README.md`](sumi-api/evals/README.md) | Harness de avaliação de IA |
+| [`docs/analise-pipeline-ia.md`](docs/analise-pipeline-ia.md) | Onde a IA atua em cada tela |
+| [`docs/auth/`](docs/auth/) | Fluxos de cadastro e login |
+| [`INSTALL_WINDOWS.md`](INSTALL_WINDOWS.md) | Instalação com Docker Desktop |
+| [`entrega/`](entrega/) | Documento acadêmico da sistematização |

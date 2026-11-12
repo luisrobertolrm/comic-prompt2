@@ -3,11 +3,10 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime
 
+from base import Base
 from sqlalchemy import Boolean, DateTime, ForeignKey, String, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from base import Base
 
 
 def _utcnow() -> datetime:

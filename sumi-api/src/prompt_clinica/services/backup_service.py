@@ -14,8 +14,6 @@ import uuid
 import zipfile
 from datetime import UTC, datetime
 
-import prompt_clinica._paths  # noqa: F401
-
 from character import Character
 from fastapi import HTTPException, status
 from narration_voice import NarrationVoice
@@ -29,6 +27,7 @@ from sqlalchemy.orm import Session
 from user import User
 from youtube_metadata import VideoMetadata
 
+import prompt_clinica._paths  # noqa: F401
 from prompt_clinica.storage import get_storage
 
 FORMAT = "sumi-project-backup"

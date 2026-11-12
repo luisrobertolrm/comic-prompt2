@@ -2,12 +2,12 @@ import uuid
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+from user import User
 
 from prompt_clinica.database import get_db
 from prompt_clinica.deps import get_current_user
 from prompt_clinica.schemas.panel import GeneratePanelBody, PanelOut, PanelPatch
 from prompt_clinica.services import panel_service
-from user import User
 
 router = APIRouter(tags=["panels"])
 

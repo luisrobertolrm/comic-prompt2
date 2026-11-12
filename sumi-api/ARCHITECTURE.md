@@ -4,149 +4,138 @@
 
 ```
 sumi-api/
-├── alembic/                    # Migrations
-│   ├── env.py                  # Configuração do Alembic (lê DATABASE_URL do .env)
-│   ├── script.py.mako          # Template de migration
-│   └── versions/               # Arquivos de migration gerados
+├── alembic/                    # Migrations (env.py lê DATABASE_URL do .env)
+│   └── versions/
 ├── models/                     # Modelos ORM (fora do pacote principal por design)
-│   ├── base.py                 # DeclarativeBase do SQLAlchemy
-│   ├── user.py                 # Modelos: User, UserOAuth, UserSession, PasswordResetToken
-│   └── all_models.py           # Importa todos os modelos (usado pelo Alembic para detecção)
+│   ├── base.py                 # DeclarativeBase
+│   ├── all_models.py           # Importa todos os modelos (usado pelo Alembic)
+│   ├── user.py, user_settings.py
+│   ├── project.py, panel.py, project_character.py, project_scenario.py
+│   ├── character.py, scenario.py, temp_portrait.py, visual_style.py
+│   ├── series.py, series_project.py
+│   ├── narration_voice.py, youtube_metadata.py, recomendacao.py
 ├── src/prompt_clinica/         # Pacote principal da API
-│   ├── main.py                 # Entrypoint FastAPI — registra routers e middleware CORS
+│   ├── main.py                 # Entrypoint FastAPI — routers, CORS, handler global de erro, SPA estática
 │   ├── config.py               # Settings (dataclass frozen) — lê variáveis do .env
 │   ├── database.py             # Engine SQLAlchemy + SessionLocal + get_db()
-│   ├── _paths.py               # Adiciona models/ ao sys.path em runtime
-│   ├── routers/
-│   │   ├── auth.py             # Endpoints /auth/*
-│   │   └── health.py           # GET /health
-│   ├── schemas/
-│   │   └── auth.py             # Pydantic schemas: RegisterRequest, LoginRequest, TokenResponse…
-│   ├── services/
-│   │   └── auth_service.py     # Lógica de negócio: register, login, reset de senha
-│   └── utils/
-│       └── security.py         # bcrypt (hash/verify) + JWT (create/decode)
-├── .env.example                # Variáveis necessárias — copie para .env e preencha
-├── alembic.ini                 # Configuração base do Alembic (sqlalchemy.url sobrescrito em env.py)
-└── pyproject.toml              # Dependências e configuração de ferramentas (ruff, pyright, pytest)
+│   ├── deps.py                 # Dependências de autenticação (usuário atual, admin)
+│   ├── storage.py              # StorageBackend: LocalStorage | S3 (bucket compatível)
+│   ├── styles.py, character_options.py, scenario_options.py   # catálogos fixos
+│   ├── routers/                # Camada HTTP
+│   ├── schemas/                # Pydantic (entrada/saída)
+│   ├── services/               # Regras de negócio
+│   ├── ai/                     # Integração com IA
+│   │   ├── base.py             # Protocolo AIProvider (text / image)
+│   │   ├── types.py            # TextRequest/Response, ImageRequest/Response
+│   │   ├── providers/          # openai, seedream, minimax, comfyui
+│   │   ├── minimax/            # clientes MiniMax: texto, imagem, voz (TTS), vídeo
+│   │   ├── roteiro.py          # premissa → outline → quadros (prompt chaining)
+│   │   ├── synopsis.py         # sinopse do projeto
+│   │   └── youtube_metadata.py # título/descrição/tags para publicação
+│   └── utils/security.py       # bcrypt + JWT
+├── evals/                      # Avaliação LLM-as-judge (manual)
+├── scripts/                    # Testes manuais dos providers de IA
+├── tests/                      # pytest (apenas conftest.py por enquanto)
+├── .env.example
+├── alembic.ini
+└── pyproject.toml / uv.lock
 ```
+
+### Camadas
+
+`routers` → `services` → (`ai`, `models` via SQLAlchemy, `storage`). Routers não acessam o provedor de IA diretamente; services não conhecem HTTP além de `HTTPException`.
+
+O `_paths.py` adiciona `models/` ao `sys.path` em runtime para que os modelos sejam importáveis pela API e pelo Alembic sem fazer parte do pacote `prompt_clinica`.
 
 ---
 
 ## ORM — SQLAlchemy
 
-**Base declarativa:** `models/base.py`
-
-**Modelos:** `models/user.py`
-
-| Tabela                  | Classe                | Descrição                                    |
-|-------------------------|-----------------------|----------------------------------------------|
-| `users`                 | `User`                | Usuário principal (email/senha + OAuth)      |
-| `user_oauth`            | `UserOAuth`           | Provedores OAuth vinculados (guest, Google…) |
-| `user_sessions`         | `UserSession`         | Sessões JWT persistidas                      |
-| `password_reset_tokens` | `PasswordResetToken`  | Tokens de redefinição de senha               |
-
-O `_paths.py` adiciona `models/` ao `sys.path` em runtime para que os models sejam importáveis tanto pela API quanto pelo Alembic sem fazer parte do pacote `prompt_clinica`.
-
-**Engine e sessão:** `src/prompt_clinica/database.py`
-
 ```python
 engine = create_engine(settings.database_url, echo=settings.is_development, pool_pre_ping=True)
 ```
 
-A sessão é injetada via `Depends(get_db)` nos routers.
+A sessão é injetada via `Depends(get_db)` nos routers. IDs são UUIDs.
 
 ---
 
-## String de conexão com o banco
+## Tarefas em segundo plano
 
-**Variável:** `DATABASE_URL` no arquivo `.env` (raiz de `sumi-api/`)
+Gerações demoradas usam `BackgroundTasks` do FastAPI com estado do job em um dicionário em memória; o frontend consulta o status por polling:
 
-**Exemplo:**
-```
-DATABASE_URL=postgresql+psycopg2://user:password@localhost:5432/sumi_db
-```
+| Job | Disparo | Consulta |
+|---|---|---|
+| Retratos de personagem | `POST /characters/generate-portrait` | `GET /characters/portrait-job/{job_id}` |
+| Imagem de cenário | `POST /scenarios/generate-scene` | `GET /scenarios/scene-job/{job_id}` |
+| Vídeo (motion comic) | `POST /projects/{id}/export/video` | `GET /projects/{id}/export/video/{job_id}` |
 
-**Quem lê:**
-- `src/prompt_clinica/config.py` → `Settings.database_url` → usado em `database.py`
-- `alembic/env.py` → `os.environ["DATABASE_URL"]` → sobrescreve `sqlalchemy.url` do `alembic.ini`
-
-O `alembic.ini` mantém `sqlalchemy.url` propositalmente em branco; o valor real vem sempre do `.env`.
+Como o estado é em memória, jobs em andamento se perdem se o processo reiniciar e a API deve rodar com **uma única réplica/worker**.
 
 ---
 
 ## Swagger UI / ReDoc
 
-Disponível **apenas em `APP_ENV=development`** (padrão):
-
-| Interface | URL                        |
-|-----------|----------------------------|
-| Swagger   | `http://localhost:8000/docs`  |
-| ReDoc     | `http://localhost:8000/redoc` |
-
-Em produção (`APP_ENV=production`) ambas as URLs são desabilitadas automaticamente em `main.py`.
+Disponível **apenas em `APP_ENV=development`** (`/docs` e `/redoc`). Em produção ambas as URLs são desabilitadas em `main.py`, e o handler global devolve `"Erro interno no servidor."` sem detalhes da exceção.
 
 ---
 
 ## Endpoints registrados
 
-| Método | Path                          | Arquivo                          |
-|--------|-------------------------------|----------------------------------|
-| GET    | `/health`                     | `routers/health.py`              |
-| POST   | `/auth/register`              | `routers/auth.py`                |
-| POST   | `/auth/login`                 | `routers/auth.py`                |
-| POST   | `/auth/oauth/guest`           | `routers/auth.py`                |
-| POST   | `/auth/password-reset/request`| `routers/auth.py`                |
+| Router | Endpoints |
+|---|---|
+| `health.py` | `GET /health`, `/health/ai`, `/health/storage`, `/health/storage/config` |
+| `auth.py` | `POST /auth/register`, `/auth/login`, `/auth/password-reset/request` |
+| `admin.py` | `GET /admin/users/pending`, `POST /admin/users/{id}/approve`, `DELETE /admin/users/{id}` |
+| `projects.py` | CRUD `/projects`; `synopsis/generate`; `characters`/`scenarios` (PUT); `panels` (listar, gerar roteiro, criar, ordenar, apagar, gerar imagens); `export/panels`; `export/video` (+ job); `youtube-metadata` (GET/PUT/generate) |
+| `panels.py` | `PATCH`/`DELETE /panels/{id}`, `POST /panels/{id}/generate`, `/image`, `/bubbles/generate` |
+| `characters.py` | `GET`/`POST /characters`, `PATCH /characters/{id}`, `POST /characters/delete-unused`, `generate-portrait` (+ job) |
+| `scenarios.py` | `GET`/`POST /scenarios`, `PATCH /scenarios/{id}`, `POST /scenarios/delete-unused`, `generate-scene` (+ job) |
+| `series.py` | CRUD `/series`, `PUT /series/{id}/projects` |
+| `voice.py` | CRUD `/voice`, `POST /voice/test` |
+| `public.py` | `GET /public/projects`, `GET /public/projects/{id}`, `POST /public/projects/{id}/reaction` (sem login) |
+| `backup.py` | `GET /projects/{id}/backup` (.zip), `POST /projects/import` |
+| `settings.py` | `GET`/`PUT /settings`, `GET /settings/local-ai/models` |
+| `storage.py` | `GET /storage/{key}` — serve arquivos do storage |
+| `styles.py`, `character_options.py`, `scenario_options.py` | Catálogos para os dropdowns |
+| `image_test.py` | `POST /image-test` — bancada de teste de prompts de imagem |
 
 ---
 
 ## Migrations — Alembic
 
-### Setup inicial (primeira vez)
+Rode sempre a partir de `sumi-api/` (o `env.py` coloca `src/` e `models/` no `sys.path`).
 
 ```bash
-cd sumi-api
-cp .env.example .env   # preencha DATABASE_URL e JWT_SECRET_KEY
-```
-
-### Gerar uma nova migration (após alterar models/)
-
-```bash
-alembic revision --autogenerate -m "descricao_da_mudanca"
-```
-
-### Aplicar todas as migrations pendentes
-
-```bash
+alembic revision --autogenerate -m "descricao_da_mudanca"   # após alterar models/
 alembic upgrade head
+alembic downgrade -1
+alembic current
+alembic history
 ```
 
-### Outros comandos úteis
-
-```bash
-alembic downgrade -1          # desfaz a última migration
-alembic current               # mostra a revisão atual do banco
-alembic history               # lista todas as revisões
-```
-
-O `alembic/env.py` cuida de colocar `src/` e `models/` no `sys.path` antes de importar a `Base`, então **rode sempre a partir de `sumi-api/`**.
+Em produção o `docker-compose.yml` executa `alembic upgrade head` antes de iniciar o Uvicorn.
 
 ---
 
 ## Variáveis de ambiente
 
-| Variável            | Obrigatória | Padrão                       | Descrição                              |
-|---------------------|-------------|------------------------------|----------------------------------------|
-| `DATABASE_URL`      | Sim         | —                            | Connection string PostgreSQL           |
-| `JWT_SECRET_KEY`    | Sim         | —                            | Chave de assinatura dos tokens JWT     |
-| `GOOGLE_API_KEY`    | Não         | `""`                         | Gemini / Google AI                     |
-| `OPENAI_API_KEY`    | Não         | `""`                         | OpenAI                                 |
-| `APP_ENV`           | Não         | `development`                | `development` habilita docs + SQL echo |
-| `APP_HOST`          | Não         | `0.0.0.0`                    | Host do uvicorn                        |
-| `APP_PORT`          | Não         | `8000`                       | Porta do uvicorn                       |
-| `APP_RELOAD`        | Não         | `true`                       | Hot-reload do uvicorn                  |
-| `JWT_EXPIRE_MINUTES`| Não         | `60`                         | Validade do token em minutos           |
-| `CORS_ORIGINS`      | Não         | `http://localhost:4200`      | Origins permitidas (vírgula-separadas) |
+Lista completa e comentada em [`.env.example`](.env.example). Principais:
+
+| Variável | Obrigatória | Padrão | Descrição |
+|---|---|---|---|
+| `DATABASE_URL` | Sim | — | Connection string PostgreSQL (`postgresql+psycopg2://...`) |
+| `JWT_SECRET_KEY` | Sim | — | Chave de assinatura dos tokens |
+| `JWT_EXPIRE_MINUTES` / `JWT_REMEMBER_EXPIRE_MINUTES` | Não | `60` / `43200` | Validade do token normal / “lembrar de mim” |
+| `AI_PROVIDER` | Não | `openai` | `openai` \| `minimax` \| `comfyui` \| `seedream` |
+| `AI_TEXT_PROVIDER` / `AI_IMAGE_PROVIDER` | Não | herda `AI_PROVIDER` | Provider separado para texto e imagem |
+| `AI_TEXT_MODEL` / `AI_IMAGE_MODEL` | Não | `gpt-4o-mini` / `gpt-image-1` | Modelos OpenAI |
+| `OPENAI_API_KEY`, `BYTEPLUS_API_KEY`, `MINIMAX_API_KEY` | Conforme provider | — | Chaves dos provedores |
+| `COMFYUI_BASE_URL` | Se `comfyui` | `http://127.0.0.1:8188` | ComfyUI local |
+| `STORAGE_BACKEND` | Não | `local` | `local` (pasta/volume `IMAGES_DIR`) ou bucket S3 compatível |
+| `IMAGES_DIR` | Não | `static/images` | Pasta do storage local |
+| `APP_ENV` | Não | `development` | `development` habilita docs e SQL echo |
+| `ROOT_PATH` | Não | vazio | Prefixo quando servido sob sub-path (casa com `BASE_HREF` do Angular) |
+| `CORS_ORIGINS` | Não | `http://localhost:4200` | Origens permitidas (vírgula) |
 
 ---
 
@@ -154,13 +143,8 @@ O `alembic/env.py` cuida de colocar `src/` e `models/` no `sys.path` antes de im
 
 ```bash
 cd sumi-api
-python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -e .
-
-cp .env.example .env             # configure DATABASE_URL e JWT_SECRET_KEY
-
-alembic upgrade head             # cria/atualiza as tabelas
-
-python -m prompt_clinica.main    # inicia em http://localhost:8000
+uv sync
+cp .env.example .env             # configure DATABASE_URL, JWT_SECRET_KEY e o provider de IA
+uv run alembic upgrade head
+uv run python -m prompt_clinica.main    # http://localhost:8000
 ```

@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
+from base import Base
 from sqlalchemy import Boolean, DateTime, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
-
-from base import Base
 
 
 def _utcnow() -> datetime:

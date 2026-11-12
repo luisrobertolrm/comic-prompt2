@@ -95,6 +95,13 @@ def login(req: LoginRequest, db: Session) -> TokenResponse:
     )
 
 
+def refresh(user: User) -> TokenResponse:
+    return TokenResponse(
+        access_token=create_access_token(str(user.id), settings.jwt_remember_expire_minutes),
+        user=_user_out(user),
+    )
+
+
 def request_password_reset(email: str, db: Session) -> None:
     """Sempre retorna sem revelar se o e-mail existe."""
     user: User | None = db.query(User).filter(User.email == email.lower()).first()

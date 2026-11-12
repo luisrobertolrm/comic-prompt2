@@ -9,10 +9,10 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
-from PIL import Image, ImageDraw, ImageFont
 from character import Character
 from fastapi import HTTPException, status
 from panel import Panel
+from PIL import Image, ImageDraw, ImageFont
 from project import Project
 from project_character import ProjectCharacter
 from sqlalchemy.orm import Session

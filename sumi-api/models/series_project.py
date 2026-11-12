@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import uuid
 
+from base import Base
 from sqlalchemy import ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
-
-from base import Base
 
 
 class SeriesProject(Base):

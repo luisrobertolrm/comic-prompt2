@@ -9,7 +9,12 @@ from pydantic import BaseModel, Field, field_serializer
 from prompt_clinica.schemas.character import CharacterOut
 from prompt_clinica.schemas.panel import PanelOut
 from prompt_clinica.schemas.scenario import ScenarioOut
-from prompt_clinica.styles import DEFAULT_COLOR_MODE, DEFAULT_STYLE, ColorModeId, StyleId
+from prompt_clinica.styles import (
+    DEFAULT_COLOR_MODE,
+    DEFAULT_STYLE,
+    ColorModeId,
+    StyleId,
+)
 
 
 class ProjectCreate(BaseModel):

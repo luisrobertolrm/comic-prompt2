@@ -4,7 +4,7 @@ import logging
 import threading
 import uuid
 import zipfile
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
@@ -225,7 +225,7 @@ def _run_video_job(job_id: str, project_id: uuid.UUID, user_id: uuid.UUID) -> No
             _video_jobs[job_id].status = "done"
             _video_jobs[job_id].video_url = url
             _video_jobs[job_id].progress = 100
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.exception("Render de vídeo falhou — projeto %s", project_id)
         with _video_lock:
             _video_jobs[job_id].status = "error"
