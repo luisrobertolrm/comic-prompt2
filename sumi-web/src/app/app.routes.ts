@@ -63,6 +63,12 @@ export const routes: Routes = [
           import('./features/admin/admin.component').then(m => m.AdminComponent),
       },
       {
+        path: 'app-settings',
+        canActivate: [adminGuard],
+        loadComponent: () =>
+          import('./features/app-settings/app-settings.component').then(m => m.AppSettingsComponent),
+      },
+      {
         path: 'projects/new',
         loadComponent: () =>
           import('./features/projects/new/new-project.component').then(m => m.NewProjectComponent),

@@ -28,6 +28,8 @@ class Settings:
     ai_image_provider: str = field(default_factory=lambda: _optional("AI_IMAGE_PROVIDER"))
     ai_text_model: str = field(default_factory=lambda: _optional("AI_TEXT_MODEL", "gpt-4o-mini"))
     ai_image_model: str = field(default_factory=lambda: _optional("AI_IMAGE_MODEL", "gpt-image-1"))
+    stt_model: str = field(default_factory=lambda: _optional("STT_MODEL", "gpt-4o-mini-transcribe"))
+    stt_language: str = field(default_factory=lambda: _optional("STT_LANGUAGE", "pt"))
     byteplus_api_key: str = field(default_factory=lambda: _optional("BYTEPLUS_API_KEY"))
     byteplus_base_url: str = field(default_factory=lambda: _optional("BYTEPLUS_BASE_URL", "https://ark.ap-southeast.bytepluses.com/api/v3"))
     seedream_model: str = field(default_factory=lambda: _optional("SEEDREAM_MODEL", "seedream-4-0-250828"))

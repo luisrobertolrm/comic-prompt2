@@ -1,0 +1,61 @@
+<div style="max-width:640px;margin:0 auto;padding:8px 0">
+
+  <div class="page-head" style="margin-bottom:24px">
+    <div>
+      <p class="eyebrow">ADMINISTRAÇÃO</p>
+      <h1>Configurações do sistema</h1>
+      <p class="lede">Modelos de IA usados por todos os usuários. Campo vazio usa o valor do .env (mostrado em cinza). Vale na hora, sem reiniciar a API.</p>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <p class="muted-sm">Carregando…</p>
+  } @else {
+    <div style="display:flex;flex-direction:column;gap:28px">
+
+      @for (section of sections; track section.title) {
+        <section style="display:flex;flex-direction:column;gap:14px">
+          <div>
+            <h2 style="font-size:15px;margin:0">{{ section.title }}</h2>
+            <span class="muted-sm">{{ section.hint }}</span>
+          </div>
+
+          @for (f of section.fields; track f.key) {
+            <label style="display:flex;flex-direction:column;gap:6px">
+              <span style="font-size:13px;font-weight:600">{{ f.label }}</span>
+              @if (f.options) {
+                <select class="input" (change)="set(f.key, $any($event.target).value)">
+                  <option value="" [selected]="!values()[f.key]">Padrão do .env ({{ defaults()[f.key] || '—' }})</option>
+                  @for (o of f.options; track o) {
+                    <option [value]="o" [selected]="o === values()[f.key]">{{ o }}</option>
+                  }
+                </select>
+              } @else {
+                <input class="input" type="text" autocomplete="off" spellcheck="false"
+                       [placeholder]="defaults()[f.key]"
+                       [value]="values()[f.key]"
+                       (input)="set(f.key, $any($event.target).value)">
+              }
+            </label>
+          }
+        </section>
+      }
+
+      @if (error(); as err) {
+        <div role="alert"
+             style="padding:12px 14px;border:1px solid var(--error,#c0392b);border-radius:10px;color:var(--error,#c0392b);font-size:13px">
+          ⚠ {{ err }}
+        </div>
+      }
+
+      <div style="display:flex;gap:10px;align-items:center">
+        <button class="btn-primary" (click)="save()" [disabled]="saving()">
+          {{ saving() ? 'Salvando…' : 'Salvar' }}
+        </button>
+        @if (saved()) { <span class="muted-sm" style="color:var(--mint,#2e9e6b)">✓ Salvo</span> }
+      </div>
+
+    </div>
+  }
+
+</div>

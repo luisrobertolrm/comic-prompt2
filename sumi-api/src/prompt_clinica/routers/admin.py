@@ -6,7 +6,9 @@ from user import User
 
 from prompt_clinica.database import get_db
 from prompt_clinica.deps import get_current_admin
+from prompt_clinica.schemas.app_settings import AppSettingsOut, AppSettingsValues
 from prompt_clinica.schemas.auth import PendingUserOut
+from prompt_clinica.services import app_settings_service
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -54,3 +56,20 @@ def reject_user(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado.")
     db.delete(user)
     db.commit()
+
+
+@router.get("/app-settings", response_model=AppSettingsOut)
+def get_app_settings(
+    _admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> AppSettingsOut:
+    return app_settings_service.get_app_settings(db)
+
+
+@router.put("/app-settings", response_model=AppSettingsOut)
+def update_app_settings(
+    data: AppSettingsValues,
+    _admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+) -> AppSettingsOut:
+    return app_settings_service.update_app_settings(data, db)

@@ -1,1 +1,11 @@
 <router-outlet />
+
+@if (dictation.state() !== 'idle' || dictation.error()) {
+  <div class="dictation-pill" role="status" [class.error]="dictation.error()">
+    @switch (dictation.state()) {
+      @case ('recording') { 🎙 Gravando… <span>Ctrl+Shift+Espaço conclui · Esc cancela</span> }
+      @case ('transcribing') { Transcrevendo… }
+      @default { ⚠ {{ dictation.error() }} }
+    }
+  </div>
+}

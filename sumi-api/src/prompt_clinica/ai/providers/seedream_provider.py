@@ -52,12 +52,12 @@ def _resolve_size(req: ImageRequest) -> str:
 
 
 class SeedreamProvider:
-    def __init__(self) -> None:
+    def __init__(self, model: str = "") -> None:
         from prompt_clinica.config import settings
 
         self._api_key = settings.byteplus_api_key
         self._base_url = settings.byteplus_base_url.rstrip("/")
-        self._model = settings.seedream_model
+        self._model = model or settings.seedream_model
 
     @property
     def name(self) -> str:

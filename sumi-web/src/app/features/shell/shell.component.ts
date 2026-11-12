@@ -78,6 +78,7 @@ export class ShellComponent {
     if (u.startsWith('/voice-test'))        return 'voice-test';
     if (u.startsWith('/settings'))          return 'settings';
     if (u.startsWith('/admin'))             return 'admin';
+    if (u.startsWith('/app-settings'))      return 'app-settings';
     if (u.endsWith('/new'))                 return 'new';
     if (u.endsWith('/characters'))          return 'characters';
     if (u.endsWith('/scenarios'))           return 'scenarios';
@@ -123,6 +124,7 @@ export class ShellComponent {
     if (s === 'library') return [{ label: 'Biblioteca',    route: '' }];
     if (s === 'series')  return [{ label: 'Séries',        route: '' }];
     if (s === 'admin')   return [{ label: 'Administração', route: '' }];
+    if (s === 'app-settings') return [{ label: 'Configurações do sistema', route: '' }];
     const title = this.draft.currentProjectTitle() || 'Projeto';
     return [
       { label: 'Projetos', route: '/home' },

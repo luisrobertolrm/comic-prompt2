@@ -9,8 +9,9 @@ Uso básico:
     resp = ai.text(TextRequest(messages=[Message("user", "Olá!")]))
     img  = ai.image(ImageRequest(prompt="Mangá, personagem correndo"))
 
-Para trocar de provider, altere AI_PROVIDER no .env e implemente
-um novo provider seguindo o protocolo em base.py.
+Provider e modelos vêm do .env, sobrescritos pela tabela app_settings
+(tela "Configurações do sistema"). Para um provider novo, implemente o
+protocolo em base.py e registre em _build_provider.
 """
 
 from __future__ import annotations
@@ -25,7 +26,7 @@ from prompt_clinica.ai.types import (
 )
 
 
-def _build_provider(name: str) -> AIProvider:
+def _build_provider(name: str, cfg: dict[str, str]) -> AIProvider:
     from prompt_clinica.config import settings
 
     match name:
@@ -34,8 +35,8 @@ def _build_provider(name: str) -> AIProvider:
 
             return OpenAIProvider(
                 api_key=settings.openai_api_key,
-                text_model=settings.ai_text_model,
-                image_model=settings.ai_image_model,
+                text_model=cfg["ai_text_model"],
+                image_model=cfg["ai_image_model"],
             )
         case "minimax":
             from prompt_clinica.ai.providers.minimax_provider import MinimaxProvider
@@ -48,7 +49,7 @@ def _build_provider(name: str) -> AIProvider:
         case "seedream":
             from prompt_clinica.ai.providers.seedream_provider import SeedreamProvider
 
-            return SeedreamProvider()
+            return SeedreamProvider(model=cfg["seedream_model"])
         case _:
             raise ValueError(f"Provider desconhecido: '{name}'. Implemente em ai/providers/ e registre aqui.")
 
@@ -84,26 +85,67 @@ def build_local_text_provider(base_url: str, model: str) -> AIProvider:
     return OpenAIProvider(api_key="local", text_model=model, base_url=v1)
 
 
-def _build_default() -> AIProvider:
+def env_ai_config() -> dict[str, str]:
+    """Valores de IA vindos do .env — base sobre a qual o app_settings sobrescreve."""
     from prompt_clinica.config import settings
 
-    text_name = (settings.ai_text_provider or settings.ai_provider).lower()
-    image_name = (settings.ai_image_provider or settings.ai_provider).lower()
+    return {
+        "ai_text_provider": settings.ai_text_provider or settings.ai_provider,
+        "ai_text_model": settings.ai_text_model,
+        "ai_image_provider": settings.ai_image_provider or settings.ai_provider,
+        "ai_image_model": settings.ai_image_model,
+        "seedream_model": settings.seedream_model,
+    }
+
+
+def build_default(overrides: dict[str, str] | None = None) -> AIProvider:
+    """Monta o provider a partir do .env, com `overrides` não vazios por cima."""
+    cfg = env_ai_config()
+    cfg.update({k: v for k, v in (overrides or {}).items() if v and k in cfg})
+    text_name = cfg["ai_text_provider"].lower()
+    image_name = cfg["ai_image_provider"].lower()
     if text_name == image_name:
-        return _build_provider(text_name)
-    return _CompositeProvider(_build_provider(text_name), _build_provider(image_name))
+        return _build_provider(text_name, cfg)
+    return _CompositeProvider(_build_provider(text_name, cfg), _build_provider(image_name, cfg))
 
 
-# Instância singleton — criada na primeira importação.
-ai: AIProvider = _build_default()
+class _ReloadableProvider:
+    """Repassa ao provider atual. `swap` troca o alvo sem mudar os imports de `ai`."""
+
+    def __init__(self, provider: AIProvider) -> None:
+        self._provider = provider
+
+    @property
+    def name(self) -> str:
+        return self._provider.name
+
+    def text(self, req: TextRequest) -> TextResponse:
+        return self._provider.text(req)
+
+    def image(self, req: ImageRequest) -> ImageResponse:
+        return self._provider.image(req)
+
+    def swap(self, provider: AIProvider) -> None:
+        self._provider = provider
+
+
+ai = _ReloadableProvider(build_default())
+
+
+def reload_ai(provider: AIProvider) -> None:
+    ai.swap(provider)
+
 
 __all__ = [
-    "ai",
-    "build_local_text_provider",
     "AIProvider",
+    "ImageRequest",
+    "ImageResponse",
     "Message",
     "TextRequest",
     "TextResponse",
-    "ImageRequest",
-    "ImageResponse",
+    "ai",
+    "build_default",
+    "build_local_text_provider",
+    "env_ai_config",
+    "reload_ai",
 ]

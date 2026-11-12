@@ -25,13 +25,17 @@ from prompt_clinica.routers import (
     scenarios,
     series,
     settings as settings_router,
+    speech,
     storage,
     styles,
     voice,
 )
+from prompt_clinica.services import app_settings_service
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("sumi.api")
+
+app_settings_service.apply_from_db()
 
 app = FastAPI(
     title="Sumi API",
@@ -80,6 +84,7 @@ app.include_router(voice.router)
 app.include_router(image_test.router)
 app.include_router(styles.router)
 app.include_router(settings_router.router)
+app.include_router(speech.router)
 
 _static_root = Path("static")
 _static_root.mkdir(parents=True, exist_ok=True)

@@ -1,4 +1,5 @@
 # Importe aqui todos os modelos para que o Alembic os detecte via Base.metadata.
+from app_settings import AppSettings
 from character import Character
 from narration_voice import NarrationVoice
 from panel import Panel
@@ -15,4 +16,4 @@ from user_settings import UserSettings
 from visual_style import VisualStyle
 from youtube_metadata import VideoMetadata
 
-__all__ = ["Group", "User", "UserOAuth", "PasswordResetToken", "UserSession", "UserSettings", "Project", "Character", "ProjectCharacter", "Scenario", "ProjectScenario", "Series", "SeriesProject", "VideoMetadata", "TempPortrait", "NarrationVoice", "VisualStyle", "RecomendacaoPositiva", "RecomendacaoNegativa", "RecomendacaoUsuario"]
+__all__ = ["AppSettings", "Group", "User", "UserOAuth", "PasswordResetToken", "UserSession", "UserSettings", "Project", "Character", "ProjectCharacter", "Scenario", "ProjectScenario", "Series", "SeriesProject", "VideoMetadata", "TempPortrait", "NarrationVoice", "VisualStyle", "RecomendacaoPositiva", "RecomendacaoNegativa", "RecomendacaoUsuario"]
