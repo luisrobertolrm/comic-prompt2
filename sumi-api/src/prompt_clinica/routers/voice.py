@@ -7,8 +7,9 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from user import User
 
-from prompt_clinica.ai import minimax_config
-from prompt_clinica.ai.minimax import MinimaxError, MinimaxVoiceClient
+from prompt_clinica.ai.base import TextToSpeech
+from prompt_clinica.ai.minimax import MinimaxError
+from prompt_clinica.ai.registry import build_text_to_speech
 from prompt_clinica.database import get_db
 from prompt_clinica.deps import get_current_user
 from prompt_clinica.schemas.voice import VoiceCreate, VoiceOut, VoiceUpdate
@@ -26,17 +27,18 @@ class VoiceTestBody(BaseModel):
 def test_voice(
     body: VoiceTestBody,
     user: User = Depends(get_current_user),
+    tts: TextToSpeech = Depends(build_text_to_speech),
 ) -> Response:
     text = body.text.strip()
     if not text:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Texto vazio.")
     try:
-        result = MinimaxVoiceClient(minimax_config()).synthesize(text, voice_id=body.voice_id)
+        audio = tts.synthesize(text, voice_id=body.voice_id)
     except (MinimaxError, ValueError) as exc:
         raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=f"MiniMax: {exc}"
+            status_code=status.HTTP_502_BAD_GATEWAY, detail=f"Falha na síntese de voz: {exc}"
         ) from exc
-    return Response(content=result.audio, media_type="audio/mpeg")
+    return Response(content=audio, media_type="audio/mpeg")
 
 
 @router.get("", response_model=list[VoiceOut])

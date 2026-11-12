@@ -1,125 +1,103 @@
-<div style="max-width:640px;margin:0 auto;padding:8px 0">
+<div class="settings">
 
-  <div class="page-head" style="margin-bottom:24px">
-    <div>
-      <p class="eyebrow">ADMINISTRAÇÃO</p>
-      <h1>Configurações do sistema</h1>
-      <p class="lede">Modelos e chaves de IA usados por todos os usuários. Campo vazio usa o valor do .env (mostrado em cinza). Vale na hora, sem reiniciar a API. Os testes usam o que está salvo.</p>
-    </div>
+  <div class="page-head">
+    <p class="eyebrow">ADMINISTRAÇÃO</p>
+    <h1>Configurações do sistema</h1>
+    <p class="lede">
+      Conexões de IA usadas por todos os usuários. Cada tipo pode ter várias configurações e uma ativa.
+      As trocas valem na hora, sem reiniciar a API.
+    </p>
   </div>
+
+  <div class="tabs" role="tablist">
+    @for (t of tabs; track t.type) {
+      <button type="button" role="tab" class="tab" [class.tab--active]="t === tab()"
+              [attr.aria-selected]="t === tab()" (click)="selectTab(t)">{{ t.label }}</button>
+    }
+  </div>
+
+  <div class="toolbar">
+    <span class="muted-sm">{{ tab().hint }}</span>
+    <button type="button" class="btn-primary" (click)="openNew()">+ Nova configuração</button>
+  </div>
+
+  @if (error()) { <p class="msg msg--error" role="alert">⚠ {{ error() }}</p> }
 
   @if (loading()) {
     <p class="muted-sm">Carregando…</p>
+  } @else if (!configs().length) {
+    <div class="empty">Nenhuma configuração de {{ tab().noun }}. Clique em Nova configuração.</div>
   } @else {
-    <div style="display:flex;flex-direction:column;gap:28px">
+    @if (!hasActive()) {
+      <p class="msg msg--warn">Nenhuma IA de {{ tab().noun }} ativa. As funções de {{ tab().noun }} ficam indisponíveis.</p>
+    }
 
-      <section style="display:flex;flex-direction:column;gap:14px">
-        <div>
-          <h2 style="font-size:15px;margin:0">Chaves de API</h2>
-          <span class="muted-sm">Guardadas criptografadas. A chave nunca volta para a tela; deixe em branco para manter a atual.</span>
-        </div>
-
-        @for (k of apiKeys; track k.key) {
-          <label style="display:flex;flex-direction:column;gap:6px">
-            <span style="font-size:13px;font-weight:600">{{ k.label }}</span>
-            <span class="muted-sm">{{ keyLabel(k.key) }}</span>
-            <div style="display:flex;gap:8px">
-              <input class="input" type="password" autocomplete="new-password" spellcheck="false" style="flex:1"
-                     placeholder="Nova chave"
-                     [value]="keyEdits()[k.key] ?? ''"
-                     (input)="setKey(k.key, $any($event.target).value)">
-              @if (keyStatus()[k.key].source === 'db' && keyEdits()[k.key] !== '') {
-                <button type="button" class="btn-ghost" (click)="removeKey(k.key)">Remover</button>
-              }
-            </div>
-          </label>
-        }
-      </section>
-
-      @for (section of sections; track section.title) {
-        <section style="display:flex;flex-direction:column;gap:14px">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
-            <div>
-              <h2 style="font-size:15px;margin:0">{{ section.title }}</h2>
-              <span class="muted-sm">{{ section.hint }}</span>
-            </div>
-            @switch (section.test) {
-              @case ('text') {
-                <button type="button" class="btn-ghost" (click)="testText()" [disabled]="testing() !== null">
-                  {{ testing() === 'text' ? 'Testando…' : 'Testar texto' }}
+    <div class="grid-wrap">
+      <table class="grid">
+        <thead>
+          <tr>
+            <th>Ativa</th>
+            <th>Nome</th>
+            <th>Tipo · Modelo</th>
+            <th>Chave</th>
+            <th>URL</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of configs(); track c.id) {
+            <tr [class.row--active]="c.active">
+              <td>
+                <label class="switch" [title]="c.active ? 'Desativar' : 'Ativar'">
+                  <input type="checkbox" [checked]="c.active" [disabled]="busyId() !== null"
+                         (change)="toggleActive(c)">
+                  <span class="switch-track"></span>
+                </label>
+              </td>
+              <td class="cell-name">{{ c.name }}</td>
+              <td>{{ kindLabel(tab(), c.kind) }} · <code>{{ c.model }}</code></td>
+              <td><code>{{ c.key_hint || '—' }}</code></td>
+              <td class="cell-url" [title]="c.base_url">{{ host(c.base_url) }}</td>
+              <td class="cell-actions">
+                <button type="button" class="link-btn" (click)="test(c)"
+                        [disabled]="testingId() !== null || (recordingId() !== null && recordingId() !== c.id)">
+                  {{ testLabel(c) }}
                 </button>
-              }
-              @case ('image') {
-                <button type="button" class="btn-ghost" (click)="testImage()" [disabled]="testing() !== null">
-                  {{ testing() === 'image' ? 'Gerando…' : 'Testar imagem' }}
+                <button type="button" class="link-btn" (click)="openEdit(c)">Editar</button>
+                <button type="button" class="link-btn link-btn--danger" (click)="askDelete(c)"
+                        [disabled]="c.active" [title]="c.active ? 'Desative antes de excluir' : 'Excluir'">
+                  Excluir
                 </button>
-              }
-              @case ('stt') {
-                <button type="button" class="btn-ghost" (click)="testStt()"
-                        [disabled]="dictation.state() === 'transcribing'">
-                  {{ dictation.state() === 'recording' ? '■ Parar e transcrever'
-                     : dictation.state() === 'transcribing' ? 'Transcrevendo…' : '🎙 Testar transcrição' }}
-                </button>
-              }
-            }
-          </div>
-
-          @for (f of section.fields; track f.key) {
-            <label style="display:flex;flex-direction:column;gap:6px">
-              <span style="font-size:13px;font-weight:600">{{ f.label }}</span>
-              @if (f.options) {
-                <select class="input" (change)="set(f.key, $any($event.target).value)">
-                  <option value="" [selected]="!values()[f.key]">Padrão do .env ({{ defaults()[f.key] || '—' }})</option>
-                  @for (o of f.options; track o) {
-                    <option [value]="o" [selected]="o === values()[f.key]">{{ o }}</option>
-                  }
-                </select>
-              } @else {
-                <input class="input" type="text" autocomplete="off" spellcheck="false"
-                       [placeholder]="defaults()[f.key]"
-                       [value]="values()[f.key]"
-                       (input)="set(f.key, $any($event.target).value)">
-              }
-            </label>
-          }
-
-          @switch (section.test) {
-            @case ('text') {
-              @if (textResult()) { <p class="muted-sm" style="color:var(--mint,#2e9e6b);margin:0">{{ textResult() }}</p> }
-              @if (textError()) { <p class="muted-sm" style="color:var(--error,#c0392b);margin:0">⚠ {{ textError() }}</p> }
-            }
-            @case ('image') {
-              @if (imageResult(); as r) {
-                <div style="display:flex;flex-direction:column;gap:6px">
-                  <span class="muted-sm" style="color:var(--mint,#2e9e6b)">✓ {{ r.provider }} · {{ r.model }} · {{ r.elapsed_ms }} ms</span>
-                  <img [src]="r.image" alt="Imagem de teste" style="max-width:256px;border-radius:10px;border:1px solid var(--paper-3)">
-                </div>
-              }
-              @if (imageError()) { <p class="muted-sm" style="color:var(--error,#c0392b);margin:0">⚠ {{ imageError() }}</p> }
-            }
-            @case ('stt') {
-              <textarea #sttBox class="input" rows="2"
-                        placeholder="Clique em “Testar transcrição”, fale e clique de novo — o texto aparece aqui."></textarea>
+              </td>
+            </tr>
+            @if (results()[c.id]; as r) {
+              <tr class="row-result">
+                <td colspan="6">
+                  <p class="msg" [class.msg--ok]="r.ok" [class.msg--error]="!r.ok">
+                    {{ r.ok ? '' : '⚠ ' }}{{ r.message }}
+                  </p>
+                  @if (r.image) { <img class="test-image" [src]="r.image" alt="Imagem de teste"> }
+                  @if (r.audio) { <audio controls autoplay [src]="r.audio"></audio> }
+                </td>
+              </tr>
             }
           }
-        </section>
-      }
-
-      @if (error(); as err) {
-        <div role="alert"
-             style="padding:12px 14px;border:1px solid var(--error,#c0392b);border-radius:10px;color:var(--error,#c0392b);font-size:13px">
-          ⚠ {{ err }}
-        </div>
-      }
-
-      <div style="display:flex;gap:10px;align-items:center">
-        <button class="btn-primary" (click)="save()" [disabled]="saving()">
-          {{ saving() ? 'Salvando…' : 'Salvar' }}
-        </button>
-        @if (saved()) { <span class="muted-sm" style="color:var(--mint,#2e9e6b)">✓ Salvo</span> }
-      </div>
-
+        </tbody>
+      </table>
     </div>
   }
 
 </div>
+
+<app-ai-config-dialog (saved)="load()" />
+
+<dialog #confirmDialog class="modal">
+  <div class="modal-body">
+    <h2 class="modal-title">Excluir configuração</h2>
+    <p>Excluir <strong>{{ toDelete()?.name }}</strong>? Esta ação não pode ser desfeita.</p>
+    <div class="modal-actions">
+      <button type="button" class="btn-ghost" (click)="cancelDelete()">Cancelar</button>
+      <button type="button" class="btn-primary btn-danger" (click)="confirmDelete()">Excluir</button>
+    </div>
+  </div>
+</dialog>

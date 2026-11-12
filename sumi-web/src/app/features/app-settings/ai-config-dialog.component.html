@@ -1,0 +1,72 @@
+<dialog #dialog class="modal" (cancel)="error.set('')">
+  @if (tab(); as t) {
+    <form method="dialog" class="modal-body" (submit)="$event.preventDefault(); save()">
+      <h2 class="modal-title">{{ editing() ? 'Editar' : 'Nova' }} configuração de {{ t.label }}</h2>
+
+      <label class="field">
+        <span class="field-label">Nome</span>
+        <input class="input" type="text" autocomplete="off" required maxlength="80"
+               placeholder="Ex.: BytePlus produção"
+               [value]="form().name" (input)="set('name', $any($event.target).value)">
+      </label>
+
+      <label class="field">
+        <span class="field-label">Tipo</span>
+        <select class="input" (change)="changeKind($any($event.target).value)">
+          @for (k of t.kinds; track k.kind) {
+            <option [value]="k.kind" [selected]="k.kind === form().kind">{{ k.label }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="field">
+        <span class="field-label">URL base</span>
+        <input class="input" type="url" autocomplete="off" spellcheck="false" required maxlength="300"
+               [value]="form().base_url" (input)="set('base_url', $any($event.target).value)">
+        @if (t.urlHint && form().kind === 'openai') { <span class="field-hint">{{ t.urlHint }}</span> }
+      </label>
+
+      <label class="field">
+        <span class="field-label">Chave</span>
+        <input class="input" type="password" autocomplete="new-password" spellcheck="false" maxlength="500"
+               [placeholder]="editing() ? 'Nova chave' : ''"
+               [value]="form().api_key" (input)="set('api_key', $any($event.target).value)">
+        @if (editing(); as c) {
+          <span class="field-hint">
+            {{ c.key_hint ? 'Atual ' + c.key_hint + '.' : 'Sem chave salva.' }} Deixe em branco para manter.
+          </span>
+        }
+      </label>
+
+      <label class="field">
+        <span class="field-label">Modelo</span>
+        <input class="input" type="text" autocomplete="off" spellcheck="false" required maxlength="120"
+               [value]="form().model" (input)="set('model', $any($event.target).value)">
+      </label>
+
+      @if (t.type === 'transcription') {
+        <label class="field">
+          <span class="field-label">Idioma</span>
+          <input class="input input--short" type="text" autocomplete="off" spellcheck="false" maxlength="10"
+                 placeholder="pt" [value]="form().language" (input)="set('language', $any($event.target).value)">
+          <span class="field-hint">Código ISO (pt, en…). Vazio = detecção automática.</span>
+        </label>
+      }
+
+      <label class="check">
+        <input type="checkbox" [checked]="form().active" (change)="set('active', $any($event.target).checked)">
+        <span>Ativa</span>
+        @if (form().active && currentActive()) {
+          <span class="field-hint">(desativa a atual: {{ currentActive() }})</span>
+        }
+      </label>
+
+      @if (error()) { <p class="msg msg--error" role="alert">⚠ {{ error() }}</p> }
+
+      <div class="modal-actions">
+        <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>
+        <button type="submit" class="btn-primary" [disabled]="saving()">{{ saving() ? 'Salvando…' : 'Salvar' }}</button>
+      </div>
+    </form>
+  }
+</dialog>

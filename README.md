@@ -32,6 +32,7 @@ Ideia → Personagens → Cenários → Roteiro → Revisão → Editor → Fina
 - **Galeria pública** (`/` e `/p/:id`) — leitura sem login, com vídeo e reações (curtir/não curtir).
 - **Séries** — agrupam vários projetos em ordem.
 - **Aprovação de usuários** — novos cadastros ficam pendentes até um administrador aprovar (`/admin`).
+- **Configurações do sistema** (`/app-settings`, admin) — cadastro das IAs por tipo (texto, imagem, transcrição, voz, vídeo), com várias configurações por tipo e uma ativa.
 - **Configurações por usuário** — permite usar uma IA local compatível com a API OpenAI (ex.: Ollama) para o roteiro.
 - **Backup** — exportação/importação de um projeto completo em `.zip` (dados + imagens + áudios).
 - **Vozes de narração** — cadastro de vozes MiniMax e atribuição ao narrador e a cada personagem.
@@ -66,7 +67,7 @@ Em produção a **API serve o build do Angular** como arquivos estáticos — n�
 
 ```
 Navegador ──HTTPS──► Contêiner sumi (FastAPI + SPA Angular)
-                        ├── routers → services → ai/providers ──► OpenAI / BytePlus Seedream / MiniMax / ComfyUI
+                        ├── routers → services → ai/providers ──► OpenAI-compatível / Anthropic / Seedream / MiniMax
                         ├── SQLAlchemy ─────────────────────────► Contêiner PostgreSQL (rede shared-db)
                         └── storage.py ─────────────────────────► Volume Docker (imagens, áudios, vídeos)
 ```
@@ -87,8 +88,9 @@ Detalhes da API (camadas, endpoints, variáveis): [`sumi-api/ARCHITECTURE.md`](s
 | Migrations | **Alembic** |
 | Validação | **Pydantic v2** |
 | Gerenciador de pacotes | **uv** (`pyproject.toml` + `uv.lock`) |
-| LLM (texto) | OpenAI (`gpt-4o-mini` padrão; suporta gpt-5/o-series), MiniMax, ou IA local OpenAI-compatível via LangChain |
-| Imagem | OpenAI `gpt-image-1`, BytePlus **Seedream**, MiniMax `image-01`, **ComfyUI** (Stable Diffusion local) |
+| LLM (texto) | Qualquer API **OpenAI-compatível** (OpenAI, ByteDance/BytePlus, MiniMax, DeepSeek, Ollama) ou **Anthropic** |
+| Imagem | OpenAI `gpt-image-1`, BytePlus **Seedream**, MiniMax `image-01` |
+| Transcrição | API OpenAI-compatível (`/audio/transcriptions`) |
 | Voz (TTS) | MiniMax `speech-2.8-hd` |
 | Vídeo | ffmpeg (via `imageio-ffmpeg`) — quadros + áudio → MP4 |
 | Autenticação | JWT + bcrypt |
@@ -96,19 +98,27 @@ Detalhes da API (camadas, endpoints, variáveis): [`sumi-api/ARCHITECTURE.md`](s
 
 ### Provedores de IA
 
-Toda chamada de IA passa pelo contrato `AIProvider` (`src/prompt_clinica/ai/base.py`), com implementações em `ai/providers/`. O provedor é escolhido por variável de ambiente:
+Toda chamada de IA passa por contratos em `src/prompt_clinica/ai/base.py`: `AIProvider` (texto e imagem), `SpeechToText` (transcrição) e `TextToSpeech` (voz). As implementações ficam em `ai/providers/` e `ai/minimax/`.
 
-```dotenv
-AI_PROVIDER=openai          # openai | minimax | comfyui | seedream
-AI_TEXT_PROVIDER=           # opcional: sobrescreve só o texto
-AI_IMAGE_PROVIDER=          # opcional: sobrescreve só a imagem
-```
+Provedor, URL, chave e modelo **não vêm mais do `.env`**. Eles são cadastrados na tela **Configurações do sistema** (`/app-settings`, só admin). Há um cadastro (tabela) por tipo de IA, todos com os mesmos campos: nome, tipo, URL base, chave (cifrada), modelo e, na transcrição, idioma. Cada tipo tem no máximo **uma configuração ativa**:
+
+| Tipo de IA | Tabela | Valores do campo Tipo |
+|---|---|---|
+| Texto | `ai_text_config` | `openai` (OpenAI-compatível), `anthropic` |
+| Imagem | `ai_image_config` | `openai`, `seedream`, `minimax` |
+| Transcrição | `ai_transcription_config` | `openai` |
+| Voz | `ai_voice_config` | `minimax` |
+| Vídeo | `ai_video_config` | `minimax` |
+
+O campo Tipo só escolhe o adaptador; nenhum fornecedor tem campos próprios. No texto, ByteDance (`https://ark.ap-southeast.bytepluses.com/api/v3`) e MiniMax (`https://api.minimax.io/v1`) entram como `openai`, trocando só a URL. O `ai/registry.py` lê a configuração ativa do banco e monta o adaptador. Ativar, editar ou excluir uma configuração vale na próxima chamada, sem reiniciar. Cada configuração tem um botão **Testar** na tela.
+
+Na atualização, a migração `ai_config_tables` converte a configuração antiga (tabela `app_settings` + variáveis de IA do `.env`) em registros já ativos e remove `app_settings`. O provider ComfyUI foi removido.
 
 Gerações demoradas (retratos, cenas, vídeo) rodam em `BackgroundTasks` do FastAPI e o frontend acompanha o job por polling (`/characters/portrait-job/{id}`, `/scenarios/scene-job/{id}`, `/projects/{id}/export/video/{job_id}`). O estado dos jobs fica em memória do processo.
 
 ### Geração de imagem — Seedream
 
-Com `AI_IMAGE_PROVIDER=seedream` (BytePlus ModelArk), o `size` enviado à API deve ser uma dimensão concreta. Dimensões recomendadas por razão de aspecto:
+Com uma configuração de imagem do tipo `seedream` ativa (BytePlus ModelArk), o `size` enviado à API deve ser uma dimensão concreta. Dimensões recomendadas por razão de aspecto:
 
 | Razão | 2K | 3K | 4K |
 |-------|----|----|----|
@@ -163,7 +173,7 @@ O design segue o protótipo em `comic-prompt/` (abra `comic-prompt/Sumi - HQ com
 ```bash
 cd sumi-api
 uv sync                          # cria .venv e instala dependências
-cp .env.example .env             # preencha DATABASE_URL, JWT_SECRET_KEY e a chave do provider de IA
+cp .env.example .env             # preencha DATABASE_URL e JWT_SECRET_KEY (IAs: tela Configurações do sistema)
 uv run alembic upgrade head
 uv run python -m prompt_clinica.main   # http://localhost:8000  (Swagger em /docs)
 ```

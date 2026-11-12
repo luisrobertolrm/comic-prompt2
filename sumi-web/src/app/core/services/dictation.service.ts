@@ -93,6 +93,22 @@ export class DictationService {
     });
   }
 
+  /** Grava o microfone até `stop` ser chamado e devolve o áudio cru, sem transcrever. */
+  async recordBlob(): Promise<{ stop: () => void; audio: Promise<Blob> }> {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const recorder = new MediaRecorder(stream);
+    const chunks: Blob[] = [];
+    recorder.ondataavailable = ev => { if (ev.data.size) chunks.push(ev.data); };
+    const audio = new Promise<Blob>(resolve => {
+      recorder.onstop = () => {
+        stream.getTracks().forEach(t => t.stop());
+        resolve(new Blob(chunks, { type: recorder.mimeType || 'audio/webm' }));
+      };
+    });
+    recorder.start();
+    return { stop: () => recorder.stop(), audio };
+  }
+
   private showError(msg: string): void {
     this.error.set(msg);
     setTimeout(() => this.error.set(''), 4000);

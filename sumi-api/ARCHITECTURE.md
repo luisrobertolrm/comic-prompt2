@@ -25,10 +25,12 @@ sumi-api/
 │   ├── schemas/                # Pydantic (entrada/saída)
 │   ├── services/               # Regras de negócio
 │   ├── ai/                     # Integração com IA
-│   │   ├── base.py             # Protocolo AIProvider (text / image)
+│   │   ├── base.py             # Protocolos AIProvider (text / image), SpeechToText, TextToSpeech
+│   │   ├── registry.py         # AIConfig, config ativa por tipo (banco) e fábricas de adaptadores
 │   │   ├── types.py            # TextRequest/Response, ImageRequest/Response
-│   │   ├── providers/          # openai, seedream, minimax, comfyui
-│   │   ├── minimax/            # clientes MiniMax: texto, imagem, voz (TTS), vídeo
+│   │   ├── providers/          # openai (compatível), anthropic, seedream, minimax
+│   │   ├── speech.py           # OpenAISpeechToText (transcrição)
+│   │   ├── minimax/            # clientes MiniMax: imagem, voz (TTS), vídeo
 │   │   ├── roteiro.py          # premissa → outline → quadros (prompt chaining)
 │   │   ├── synopsis.py         # sinopse do projeto
 │   │   └── youtube_metadata.py # título/descrição/tags para publicação
@@ -117,6 +119,19 @@ Em produção o `docker-compose.yml` executa `alembic upgrade head` antes de ini
 
 ---
 
+## Configuração de IA
+
+Provedores, URLs, chaves e modelos de IA **não são variáveis de ambiente**. Eles ficam em cinco tabelas, uma por tipo (`ai_text_config`, `ai_image_config`, `ai_transcription_config`, `ai_voice_config`, `ai_video_config`), editadas na tela **Configurações do sistema** pelas rotas `/admin/ai-configs/{ai_type}` (só admin).
+
+- Colunas comuns: `name`, `kind`, `base_url`, `api_key`, `model`, `active` e `updated_at`. A `api_key` é cifrada com Fernet derivada do `JWT_SECRET_KEY`. `ai_transcription_config` tem também `language`.
+- Cada tabela tem no máximo uma linha ativa (índice único parcial `WHERE active`). Ativar uma desativa a anterior.
+- `kind` permitido: texto `openai`/`anthropic`; imagem `openai`/`seedream`/`minimax`; transcrição `openai`; voz e vídeo `minimax`.
+- `ai/registry.py` lê a linha ativa (`get_active`) e monta o adaptador (`build_text_provider`, `build_image_provider`, `build_speech_to_text`, `build_text_to_speech`). Depois de qualquer escrita no cadastro, o singleton `ai` é remontado na próxima chamada.
+- Sem configuração ativa, a função responde 400: "Nenhuma IA de <tipo> ativa. Configure em Configurações do sistema."
+- A migração `ai_config_tables` converteu a antiga tabela `app_settings` + variáveis de IA do `.env` em registros e removeu `app_settings`. O provider ComfyUI foi removido.
+
+---
+
 ## Variáveis de ambiente
 
 Lista completa e comentada em [`.env.example`](.env.example). Principais:
@@ -126,11 +141,7 @@ Lista completa e comentada em [`.env.example`](.env.example). Principais:
 | `DATABASE_URL` | Sim | — | Connection string PostgreSQL (`postgresql+psycopg2://...`) |
 | `JWT_SECRET_KEY` | Sim | — | Chave de assinatura dos tokens |
 | `JWT_EXPIRE_MINUTES` / `JWT_REMEMBER_EXPIRE_MINUTES` | Não | `60` / `43200` | Validade do token normal / “lembrar de mim” |
-| `AI_PROVIDER` | Não | `openai` | `openai` \| `minimax` \| `comfyui` \| `seedream` |
-| `AI_TEXT_PROVIDER` / `AI_IMAGE_PROVIDER` | Não | herda `AI_PROVIDER` | Provider separado para texto e imagem |
-| `AI_TEXT_MODEL` / `AI_IMAGE_MODEL` | Não | `gpt-4o-mini` / `gpt-image-1` | Modelos OpenAI |
-| `OPENAI_API_KEY`, `BYTEPLUS_API_KEY`, `MINIMAX_API_KEY` | Conforme provider | — | Chaves dos provedores |
-| `COMFYUI_BASE_URL` | Se `comfyui` | `http://127.0.0.1:8188` | ComfyUI local |
+| `SEEDREAM_PAYLOAD_LOG` / `MINIMAX_PAYLOAD_LOG` | Não | `true` | Grava o payload de cada geração de imagem em `*_payload.log` |
 | `STORAGE_BACKEND` | Não | `local` | `local` (pasta/volume `IMAGES_DIR`) ou bucket S3 compatível |
 | `IMAGES_DIR` | Não | `static/images` | Pasta do storage local |
 | `APP_ENV` | Não | `development` | `development` habilita docs e SQL echo |
@@ -144,7 +155,7 @@ Lista completa e comentada em [`.env.example`](.env.example). Principais:
 ```bash
 cd sumi-api
 uv sync
-cp .env.example .env             # configure DATABASE_URL, JWT_SECRET_KEY e o provider de IA
+cp .env.example .env             # configure DATABASE_URL e JWT_SECRET_KEY
 uv run alembic upgrade head
 uv run python -m prompt_clinica.main    # http://localhost:8000
 ```

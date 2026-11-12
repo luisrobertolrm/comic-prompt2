@@ -2,7 +2,8 @@ import time
 
 from fastapi import APIRouter
 
-from prompt_clinica.ai import Message, TextRequest, ai, current_config
+from prompt_clinica.ai import Message, TextRequest, ai
+from prompt_clinica.ai.registry import NoActiveConfig, get_active
 from prompt_clinica.config import settings
 from prompt_clinica.storage import get_storage
 
@@ -37,14 +38,13 @@ def storage_config_check() -> dict[str, str]:
     }
 
 
-def _text_model(cfg: dict[str, str]) -> str:
-    return cfg["minimax_text_model"] if cfg["ai_text_provider"] == "minimax" else cfg["ai_text_model"]
-
-
 @router.get("/health/ai")
 def ai_health_check() -> dict[str, str]:
-    cfg = current_config()
-    provider, model = cfg["ai_text_provider"], _text_model(cfg)
+    try:
+        cfg = get_active("text")
+    except NoActiveConfig:
+        return {"status": "error", "detail": "Nenhuma IA de texto ativa."}
+    provider, model = cfg.kind, cfg.model
     start = time.monotonic()
     try:
         resp = ai.text(TextRequest(

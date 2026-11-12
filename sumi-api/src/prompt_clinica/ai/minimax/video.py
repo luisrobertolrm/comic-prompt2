@@ -35,7 +35,7 @@ class MinimaxVideoClient(MinimaxHTTPBase):
     ) -> str:
         cfg = self.config.video
         payload: dict[str, object] = {
-            "model": model or cfg.model,
+            "model": model or self.config.model,
             "prompt": prompt,
             "duration": duration or cfg.duration,
             "resolution": resolution or cfg.resolution,
@@ -68,7 +68,7 @@ class MinimaxVideoClient(MinimaxHTTPBase):
         poll_interval: float = 10.0,
         timeout: float = 600.0,
     ) -> MinimaxVideoResult:
-        model_name = model or self.config.video.model
+        model_name = model or self.config.model
         task_id = self.submit(
             prompt,
             model=model_name,

@@ -35,7 +35,7 @@ class MinimaxImageClient(MinimaxHTTPBase):
     ) -> MinimaxImageResult:
         cfg = self.config.image
         payload: dict[str, object] = {
-            "model": model or cfg.model,
+            "model": model or self.config.model,
             "prompt": prompt,
             "aspect_ratio": aspect_ratio or cfg.aspect_ratio,
             "n": n,

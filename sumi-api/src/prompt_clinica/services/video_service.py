@@ -32,8 +32,8 @@ from project_character import ProjectCharacter
 from sqlalchemy.orm import Session
 
 import prompt_clinica._paths  # noqa: F401
-from prompt_clinica.ai import minimax_config
-from prompt_clinica.ai.minimax import MinimaxError, MinimaxVoiceClient
+from prompt_clinica.ai.minimax import MinimaxError
+from prompt_clinica.ai.registry import build_text_to_speech
 from prompt_clinica.storage import get_storage
 
 logger = logging.getLogger(__name__)
@@ -107,11 +107,6 @@ def _media_duration(path: Path) -> float:
         return 0.0
     hh, mm, ss = int(m.group(1)), int(m.group(2)), float(m.group(3))
     return hh * 3600 + mm * 60 + ss
-
-
-def _synthesize(client: MinimaxVoiceClient, text: str, voice_id: str) -> bytes:
-    result = client.synthesize(text, voice_id=voice_id)
-    return result.audio
 
 
 # ── Composição do frame ──────────────────────────────────────────────
@@ -357,9 +352,7 @@ def render(project_id: uuid.UUID, user_id: uuid.UUID, db: Session,
         raise RuntimeError("O projeto não tem quadros para gerar o vídeo.")
 
     narrator_voice, char_voices = _voice_map(project, db)
-    mm = minimax_config()
-    default_voice = mm.voice.voice_id
-    client = MinimaxVoiceClient(mm)
+    tts = build_text_to_speech()
     storage = get_storage()
 
     with tempfile.TemporaryDirectory(prefix="sumi-video-") as tmp:
@@ -372,7 +365,7 @@ def render(project_id: uuid.UUID, user_id: uuid.UUID, db: Session,
             # Beats: caption + balões. Narração (caption e balões "narration") usa a voz
             # do narrador; balões de fala usam a voz do personagem em cena.
             beats: list[tuple[str, str]] = []
-            narrator = narrator_voice or default_voice
+            narrator = narrator_voice or ""
             if panel.caption and panel.caption.strip():
                 beats.append((panel.caption.strip(), narrator))
             char_voice = char_voices.get(panel.character_name or "", narrator)
@@ -392,7 +385,7 @@ def render(project_id: uuid.UUID, user_id: uuid.UUID, db: Session,
             beat_files: list[Path] = []
             for j, (text, vid) in enumerate(beats):
                 try:
-                    audio = _synthesize(client, text, vid)
+                    audio = tts.synthesize(text, vid)
                 except (MinimaxError, ValueError) as exc:
                     logger.warning("TTS falhou (cena %d beat %d): %s", i, j, exc)
                     continue

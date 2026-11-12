@@ -167,7 +167,7 @@ def generate_scene(
         style, color_mode, location, time_of_day, weather, atmosphere, extra
     )
 
-    logger.info("generate_scene provider=%s style=%r -> %s", ai.name, style, base_prompt)
+    logger.info("generate_scene style=%r -> %s", style, base_prompt)
 
     def _generate_one(variant_id: str, variant_suffix: str) -> SceneCandidate:
         full_prompt = f"{base_prompt}, {variant_suffix}" if variant_suffix else base_prompt

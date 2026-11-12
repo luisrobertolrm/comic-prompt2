@@ -1,5 +1,3 @@
-import prompt_clinica._paths  # noqa: F401 — models/ no sys.path antes de tudo
-
 import logging
 from pathlib import Path
 
@@ -9,9 +7,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+import prompt_clinica._paths  # noqa: F401 — models/ no sys.path antes de tudo
+from prompt_clinica.ai.registry import NoActiveConfig
 from prompt_clinica.config import settings
 from prompt_clinica.routers import (
     admin,
+    ai_configs,
     auth,
     backup,
     character_options,
@@ -24,18 +25,17 @@ from prompt_clinica.routers import (
     scenario_options,
     scenarios,
     series,
-    settings as settings_router,
     speech,
     storage,
     styles,
     voice,
 )
-from prompt_clinica.services import app_settings_service
+from prompt_clinica.routers import (
+    settings as settings_router,
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("sumi.api")
-
-app_settings_service.apply_from_db()
 
 app = FastAPI(
     title="Sumi API",
@@ -52,6 +52,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.exception_handler(NoActiveConfig)
+async def no_active_config_handler(_request: Request, exc: NoActiveConfig) -> JSONResponse:
+    return JSONResponse(status_code=400, content={"detail": str(exc)})
+
 
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
@@ -70,6 +75,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(admin.router)
+app.include_router(ai_configs.router)
 app.include_router(public.router)
 app.include_router(projects.router)
 app.include_router(backup.router)
@@ -93,7 +99,7 @@ app.mount("/static", StaticFiles(directory=str(_static_root)), name="static")
 _spa_dir = Path("static/app")
 if _spa_dir.exists():
     @app.get("/{full_path:path}", include_in_schema=False)
-    async def serve_spa(full_path: str) -> FileResponse:  # noqa: RUF029
+    async def serve_spa(full_path: str) -> FileResponse:
         spa_file = _spa_dir / full_path
         if spa_file.is_file():
             return FileResponse(str(spa_file))

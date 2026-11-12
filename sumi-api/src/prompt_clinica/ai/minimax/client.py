@@ -43,8 +43,6 @@ class MinimaxHTTPBase:
         return self._unwrap(resp)
 
     def _get(self, path: str, params: dict[str, Any]) -> dict[str, Any]:
-        if self._config.group_id:
-            params = {**params, "GroupId": self._config.group_id}
         resp = httpx.get(
             self._url(path),
             headers=self._headers(),

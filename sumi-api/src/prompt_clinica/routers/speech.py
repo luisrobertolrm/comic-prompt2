@@ -3,9 +3,10 @@ import logging
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from user import User
 
-from prompt_clinica.ai.speech import transcribe
+from prompt_clinica.ai.base import SpeechToText
+from prompt_clinica.ai.registry import build_speech_to_text
 from prompt_clinica.deps import get_current_user
-from prompt_clinica.schemas.app_settings import TranscriptionOut
+from prompt_clinica.schemas.ai_config import TranscriptionOut
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +19,7 @@ _MAX_BYTES = 25 * 1024 * 1024  # limite da API de transcrição da OpenAI
 def transcribe_audio(
     file: UploadFile = File(...),
     _user: User = Depends(get_current_user),
+    stt: SpeechToText = Depends(build_speech_to_text),
 ) -> TranscriptionOut:
     audio = file.file.read()
     if not audio:
@@ -25,7 +27,7 @@ def transcribe_audio(
     if len(audio) > _MAX_BYTES:
         raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Áudio acima de 25 MB.")
     try:
-        text = transcribe(audio, file.filename or "audio.webm")
+        text = stt.transcribe(audio, file.filename or "audio.webm")
     except Exception as exc:
         logger.exception("Falha na transcrição")
         raise HTTPException(

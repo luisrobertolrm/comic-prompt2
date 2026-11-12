@@ -32,12 +32,10 @@ class ImageRequest:
     size: str = "1024x1024"  # "1024x1024" | "1792x1024" | "1024x1792"
     quality: str = "standard"  # "standard" | "hd"
     n: int = 1
-    # Proporção da imagem (ex.: "16:9", "1:1"). Vazio = default do provider. Só o MiniMax usa.
+    # Proporção da imagem (ex.: "16:9", "1:1"). Vazio = default do provider.
     aspect_ratio: str = ""
-    # Referências de personagem (URL pública ou data-URI base64). Só o MiniMax usa.
+    # Referências de personagem (URL pública ou data-URI base64). MiniMax e Seedream usam.
     subject_reference: list[str] | None = None
-    # Prompt negativo (o que NÃO deve aparecer). Só providers Stable Diffusion usam.
-    negative_prompt: str = ""
 
 
 @dataclass

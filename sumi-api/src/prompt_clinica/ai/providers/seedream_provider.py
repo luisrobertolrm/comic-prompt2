@@ -2,8 +2,7 @@
 Provider de imagem Seedream (BytePlus ModelArk).
 
 API compatível com OpenAI (`/images/generations`). Aceita prompt + até 10
-imagens de referência (campo `image`). Só implementa `image()`; texto continua
-no provider configurado em AI_TEXT_PROVIDER.
+imagens de referência (campo `image`). Só implementa `image()`.
 """
 from __future__ import annotations
 
@@ -52,12 +51,10 @@ def _resolve_size(req: ImageRequest) -> str:
 
 
 class SeedreamProvider:
-    def __init__(self, model: str = "", api_key: str = "") -> None:
-        from prompt_clinica.config import settings
-
-        self._api_key = api_key or settings.byteplus_api_key
-        self._base_url = settings.byteplus_base_url.rstrip("/")
-        self._model = model or settings.seedream_model
+    def __init__(self, api_key: str, base_url: str, model: str) -> None:
+        self._api_key = api_key
+        self._base_url = base_url.rstrip("/")
+        self._model = model
 
     @property
     def name(self) -> str:
@@ -65,7 +62,7 @@ class SeedreamProvider:
 
     def text(self, req: TextRequest) -> TextResponse:
         raise NotImplementedError(
-            "Seedream é provider de imagem. Use AI_TEXT_PROVIDER para o texto."
+            "Seedream é provider de imagem; o texto usa a configuração de IA de texto."
         )
 
     def _log_payload(self, payload: dict[str, object]) -> None:
@@ -90,7 +87,7 @@ class SeedreamProvider:
 
     def image(self, req: ImageRequest) -> ImageResponse:
         if not self._api_key:
-            raise ValueError("BYTEPLUS_API_KEY não definida no ambiente.")
+            raise ValueError("Chave do Seedream não configurada.")
 
         payload: dict[str, object] = {
             "model": self._model,

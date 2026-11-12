@@ -13,8 +13,8 @@ from sqlalchemy.orm import Session
 from user import User
 
 import prompt_clinica._paths  # noqa: F401
-from prompt_clinica import character_options, styles
-from prompt_clinica.ai import ImageRequest, Message, TextRequest, ai
+from prompt_clinica import styles
+from prompt_clinica.ai import ImageRequest, ai
 from prompt_clinica.schemas.character import (
     CharacterCreate,
     CharacterUpdate,
@@ -168,54 +168,6 @@ _ETNIA = {
 }
 
 
-# Tags danbooru para Stable Diffusion (ComfyUI). "male focus" contrabalança tags
-# com viés feminino forte (ex.: "shoujo").
-_SD_GENDER = {
-    "Feminino": "1girl",
-    "Masculino": "1boy, male focus",
-    "Outro": "androgynous",
-    "Não especificado": "",
-}
-
-_SD_QUALITY = "masterpiece, best quality, newest, absurdres, highres"
-# NoobAI é treinado em danbooru + e621 (furry): sem estes negativos, tags de
-# corpo ("plump, fat") puxam para arte furry/cartoon do e621. "multiple views"
-# evita folhas de expressões em grade.
-_SD_NEGATIVE_BASE = (
-    "worst quality, low quality, blurry, jpeg artifacts, text, watermark, signature, "
-    "furry, anthro, feral, animal ears, animal nose, mammal, "
-    "multiple views, expression chart, reference sheet, 3d, photorealistic"
-)
-
-
-_TAGS_SYSTEM = (
-    "Converta a descrição de personagem para tags danbooru em inglês, curtas e "
-    "separadas por vírgula (ex.: 'black hair, blunt bangs, school uniform, shy'). "
-    "Traduza TODOS os atributos visuais — cabelo, olhos, roupa, corpo, acessórios — "
-    "sem omitir nenhum. Descarte só o que não for visual (nome, papel narrativo). "
-    "Responda APENAS as tags."
-)
-
-
-def _attrs_to_tags(text: str) -> str:
-    """Traduz atributos livres (PT) para tags danbooru — tokens em português
-    degradam muito a geração em modelos treinados em danbooru/e621."""
-    cleaned = ", ".join(p.strip() for p in text.split(",") if p.strip())
-    if not cleaned:
-        return cleaned
-    try:
-        # max_tokens alto: o M3 gasta o orçamento no <think> antes da resposta.
-        resp = ai.text(TextRequest(
-            messages=[Message("system", _TAGS_SYSTEM), Message("user", cleaned)],
-            temperature=0.0,
-            max_tokens=2000,
-        ))
-        tags = resp.content.strip().strip(".")
-        return tags or cleaned
-    except Exception:
-        return cleaned
-
-
 def _slots(
     gender: str | None,
     age_range: str | None,
@@ -228,32 +180,6 @@ def _slots(
         "etinia": _ETNIA.get(ethnicity or "", ""),
         "cabelo": (hair or "").strip(),
     }
-
-
-def build_portrait_prompts(
-    style: str = styles.DEFAULT_STYLE,
-    color_mode: str | None = None,
-    gender: str | None = None,
-    age_range: str | None = None,
-    ethnicity: str | None = None,
-    hair: str | None = None,
-    extra: str | None = None,
-) -> tuple[str, str]:
-    """Retorna (prompt, negative_prompt) no formato do provider ativo."""
-    if ai.name != "comfyui":
-        return build_portrait_prompt(style, color_mode, gender, age_range, ethnicity, hair, extra), ""
-
-    free = ", ".join(p for p in ((hair or "").strip(), (extra or "").strip()) if p)
-    positive_parts = [
-        _SD_QUALITY,
-        _SD_GENDER.get(gender or "", ""),
-        "solo",
-        character_options.prompt_for("ethnicity", ethnicity),
-        _attrs_to_tags(free),
-        "simple background",
-    ]
-    positive = ", ".join(p for p in positive_parts if p)
-    return positive, _SD_NEGATIVE_BASE
 
 
 def build_portrait_prompt(
@@ -287,19 +213,19 @@ def generate_portrait(
 ) -> list[PortraitCandidate]:
     if raw:
         # Prompt livre: o texto vai literal à IA, sem montagem por template.
-        base_prompt, negative = prompt, ""
+        base_prompt = prompt
     else:
-        base_prompt, negative = build_portrait_prompts(
+        base_prompt = build_portrait_prompt(
             style, color_mode, gender, age_range, ethnicity, hair, extra
         )
     variants = _PORTRAIT_VARIANTS
 
-    logger.info("generate_portrait provider=%s style=%r -> %s", ai.name, style, base_prompt)
+    logger.info("generate_portrait style=%r -> %s", style, base_prompt)
 
     def _generate_one(variant_id: str, variant_suffix: str) -> PortraitCandidate:
         full_prompt = f"{base_prompt}, {variant_suffix}" if variant_suffix else base_prompt
         resp = ai.image(ImageRequest(
-            prompt=full_prompt, size="1024x1024", quality="medium", negative_prompt=negative,
+            prompt=full_prompt, size="1024x1024", quality="medium",
         ))
         if not resp.b64_json:
             raise HTTPException(
