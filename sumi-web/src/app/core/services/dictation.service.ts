@@ -37,12 +37,14 @@ export class DictationService {
     }
     if (!(e.ctrlKey && e.shiftKey && e.code === 'Space')) return;
     e.preventDefault();
-    if (this.state() === 'recording') {
-      this.recorder?.stop();
-    } else if (this.state() === 'idle') {
-      const field = asTextField(document.activeElement);
-      if (field) void this.start(field);
-    }
+    const field = asTextField(document.activeElement);
+    if (field || this.state() === 'recording') this.toggle(field);
+  }
+
+  /** Inicia a gravação para `field` ou, se já estiver gravando, conclui. */
+  toggle(field: TextField | null): void {
+    if (this.state() === 'recording') this.recorder?.stop();
+    else if (this.state() === 'idle' && field) void this.start(field);
   }
 
   private async start(field: TextField): Promise<void> {

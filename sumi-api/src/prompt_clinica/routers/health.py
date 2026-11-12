@@ -1,6 +1,8 @@
+import time
+
 from fastapi import APIRouter
 
-from prompt_clinica.ai import Message, TextRequest, ai
+from prompt_clinica.ai import Message, TextRequest, ai, current_config
 from prompt_clinica.config import settings
 from prompt_clinica.storage import get_storage
 
@@ -35,23 +37,31 @@ def storage_config_check() -> dict[str, str]:
     }
 
 
+def _text_model(cfg: dict[str, str]) -> str:
+    return cfg["minimax_text_model"] if cfg["ai_text_provider"] == "minimax" else cfg["ai_text_model"]
+
+
 @router.get("/health/ai")
 def ai_health_check() -> dict[str, str]:
+    cfg = current_config()
+    provider, model = cfg["ai_text_provider"], _text_model(cfg)
+    start = time.monotonic()
     try:
         resp = ai.text(TextRequest(
             messages=[Message(role="user", content="Responda apenas: ok")],
-            max_tokens=10,
+            max_tokens=200,
         ))
         return {
             "status": "ok",
-            "provider": settings.ai_provider,
-            "model": settings.ai_text_model,
+            "provider": provider,
+            "model": resp.model or model,
             "response": resp.content.strip(),
+            "elapsed_ms": str(int((time.monotonic() - start) * 1000)),
         }
     except Exception as exc:  # noqa: BLE001
         return {
             "status": "error",
-            "provider": settings.ai_provider,
-            "model": settings.ai_text_model,
+            "provider": provider,
+            "model": model,
             "detail": str(exc),
         }

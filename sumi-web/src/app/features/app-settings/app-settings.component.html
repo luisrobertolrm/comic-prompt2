@@ -4,7 +4,7 @@
     <div>
       <p class="eyebrow">ADMINISTRAÇÃO</p>
       <h1>Configurações do sistema</h1>
-      <p class="lede">Modelos de IA usados por todos os usuários. Campo vazio usa o valor do .env (mostrado em cinza). Vale na hora, sem reiniciar a API.</p>
+      <p class="lede">Modelos e chaves de IA usados por todos os usuários. Campo vazio usa o valor do .env (mostrado em cinza). Vale na hora, sem reiniciar a API. Os testes usam o que está salvo.</p>
     </div>
   </div>
 
@@ -13,11 +13,55 @@
   } @else {
     <div style="display:flex;flex-direction:column;gap:28px">
 
+      <section style="display:flex;flex-direction:column;gap:14px">
+        <div>
+          <h2 style="font-size:15px;margin:0">Chaves de API</h2>
+          <span class="muted-sm">Guardadas criptografadas. A chave nunca volta para a tela; deixe em branco para manter a atual.</span>
+        </div>
+
+        @for (k of apiKeys; track k.key) {
+          <label style="display:flex;flex-direction:column;gap:6px">
+            <span style="font-size:13px;font-weight:600">{{ k.label }}</span>
+            <span class="muted-sm">{{ keyLabel(k.key) }}</span>
+            <div style="display:flex;gap:8px">
+              <input class="input" type="password" autocomplete="new-password" spellcheck="false" style="flex:1"
+                     placeholder="Nova chave"
+                     [value]="keyEdits()[k.key] ?? ''"
+                     (input)="setKey(k.key, $any($event.target).value)">
+              @if (keyStatus()[k.key].source === 'db' && keyEdits()[k.key] !== '') {
+                <button type="button" class="btn-ghost" (click)="removeKey(k.key)">Remover</button>
+              }
+            </div>
+          </label>
+        }
+      </section>
+
       @for (section of sections; track section.title) {
         <section style="display:flex;flex-direction:column;gap:14px">
-          <div>
-            <h2 style="font-size:15px;margin:0">{{ section.title }}</h2>
-            <span class="muted-sm">{{ section.hint }}</span>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+            <div>
+              <h2 style="font-size:15px;margin:0">{{ section.title }}</h2>
+              <span class="muted-sm">{{ section.hint }}</span>
+            </div>
+            @switch (section.test) {
+              @case ('text') {
+                <button type="button" class="btn-ghost" (click)="testText()" [disabled]="testing() !== null">
+                  {{ testing() === 'text' ? 'Testando…' : 'Testar texto' }}
+                </button>
+              }
+              @case ('image') {
+                <button type="button" class="btn-ghost" (click)="testImage()" [disabled]="testing() !== null">
+                  {{ testing() === 'image' ? 'Gerando…' : 'Testar imagem' }}
+                </button>
+              }
+              @case ('stt') {
+                <button type="button" class="btn-ghost" (click)="testStt()"
+                        [disabled]="dictation.state() === 'transcribing'">
+                  {{ dictation.state() === 'recording' ? '■ Parar e transcrever'
+                     : dictation.state() === 'transcribing' ? 'Transcrevendo…' : '🎙 Testar transcrição' }}
+                </button>
+              }
+            }
           </div>
 
           @for (f of section.fields; track f.key) {
@@ -37,6 +81,26 @@
                        (input)="set(f.key, $any($event.target).value)">
               }
             </label>
+          }
+
+          @switch (section.test) {
+            @case ('text') {
+              @if (textResult()) { <p class="muted-sm" style="color:var(--mint,#2e9e6b);margin:0">{{ textResult() }}</p> }
+              @if (textError()) { <p class="muted-sm" style="color:var(--error,#c0392b);margin:0">⚠ {{ textError() }}</p> }
+            }
+            @case ('image') {
+              @if (imageResult(); as r) {
+                <div style="display:flex;flex-direction:column;gap:6px">
+                  <span class="muted-sm" style="color:var(--mint,#2e9e6b)">✓ {{ r.provider }} · {{ r.model }} · {{ r.elapsed_ms }} ms</span>
+                  <img [src]="r.image" alt="Imagem de teste" style="max-width:256px;border-radius:10px;border:1px solid var(--paper-3)">
+                </div>
+              }
+              @if (imageError()) { <p class="muted-sm" style="color:var(--error,#c0392b);margin:0">⚠ {{ imageError() }}</p> }
+            }
+            @case ('stt') {
+              <textarea #sttBox class="input" rows="2"
+                        placeholder="Clique em “Testar transcrição”, fale e clique de novo — o texto aparece aqui."></textarea>
+            }
           }
         </section>
       }

@@ -7,7 +7,8 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from user import User
 
-from prompt_clinica.ai.minimax import MinimaxConfig, MinimaxError, MinimaxVoiceClient
+from prompt_clinica.ai import minimax_config
+from prompt_clinica.ai.minimax import MinimaxError, MinimaxVoiceClient
 from prompt_clinica.database import get_db
 from prompt_clinica.deps import get_current_user
 from prompt_clinica.schemas.voice import VoiceCreate, VoiceOut, VoiceUpdate
@@ -30,7 +31,7 @@ def test_voice(
     if not text:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Texto vazio.")
     try:
-        result = MinimaxVoiceClient(MinimaxConfig()).synthesize(text, voice_id=body.voice_id)
+        result = MinimaxVoiceClient(minimax_config()).synthesize(text, voice_id=body.voice_id)
     except (MinimaxError, ValueError) as exc:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY, detail=f"MiniMax: {exc}"

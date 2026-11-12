@@ -6,7 +6,7 @@ from user import User
 
 from prompt_clinica.database import get_db
 from prompt_clinica.deps import get_current_admin
-from prompt_clinica.schemas.app_settings import AppSettingsOut, AppSettingsValues
+from prompt_clinica.schemas.app_settings import AppSettingsOut, AppSettingsUpdate, ImageTestOut
 from prompt_clinica.schemas.auth import PendingUserOut
 from prompt_clinica.services import app_settings_service
 
@@ -68,8 +68,13 @@ def get_app_settings(
 
 @router.put("/app-settings", response_model=AppSettingsOut)
 def update_app_settings(
-    data: AppSettingsValues,
+    data: AppSettingsUpdate,
     _admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ) -> AppSettingsOut:
     return app_settings_service.update_app_settings(data, db)
+
+
+@router.post("/app-settings/test-image", response_model=ImageTestOut)
+def test_image(_admin: User = Depends(get_current_admin)) -> ImageTestOut:
+    return app_settings_service.test_image()

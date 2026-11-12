@@ -32,7 +32,8 @@ from project_character import ProjectCharacter
 from sqlalchemy.orm import Session
 
 import prompt_clinica._paths  # noqa: F401
-from prompt_clinica.ai.minimax import MinimaxConfig, MinimaxError, MinimaxVoiceClient
+from prompt_clinica.ai import minimax_config
+from prompt_clinica.ai.minimax import MinimaxError, MinimaxVoiceClient
 from prompt_clinica.storage import get_storage
 
 logger = logging.getLogger(__name__)
@@ -356,8 +357,9 @@ def render(project_id: uuid.UUID, user_id: uuid.UUID, db: Session,
         raise RuntimeError("O projeto não tem quadros para gerar o vídeo.")
 
     narrator_voice, char_voices = _voice_map(project, db)
-    default_voice = MinimaxConfig().voice.voice_id
-    client = MinimaxVoiceClient(MinimaxConfig())
+    mm = minimax_config()
+    default_voice = mm.voice.voice_id
+    client = MinimaxVoiceClient(mm)
     storage = get_storage()
 
     with tempfile.TemporaryDirectory(prefix="sumi-video-") as tmp:
