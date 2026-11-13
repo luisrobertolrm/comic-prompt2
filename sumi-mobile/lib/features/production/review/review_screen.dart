@@ -15,6 +15,7 @@ import '../panels_repository.dart';
 import '../poll_job.dart';
 import '../production_step.dart';
 import '../step_action_bar.dart';
+import '../../../shared/dictation_button.dart';
 
 const _framings = [
   'Plano geral', 'Plano americano', 'Plano médio', 'Close-up',
@@ -188,6 +189,10 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
       );
     }
     final allImages = _panels.every((p) => p.hasImage);
+    void onCaption(String v) {
+      _setLocal(cur.copyWith(caption: v));
+      _patchDebounced({'caption': v});
+    }
 
     return Column(
       children: [
@@ -313,19 +318,24 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                 controller: _caption,
                 minLines: 2,
                 maxLines: 6,
-                decoration: const InputDecoration(labelText: 'Direção', alignLabelWithHint: true),
-                onChanged: (v) {
-                  _setLocal(cur.copyWith(caption: v));
-                  _patchDebounced({'caption': v});
-                },
+                decoration: InputDecoration(
+                  labelText: 'Direção',
+                  alignLabelWithHint: true,
+                  suffixIcon: DictationButton(controller: _caption, onChanged: onCaption),
+                ),
+                onChanged: onCaption,
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: _prompt,
                 minLines: 2,
                 maxLines: 6,
-                decoration:
-                    const InputDecoration(labelText: 'Prompt da imagem', alignLabelWithHint: true),
+                decoration: InputDecoration(
+                  labelText: 'Prompt da imagem',
+                  alignLabelWithHint: true,
+                  suffixIcon: DictationButton(
+                      controller: _prompt, onChanged: (v) => _patchDebounced({'prompt': v})),
+                ),
                 onChanged: (v) => _patchDebounced({'prompt': v}),
               ),
               const SizedBox(height: 16),

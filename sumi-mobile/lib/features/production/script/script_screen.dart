@@ -15,6 +15,7 @@ import '../production_draft.dart';
 import '../production_step.dart';
 import '../run_limited.dart';
 import '../step_action_bar.dart';
+import '../../../shared/dictation_button.dart';
 
 class ScriptScreen extends ConsumerStatefulWidget {
   final String projectId;
@@ -112,7 +113,12 @@ class _ScriptScreenState extends ConsumerState<ScriptScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Sinopse'),
-        content: TextField(controller: controller, minLines: 6, maxLines: 14),
+        content: TextField(
+          controller: controller,
+          minLines: 6,
+          maxLines: 14,
+          decoration: InputDecoration(suffixIcon: DictationButton(controller: controller)),
+        ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
           FilledButton(
@@ -538,7 +544,11 @@ class _PanelEditSheetState extends State<_PanelEditSheet> {
                 controller: _caption,
                 minLines: 3,
                 maxLines: 8,
-                decoration: const InputDecoration(labelText: 'Direção', alignLabelWithHint: true),
+                decoration: InputDecoration(
+                  labelText: 'Direção',
+                  alignLabelWithHint: true,
+                  suffixIcon: DictationButton(controller: _caption),
+                ),
               ),
               const SizedBox(height: 16),
               FilledButton(

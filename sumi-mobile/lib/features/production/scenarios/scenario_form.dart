@@ -8,6 +8,7 @@ import '../jobs.dart';
 import '../poll_job.dart';
 import '../scenario.dart';
 import '../scenarios_repository.dart';
+import '../../../shared/dictation_button.dart';
 
 final scenarioOptionsProvider =
     FutureProvider<List<AttrGroup>>((ref) => ref.read(scenariosRepositoryProvider).options());
@@ -211,14 +212,20 @@ class _ScenarioFormState extends ConsumerState<ScenarioForm> {
           controller: _summary,
           minLines: 2,
           maxLines: 4,
-          decoration: const InputDecoration(labelText: 'Resumo', alignLabelWithHint: true),
+          decoration: InputDecoration(
+              labelText: 'Resumo',
+              alignLabelWithHint: true,
+              suffixIcon: DictationButton(controller: _summary)),
         ),
         const SizedBox(height: 12),
         TextField(
           controller: _details,
           minLines: 2,
           maxLines: 4,
-          decoration: const InputDecoration(labelText: 'Detalhes visuais', alignLabelWithHint: true),
+          decoration: InputDecoration(
+              labelText: 'Detalhes visuais',
+              alignLabelWithHint: true,
+              suffixIcon: DictationButton(controller: _details)),
         ),
         const SizedBox(height: 20),
         if (_generating)

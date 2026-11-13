@@ -9,6 +9,7 @@ import '../production/poll_job.dart';
 import '../voice_test/voices_repository.dart';
 import 'character.dart';
 import 'characters_repository.dart';
+import '../../shared/dictation_button.dart';
 
 const genders = ['Feminino', 'Masculino', 'Outro', 'Não especificado'];
 
@@ -235,7 +236,10 @@ class _CharacterFormState extends ConsumerState<CharacterForm> {
           controller: _summary,
           minLines: 2,
           maxLines: 5,
-          decoration: const InputDecoration(labelText: 'Descrição visual', alignLabelWithHint: true),
+          decoration: InputDecoration(
+              labelText: 'Descrição visual',
+              alignLabelWithHint: true,
+              suffixIcon: DictationButton(controller: _summary)),
         ),
         const SizedBox(height: 12),
         TextField(

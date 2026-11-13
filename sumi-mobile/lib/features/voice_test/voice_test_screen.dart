@@ -7,6 +7,7 @@ import '../../core/theme/app_theme.dart';
 import 'minimax_voices.dart';
 import 'voice.dart';
 import 'voices_repository.dart';
+import '../../shared/dictation_button.dart';
 
 const _sexes = ['Feminino', 'Masculino', 'Outro'];
 
@@ -183,7 +184,11 @@ class _VoiceTestScreenState extends ConsumerState<VoiceTestScreen> {
           minLines: 3,
           maxLines: 6,
           maxLength: 300,
-          decoration: const InputDecoration(labelText: 'Texto', alignLabelWithHint: true),
+          decoration: InputDecoration(
+            labelText: 'Texto',
+            alignLabelWithHint: true,
+            suffixIcon: DictationButton(controller: _text),
+          ),
         ),
         FilledButton.icon(
           onPressed: _generating ? null : _generate,
@@ -240,8 +245,11 @@ class _VoiceTestScreenState extends ConsumerState<VoiceTestScreen> {
           controller: _details,
           minLines: 2,
           maxLines: 4,
-          decoration: const InputDecoration(
-              labelText: 'Descrição', hintText: 'Ex.: menina de 5 a 10 anos, tom doce e animado'),
+          decoration: InputDecoration(
+            labelText: 'Descrição',
+            hintText: 'Ex.: menina de 5 a 10 anos, tom doce e animado',
+            suffixIcon: DictationButton(controller: _details),
+          ),
         ),
         const SizedBox(height: 12),
         Row(

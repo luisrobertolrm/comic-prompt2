@@ -9,6 +9,7 @@ import '../production_draft.dart';
 import '../step_action_bar.dart';
 import '../production_step.dart';
 import '../styles_repository.dart';
+import '../../../shared/dictation_button.dart';
 
 const _genres = [
   'Shojo', 'Shonen', 'Slice of life', 'Mistério', 'Drama',
@@ -141,10 +142,11 @@ class _IdeaScreenState extends ConsumerState<IdeaScreen> {
                 controller: _idea,
                 minLines: 3,
                 maxLines: 8,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Sua ideia',
                   hintText: 'Ex: Uma carta dobrada cai do livro emprestado. Quem a colocou ali?',
                   alignLabelWithHint: true,
+                  suffixIcon: DictationButton(controller: _idea),
                 ),
               ),
               const SizedBox(height: 8),

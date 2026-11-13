@@ -8,6 +8,7 @@ import '../projects/project.dart';
 import '../projects/projects_repository.dart';
 import 'series.dart';
 import 'series_repository.dart';
+import '../../shared/dictation_button.dart';
 
 class SeriesData {
   final List<Series> series;
@@ -191,8 +192,11 @@ class _SeriesFormState extends ConsumerState<_SeriesForm> {
                 controller: _description,
                 minLines: 2,
                 maxLines: 5,
-                decoration: const InputDecoration(
-                    labelText: 'Descrição', hintText: 'Do que se trata esta série?'),
+                decoration: InputDecoration(
+                  labelText: 'Descrição',
+                  hintText: 'Do que se trata esta série?',
+                  suffixIcon: DictationButton(controller: _description),
+                ),
               ),
               const SizedBox(height: 16),
               const Eyebrow('PROJETOS DA SÉRIE'),

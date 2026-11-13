@@ -14,6 +14,7 @@ import '../candidate_picker.dart';
 import '../poll_job.dart';
 import '../production_step.dart';
 import '../step_action_bar.dart';
+import '../../../shared/dictation_button.dart';
 
 const _ytCategories = {
   '1': 'Filme e Animação',
@@ -330,7 +331,11 @@ class _YoutubeSheetState extends ConsumerState<_YoutubeSheet> {
                 controller: _description,
                 minLines: 3,
                 maxLines: 8,
-                decoration: const InputDecoration(labelText: 'Descrição', alignLabelWithHint: true),
+                decoration: InputDecoration(
+                  labelText: 'Descrição',
+                  alignLabelWithHint: true,
+                  suffixIcon: DictationButton(controller: _description),
+                ),
               ),
               const SizedBox(height: 12),
               TextField(
