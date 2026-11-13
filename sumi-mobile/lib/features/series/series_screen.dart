@@ -36,7 +36,7 @@ class SeriesScreen extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (_) => _SeriesForm(series: series, projects: projects),
+      builder: (_) => SafeArea(top: false, child: _SeriesForm(series: series, projects: projects)),
     );
     if (saved == true) ref.invalidate(seriesDataProvider);
   }

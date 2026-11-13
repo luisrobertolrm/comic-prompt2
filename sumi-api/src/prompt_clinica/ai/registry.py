@@ -21,6 +21,8 @@ from prompt_clinica.database import SessionLocal
 from prompt_clinica.utils.crypto import decrypt
 
 if TYPE_CHECKING:
+    from langchain_core.language_models import BaseChatModel
+
     from prompt_clinica.ai.minimax import MinimaxConfig
 
 AI_TYPES: dict[str, Any] = {
@@ -119,6 +121,25 @@ def build_image_provider(cfg: AIConfig) -> AIProvider:
             return MinimaxProvider(minimax_config(cfg))
         case _:
             raise ValueError(f"Tipo de IA de imagem desconhecido: '{cfg.kind}'.")
+
+
+def build_chat_model(cfg: AIConfig) -> BaseChatModel:
+    """Modelo de chat LangChain a partir de uma config de texto."""
+    match cfg.kind:
+        case "openai":
+            from langchain_openai import ChatOpenAI
+
+            return ChatOpenAI(
+                model=cfg.model, api_key=cfg.api_key, base_url=cfg.base_url, timeout=90
+            )
+        case "anthropic":
+            from langchain_anthropic import ChatAnthropic
+
+            return ChatAnthropic(  # type: ignore[call-arg]
+                model=cfg.model, api_key=cfg.api_key, base_url=cfg.base_url, timeout=90
+            )
+        case _:
+            raise ValueError(f"Tipo de IA de texto desconhecido: '{cfg.kind}'.")
 
 
 def speech_to_text_for(cfg: AIConfig) -> SpeechToText:

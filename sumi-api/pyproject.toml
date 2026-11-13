@@ -29,6 +29,7 @@ dependencies = [
     "pillow>=11.0.0",
     "imageio-ffmpeg>=0.5.1",
     "cryptography>=44.0.0",
+    "langchain-anthropic>=1.0",
 ]
 
 [project.urls]

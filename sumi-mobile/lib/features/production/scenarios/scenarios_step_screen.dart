@@ -71,7 +71,9 @@ class _ScenariosStepScreenState extends ConsumerState<ScenariosStepScreen> {
       isScrollControlled: true,
       useSafeArea: true,
       builder: (sheetContext) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(sheetContext).viewInsets.bottom),
+        padding: EdgeInsets.only(
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom +
+                MediaQuery.of(sheetContext).padding.bottom),
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(

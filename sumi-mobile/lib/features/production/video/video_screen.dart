@@ -151,7 +151,7 @@ class _VideoScreenState extends ConsumerState<VideoScreen> {
         context: context,
         isScrollControlled: true,
         useSafeArea: true,
-        builder: (_) => _YoutubeSheet(projectId: widget.projectId),
+        builder: (_) => SafeArea(top: false, child: _YoutubeSheet(projectId: widget.projectId)),
       );
 
   @override

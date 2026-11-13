@@ -59,3 +59,24 @@ class Character {
 
   String get initial => name.isEmpty ? '?' : name.substring(0, 1).toUpperCase();
 }
+
+/// Resposta de `POST /characters/ai-draft`: a intenção reconhecida e, quando é
+/// um personagem, o rascunho para revisar no formulário.
+class CharacterAiResult {
+  final String intent;
+  final String message;
+  final Character? draft;
+
+  const CharacterAiResult({required this.intent, this.message = '', this.draft});
+
+  bool get isCharacter => intent == 'preencher_personagem' && draft != null;
+
+  factory CharacterAiResult.fromJson(Map<String, dynamic> j) {
+    final c = j['character'] as Map?;
+    return CharacterAiResult(
+      intent: j['intent'] as String? ?? '',
+      message: j['message'] as String? ?? '',
+      draft: c == null ? null : Character.fromJson({...c.cast<String, dynamic>(), 'id': ''}),
+    );
+  }
+}

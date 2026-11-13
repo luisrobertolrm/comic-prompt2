@@ -10,9 +10,11 @@ from sqlalchemy.orm import Session
 from temp_portrait import TempPortrait
 from user import User
 
+from prompt_clinica.ai.character_agent import IntentResult, IntentRouter, build_intent_router
 from prompt_clinica.database import SessionLocal, get_db
 from prompt_clinica.deps import get_current_user
 from prompt_clinica.schemas.character import (
+    AIDraftRequest,
     CharacterCreate,
     CharacterOut,
     CharacterUpdate,
@@ -99,6 +101,22 @@ def list_characters(
     db: Session = Depends(get_db),
 ) -> list[CharacterOut]:
     return [CharacterOut.model_validate(c) for c in character_service.list_all(user, db)]
+
+
+@router.post("/ai-draft", response_model=IntentResult)
+def ai_draft(
+    req: AIDraftRequest,
+    _user: User = Depends(get_current_user),
+    intent_router: IntentRouter = Depends(build_intent_router),
+) -> IntentResult:
+    try:
+        return intent_router.route(req.text)
+    except Exception as exc:
+        logger.exception("Falha ao gerar personagem por IA")
+        raise HTTPException(
+            status_code=status.HTTP_424_FAILED_DEPENDENCY,
+            detail=f"A IA de texto não conseguiu interpretar a descrição: {exc}",
+        ) from exc
 
 
 @router.post("", status_code=201, response_model=CharacterOut)

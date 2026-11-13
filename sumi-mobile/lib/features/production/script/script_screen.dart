@@ -227,7 +227,7 @@ class _ScriptScreenState extends ConsumerState<ScriptScreen> {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (_) => _PanelEditSheet(panel: panel, cast: _project?.characters.map((c) => c.name).toList() ?? []),
+      builder: (_) => SafeArea(top: false, child: _PanelEditSheet(panel: panel, cast: _project?.characters.map((c) => c.name).toList() ?? [])),
     );
     if (updated == null) return;
     _replace(await _panelsRepo.update(panel.id, updated));

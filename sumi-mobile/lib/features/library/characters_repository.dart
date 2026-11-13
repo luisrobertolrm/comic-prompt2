@@ -13,6 +13,7 @@ abstract class CharactersRepository {
   Future<Job> startPortrait(Map<String, dynamic> body);
   Future<Job> portraitJob(String jobId);
   Future<void> deleteUnused(List<String> ids);
+  Future<CharacterAiResult> aiDraft(String text);
 }
 
 class ApiCharactersRepository implements CharactersRepository {
@@ -62,6 +63,12 @@ class ApiCharactersRepository implements CharactersRepository {
   @override
   Future<void> deleteUnused(List<String> ids) =>
       _dio.post('/characters/delete-unused', data: {'ids': ids});
+
+  @override
+  Future<CharacterAiResult> aiDraft(String text) async {
+    final resp = await _dio.post('/characters/ai-draft', data: {'text': text});
+    return CharacterAiResult.fromJson((resp.data as Map).cast<String, dynamic>());
+  }
 }
 
 final charactersRepositoryProvider = Provider<CharactersRepository>(

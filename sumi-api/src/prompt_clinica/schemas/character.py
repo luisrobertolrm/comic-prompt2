@@ -8,6 +8,10 @@ from pydantic import BaseModel, Field, field_serializer, field_validator
 from prompt_clinica.styles import DEFAULT_STYLE, StyleId
 
 
+class AIDraftRequest(BaseModel):
+    text: str = Field(min_length=3, max_length=4000)
+
+
 class CharacterCreate(BaseModel):
     name: str
     role: str = "Personagem"
