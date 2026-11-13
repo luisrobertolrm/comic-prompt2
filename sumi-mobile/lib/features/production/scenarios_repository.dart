@@ -13,6 +13,7 @@ abstract class ScenariosRepository {
   Future<Job> startScene(Map<String, dynamic> body);
   Future<Job> sceneJob(String jobId);
   Future<void> deleteUnused(List<String> ids);
+  Future<ScenarioAiResult> aiDraft(String text);
 }
 
 class ApiScenariosRepository implements ScenariosRepository {
@@ -61,6 +62,12 @@ class ApiScenariosRepository implements ScenariosRepository {
   @override
   Future<void> deleteUnused(List<String> ids) =>
       _dio.post('/scenarios/delete-unused', data: {'ids': ids});
+
+  @override
+  Future<ScenarioAiResult> aiDraft(String text) async {
+    final resp = await _dio.post('/scenarios/ai-draft', data: {'text': text});
+    return ScenarioAiResult.fromJson((resp.data as Map).cast<String, dynamic>());
+  }
 }
 
 final scenariosRepositoryProvider =

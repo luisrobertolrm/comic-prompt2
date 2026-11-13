@@ -6,8 +6,11 @@ import '../core/services/notification_service.dart';
 
 enum _State { idle, recording, transcribing }
 
+enum _Mode { append, replace }
+
 /// Microfone para o `suffixIcon` de um campo: toque para gravar, toque de novo
-/// para transcrever. O texto entra na posição do cursor.
+/// para transcrever. Com o campo preenchido, pergunta antes se o ditado
+/// acrescenta ao fim ou substitui o conteúdo.
 class DictationButton extends ConsumerStatefulWidget {
   const DictationButton({super.key, required this.controller, this.onChanged});
 
@@ -23,6 +26,7 @@ class DictationButton extends ConsumerStatefulWidget {
 
 class _DictationButtonState extends ConsumerState<DictationButton> {
   _State _state = _State.idle;
+  _Mode _mode = _Mode.append;
   late final DictationService _dictation = ref.read(dictationServiceProvider);
 
   @override
@@ -31,9 +35,36 @@ class _DictationButtonState extends ConsumerState<DictationButton> {
     super.dispose();
   }
 
+  Future<_Mode?> _askMode() {
+    final box = context.findRenderObject() as RenderBox;
+    final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+    final origin = box.localToGlobal(Offset(0, box.size.height), ancestor: overlay);
+    return showMenu<_Mode>(
+      context: context,
+      position: RelativeRect.fromRect(origin & Size.zero, Offset.zero & overlay.size),
+      items: const [
+        PopupMenuItem(
+          value: _Mode.append,
+          child: ListTile(leading: Icon(Icons.playlist_add), title: Text('Acrescentar')),
+        ),
+        PopupMenuItem(
+          value: _Mode.replace,
+          child: ListTile(leading: Icon(Icons.find_replace), title: Text('Substituir')),
+        ),
+      ],
+    );
+  }
+
   Future<void> _toggle() async {
     switch (_state) {
       case _State.idle:
+        if (widget.controller.text.trim().isEmpty) {
+          _mode = _Mode.replace;
+        } else {
+          final mode = await _askMode();
+          if (mode == null || !mounted) return;
+          _mode = mode;
+        }
         if (await _dictation.start()) {
           setState(() => _state = _State.recording);
         } else {
@@ -56,16 +87,11 @@ class _DictationButtonState extends ConsumerState<DictationButton> {
   void _insert(String text) {
     if (text.isEmpty || !mounted) return;
     final c = widget.controller;
-    final value = c.text;
-    final sel = c.selection;
-    final start = sel.isValid ? sel.start : value.length;
-    final end = sel.isValid ? sel.end : value.length;
-    final before = value.substring(0, start);
-    final piece = (before.isEmpty || before.endsWith(' ') || before.endsWith('\n')) ? text : ' $text';
-    final updated = value.replaceRange(start, end, piece);
+    final before = _mode == _Mode.replace ? '' : c.text.trimRight();
+    final updated = before.isEmpty ? text : '$before $text';
     c.value = TextEditingValue(
       text: updated,
-      selection: TextSelection.collapsed(offset: start + piece.length),
+      selection: TextSelection.collapsed(offset: updated.length),
     );
     widget.onChanged?.call(updated);
   }

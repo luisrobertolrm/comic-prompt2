@@ -9,6 +9,7 @@ import '../production/poll_job.dart';
 import '../voice_test/voices_repository.dart';
 import 'character.dart';
 import 'characters_repository.dart';
+import '../../shared/ai_draft_dialog.dart';
 import '../../shared/dictation_button.dart';
 
 const genders = ['Feminino', 'Masculino', 'Outro', 'Não especificado'];
@@ -140,6 +141,7 @@ class _CharacterFormState extends ConsumerState<CharacterForm> {
               _error = j.detail.isEmpty ? 'Erro ao gerar retratos.' : j.detail;
             } else {
               _candidates = j.candidates;
+              _pickedId = _candidates.firstOrNull?.id;
             }
           });
         },
@@ -155,9 +157,18 @@ class _CharacterFormState extends ConsumerState<CharacterForm> {
   }
 
   Future<void> _fillWithAi() async {
+    final repo = ref.read(charactersRepositoryProvider);
     final draft = await showDialog<Character>(
       context: context,
-      builder: (_) => const _AiDraftDialog(),
+      builder: (_) => AiDraftDialog<Character>(
+        hint: 'Ex: Lia, 16 anos, morena, magra, cabelo cacheado, usa uniforme '
+            'escolar. É tímida e curiosa.',
+        fallbackMessage: 'Não reconheci um personagem. Descreva aparência, idade e personalidade.',
+        interpret: (text) async {
+          final r = await repo.aiDraft(text);
+          return (r.isCharacter ? r.draft : null, r.message);
+        },
+      ),
     );
     if (draft == null || !mounted) return;
     void put(TextEditingController c, String? v) {
@@ -344,92 +355,6 @@ class _CharacterFormState extends ConsumerState<CharacterForm> {
             padding: const EdgeInsets.symmetric(vertical: 12),
             child: Text(_saving ? 'Salvando…' : (_isEdit ? 'Salvar alterações' : 'Criar personagem')),
           ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Descrição livre (digitada ou ditada) que a IA quebra nos campos da ficha.
-class _AiDraftDialog extends ConsumerStatefulWidget {
-  const _AiDraftDialog();
-
-  @override
-  ConsumerState<_AiDraftDialog> createState() => _AiDraftDialogState();
-}
-
-class _AiDraftDialogState extends ConsumerState<_AiDraftDialog> {
-  final _text = TextEditingController();
-  bool _busy = false;
-  String _message = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _text.addListener(() => setState(() {}));
-  }
-
-  @override
-  void dispose() {
-    _text.dispose();
-    super.dispose();
-  }
-
-  Future<void> _generate() async {
-    setState(() {
-      _busy = true;
-      _message = '';
-    });
-    try {
-      final result = await ref.read(charactersRepositoryProvider).aiDraft(_text.text.trim());
-      if (!mounted) return;
-      if (result.isCharacter) {
-        Navigator.pop(context, result.draft);
-        return;
-      }
-      setState(() => _message = result.message.isEmpty
-          ? 'Não reconheci um personagem. Descreva aparência, idade e personalidade.'
-          : result.message);
-    } catch (e) {
-      if (mounted) setState(() => _message = friendlyError(e));
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Gerar por IA'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              controller: _text,
-              minLines: 4,
-              maxLines: 10,
-              maxLength: 4000,
-              decoration: InputDecoration(
-                hintText: 'Ex: Lia, 16 anos, morena, magra, cabelo cacheado, usa uniforme '
-                    'escolar. É tímida e curiosa.',
-                suffixIcon: DictationButton(controller: _text),
-              ),
-            ),
-            if (_message.isNotEmpty)
-              Text(_message, style: const TextStyle(color: SumiColors.danger)),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-        FilledButton.icon(
-          onPressed: _busy || _text.text.trim().length < 3 ? null : _generate,
-          icon: _busy
-              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-              : const Icon(Icons.auto_awesome),
-          label: Text(_busy ? 'Interpretando…' : 'Preencher'),
         ),
       ],
     );

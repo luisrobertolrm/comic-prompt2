@@ -47,3 +47,24 @@ class Scenario {
 
   String get initial => name.isEmpty ? '?' : name.substring(0, 1).toUpperCase();
 }
+
+/// Resposta de `POST /scenarios/ai-draft`: a intenção reconhecida e, quando é
+/// um cenário, o rascunho para revisar no formulário.
+class ScenarioAiResult {
+  final String intent;
+  final String message;
+  final Scenario? draft;
+
+  const ScenarioAiResult({required this.intent, this.message = '', this.draft});
+
+  bool get isScenario => intent == 'preencher_cenario' && draft != null;
+
+  factory ScenarioAiResult.fromJson(Map<String, dynamic> j) {
+    final s = j['scenario'] as Map?;
+    return ScenarioAiResult(
+      intent: j['intent'] as String? ?? '',
+      message: j['message'] as String? ?? '',
+      draft: s == null ? null : Scenario.fromJson({...s.cast<String, dynamic>(), 'id': ''}),
+    );
+  }
+}

@@ -8,6 +8,7 @@ import '../jobs.dart';
 import '../poll_job.dart';
 import '../scenario.dart';
 import '../scenarios_repository.dart';
+import '../../../shared/ai_draft_dialog.dart';
 import '../../../shared/dictation_button.dart';
 
 final scenarioOptionsProvider =
@@ -117,6 +118,7 @@ class _ScenarioFormState extends ConsumerState<ScenarioForm> {
               _error = j.detail.isEmpty ? 'Erro ao gerar cenários.' : j.detail;
             } else {
               _candidates = j.candidates;
+              _pickedId = _candidates.firstOrNull?.id;
             }
           });
         },
@@ -129,6 +131,37 @@ class _ScenarioFormState extends ConsumerState<ScenarioForm> {
         });
       }
     }
+  }
+
+  Future<void> _fillWithAi() async {
+    final repo = ref.read(scenariosRepositoryProvider);
+    final draft = await showDialog<Scenario>(
+      context: context,
+      builder: (_) => AiDraftDialog<Scenario>(
+        hint: 'Ex: Sala de aula vazia ao entardecer, carteiras de madeira, '
+            'luz dourada entrando pela janela. Clima nostálgico.',
+        fallbackMessage: 'Não reconheci um cenário. Descreva o lugar, a hora e o clima.',
+        interpret: (text) async {
+          final r = await repo.aiDraft(text);
+          return (r.isScenario ? r.draft : null, r.message);
+        },
+      ),
+    );
+    if (draft == null || !mounted) return;
+    void put(TextEditingController c, String? v) {
+      if (v != null && v.trim().isNotEmpty) c.text = v.trim();
+    }
+
+    setState(() {
+      put(_name, draft.name);
+      put(_kind, draft.kind);
+      put(_summary, draft.summary);
+      put(_details, draft.details);
+      _location = draft.locationType ?? _location;
+      _time = draft.timeOfDay ?? _time;
+      _weather = draft.weather ?? _weather;
+      _atmosphere = draft.atmosphere ?? _atmosphere;
+    });
   }
 
   Future<bool> _confirmRegen() async =>
@@ -197,6 +230,14 @@ class _ScenarioFormState extends ConsumerState<ScenarioForm> {
             child: Image.network(fileUrl(currentImage), height: 180, fit: BoxFit.cover),
           ),
         const SizedBox(height: 12),
+        if (!_isEdit) ...[
+          OutlinedButton.icon(
+            onPressed: _fillWithAi,
+            icon: const Icon(Icons.auto_awesome),
+            label: const Text('Gerar por IA (texto ou voz)'),
+          ),
+          const SizedBox(height: 12),
+        ],
         TextField(controller: _name, decoration: const InputDecoration(labelText: 'Nome do cenário')),
         const SizedBox(height: 12),
         TextField(

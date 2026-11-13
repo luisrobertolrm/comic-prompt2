@@ -119,7 +119,7 @@ class _StepBar extends StatelessWidget {
       child: ActionChip(
         onPressed: reachable ? () => onTap!(s) : null,
         backgroundColor: isCurrent ? SumiColors.ink : Colors.white,
-        disabledColor: SumiColors.paper2,
+        disabledColor: isCurrent ? SumiColors.ink : SumiColors.paper2,
         side: const BorderSide(color: SumiColors.rule),
         label: Text(
           '${done && !isCurrent ? '✓' : '${s.index + 1}'}  ${s.label}',

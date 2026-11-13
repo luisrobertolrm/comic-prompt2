@@ -10,6 +10,11 @@ from sqlalchemy.orm import Session
 from temp_portrait import TempPortrait
 from user import User
 
+from prompt_clinica.ai.scenario_agent import (
+    ScenarioIntentResult,
+    ScenarioIntentRouter,
+    build_scenario_router,
+)
 from prompt_clinica.database import SessionLocal, get_db
 from prompt_clinica.deps import get_current_user
 from prompt_clinica.schemas.scenario import (
@@ -21,6 +26,7 @@ from prompt_clinica.schemas.scenario import (
     SceneJobOut,
     SceneRequest,
 )
+from prompt_clinica.schemas.text import TextIn
 from prompt_clinica.services import scenario_service
 from prompt_clinica.storage import get_storage
 
@@ -99,6 +105,22 @@ def list_scenarios(
     db: Session = Depends(get_db),
 ) -> list[ScenarioOut]:
     return [ScenarioOut.model_validate(s) for s in scenario_service.list_all(user, db)]
+
+
+@router.post("/ai-draft", response_model=ScenarioIntentResult)
+def ai_draft(
+    req: TextIn,
+    _user: User = Depends(get_current_user),
+    intent_router: ScenarioIntentRouter = Depends(build_scenario_router),
+) -> ScenarioIntentResult:
+    try:
+        return intent_router.route(req.text)
+    except Exception as exc:
+        logger.exception("Falha ao gerar cenário por IA")
+        raise HTTPException(
+            status_code=status.HTTP_424_FAILED_DEPENDENCY,
+            detail=f"A IA de texto não conseguiu interpretar a descrição: {exc}",
+        ) from exc
 
 
 @router.post("", status_code=201, response_model=ScenarioOut)

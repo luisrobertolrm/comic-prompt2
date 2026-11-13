@@ -10,6 +10,7 @@ import '../step_action_bar.dart';
 import '../production_step.dart';
 import '../styles_repository.dart';
 import '../../../shared/dictation_button.dart';
+import '../../../shared/organize_button.dart';
 
 const _genres = [
   'Shojo', 'Shonen', 'Slice of life', 'Mistério', 'Drama',
@@ -146,7 +147,13 @@ class _IdeaScreenState extends ConsumerState<IdeaScreen> {
                   labelText: 'Sua ideia',
                   hintText: 'Ex: Uma carta dobrada cai do livro emprestado. Quem a colocou ali?',
                   alignLabelWithHint: true,
-                  suffixIcon: DictationButton(controller: _idea),
+                  suffixIcon: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      OrganizeButton(controller: _idea),
+                      DictationButton(controller: _idea),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
