@@ -3,6 +3,7 @@
 # USUÁRIO: teste@gmail.com
 # SENHA: 123456
 # URL: https://autoescritor.com.br/sumi/home
+# APK ANDROID: [apk-instalador/sumi-release-4.apk](apk-instalador/sumi-release-4.apk)
 
 > Produza quadrinhos completos a partir de uma faísca de ideia, com IA guiando cada etapa — do roteiro à narração em vídeo.
 
