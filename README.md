@@ -1,9 +1,8 @@
 # Sumi — HQ com IA
 
-
-URL => https://autoescritor.com.br/sumi/home
-Usuário => teste@gmail.com
-Senha => 123456
+# USUÁRIO: teste@gmail.com
+# SENHA: 123456
+# URL: https://autoescritor.com.br/sumi/home
 
 > Produza quadrinhos completos a partir de uma faísca de ideia, com IA guiando cada etapa — do roteiro à narração em vídeo.
 
